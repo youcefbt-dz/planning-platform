@@ -1,0 +1,3 @@
+{# Who wrote this: expects `a` = an AIResult #}
+<span class="ai-tag" data-kind="{{ 'model' if a.is_model else 'rules' }}">{{ icon('bulb', 14) }}
+  {% if a.is_model %}{{ t('ai.badge.model', provider=t('ai.provider.' ~ a.provider)) }}{% elif a.errors and 'consent' in (a.errors|join(' ')) %}{{ t('ai.badge.rules_consent') }}{% elif a.errors and 'demo' in (a.errors|join(' ')) %}{{ t('ai.badge.rules_demo') }}{% elif a.fell_back %}{{ t('ai.badge.fell_back') }}{% else %}{{ t('ai.badge.rules') }}{% endif %}</span>

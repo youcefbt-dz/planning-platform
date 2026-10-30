@@ -1,0 +1,14 @@
+{# Report header — also the print letterhead. Needs: key, data, cycles?, cycle_id?, generated #}
+<div class="report-head" style="display:flex;align-items:center;gap:var(--sp-4);margin-block-end:var(--sp-4)">
+  <div class="print-only">{{ logo('full', 'on_light') }}</div>
+</div>
+<div class="page-head">
+  <div><div class="crumbs no-print"><a href="{{ url_for('reports.index') }}">{{ t('reports.module') }}</a>{{ icon('chevron-right', 13, flip=true) }}<span>{{ t('reports.' ~ key ~ '.title') }}</span></div>
+    <h1>{{ icon(spec.icon, 22) }}{{ t('reports.' ~ key ~ '.title') }}</h1>
+    <p class="sub">{{ org.name }}{% if cycle %} · {{ cycle.name }}{% endif %} · {{ t('reports.generated') }} {{ d(generated, 'long') }}</p></div>
+  <div class="actions no-print">
+    {% if spec.cycle %}<form method="get" data-autosubmit><select class="select select-sm" name="cycle" aria-label="{{ t('common.cycle') }}"><option value="all" {% if not cycle_id %}selected{% endif %}>{{ t('common.all_cycles') }}</option>{% for c in cycles %}<option value="{{ c.id }}" {% if cycle_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></form>{% endif %}
+    {% if spec.csv is not false %}<a class="btn" href="{{ url_for('reports.export', key=key, cycle=request.args.get('cycle')) }}">{{ icon('download', 15) }}{{ t('reports.export_csv') }}</a>{% endif %}
+    <button class="btn btn-primary" type="button" data-print>{{ icon('printer', 15) }}{{ t('reports.print') }}</button>
+  </div>
+</div>

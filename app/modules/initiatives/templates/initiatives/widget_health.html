@@ -1,0 +1,14 @@
+{% from "components/ui.html" import stackbar, legend, empty, avatar %}
+<div class="box">
+  <div class="box-head"><h2>{{ icon('rocket', 18) }}{{ t('initiatives.widget.health') }}</h2><span class="count">{{ n(data.total) }}</span>
+    <div class="actions"><a class="btn btn-sm" href="{{ url_for('initiatives.board') }}">{{ icon('layout-kanban', 14) }}{{ t('initiatives.tabs.board') }}</a></div></div>
+  {% if data.total %}
+  <div class="box-body">{{ stackbar(data.counts) }}{{ legend(data.counts) }}</div>
+  <div class="box-head" style="border-block-start:1px solid var(--c-line)"><h3>{{ t('initiatives.widget.upcoming') }}</h3></div>
+  {% for v in data.soon %}
+  <div class="box-row"><span class="status-dot" style="background:var(--c-primary-soft);color:var(--c-primary-text)">{{ icon('checklist', 13) }}</span>
+    <div class="main"><a class="title" href="{{ url_for('initiatives.detail', id=v.obj.id) }}">{{ v.next_milestone.title }}</a><div class="meta"><span>{{ v.obj.title }}</span></div></div>
+    <span class="chip {% if v.next_milestone.due_date < today %}chip-primary{% endif %} num">{{ icon('calendar', 12) }}{{ d(v.next_milestone.due_date, 'day') }}</span></div>
+  {% endfor %}
+  {% else %}{% call empty('rocket', t('initiatives.empty_title'), t('initiatives.empty_text')) %}{% endcall %}{% endif %}
+</div>

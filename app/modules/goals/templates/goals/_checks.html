@@ -1,0 +1,13 @@
+{# The open quality checks of a goal. Expects `res` = coach.review(...) #}
+<div class="checks">
+{% if res.open %}
+  <ul class="checks__list">
+  {% for c in res.open %}
+    <li class="check" data-level="{{ c.level }}">{{ icon({'error': 'circle-x', 'warn': 'alert-triangle', 'info': 'info-circle'}[c.level], 15) }}<span dir="auto">{{ t('goals.coach.msg.' ~ c.code, **c.params) }}</span></li>
+  {% endfor %}
+  </ul>
+{% else %}
+  <p class="checks__ok">{{ icon('circle-check', 16) }}{{ t('goals.coach.all_good') }}</p>
+{% endif %}
+  <p class="hint checks__passed">{{ tn('goals.coach.passed', res.passed) }}</p>
+</div>

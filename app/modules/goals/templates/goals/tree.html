@@ -1,0 +1,39 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import dot, avatar, empty, sec %}
+{% block title %}{{ t('goals.tabs.tree') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/goals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/goalsflow.css') }}">{% endblock %}
+
+{% macro branch(v, depth) %}
+{% set pp = (v.progress * 100)|round|int %}
+<li class="ot">
+  <a class="ot__n" data-status="{{ v.status }}" href="{{ url_for('goals.detail', id=v.obj.id) }}">
+    <span class="ot__lvl">{{ t('goals.tree_level', n=depth + 1) }}</span>
+    <b class="ot__t">{{ v.obj.title }}</b>
+    <span class="ot__meta">{% if v.obj.unit %}{{ icon('building', 13) }}{{ v.obj.unit.name }}{% endif %}{% if v.obj.owner %}<span>{{ icon('user', 13) }}{{ v.obj.owner.name }}</span>{% endif %}</span>
+    <span class="ot__bar"><i style="width:{{ pp }}%"></i></span>
+    <span class="ot__foot"><b class="num">{{ pp }}%</b>{{ dot(v.status) }}</span>
+  </a>
+  {% if v.children %}<ul class="ot__kids">{% for c in v.children|sort(attribute='obj.id') if c.obj.id in pool %}{{ branch(c, depth + 1) }}{% endfor %}</ul>{% endif %}
+</li>
+{% endmacro %}
+
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ t('goals.tabs.tree') }}</h1><p class="sub">{{ t('goals.tree_sub') }}</p></div>
+  <div class="actions"><form method="get"><select class="select" name="cycle" onchange="this.form.submit()" aria-label="{{ t('common.cycle') }}">
+    <option value="all" {% if not cycle_id %}selected{% endif %}>{{ t('common.all_cycles') }}</option>
+    {% for c in cycles %}<option value="{{ c.id }}" {% if cycle_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+  </select></form>{% if can_add_goal() %}<a class="btn btn-primary" href="{{ url_for('goals.new') }}">{{ icon('plus', 16) }}{{ t('goals.create.objective') }}</a>{% endif %}</div>
+  {% if stats.total %}<dl class="hstats">
+    <div><dt>{{ t('goals.widget.objectives') }}</dt><dd class="num">{{ n(stats.total) }}</dd></div>
+    <div><dt>{{ t('goals.tree_roots') }}</dt><dd class="num">{{ n(roots|length) }}</dd></div>
+    <div><dt>{{ t('common.avg_progress') }}</dt><dd class="num">{{ pct(stats.avg) }}</dd></div>
+  </dl>{% endif %}
+</div>
+
+{% call sec('tree', 'sitemap', t('goals.s_tree'), t('goals.s_tree_sub')) %}
+{% if roots %}
+<div class="otwrap"><ul class="ot__roots">{% for v in roots %}{{ branch(v, 0) }}{% endfor %}</ul></div>
+{% else %}<div class="box">{% call empty('sitemap', t('goals.empty_title'), t('goals.empty_text')) %}{% endcall %}</div>{% endif %}
+{% endcall %}
+{% endblock %}

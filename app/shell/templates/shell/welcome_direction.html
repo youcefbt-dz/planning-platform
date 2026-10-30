@@ -1,0 +1,43 @@
+{% extends "layouts/welcome.html" %}
+{% from "components/ui.html" import csrf %}
+{% block title %}{{ t('welcome.steps.vision') }}{% endblock %}
+{% block step %}3{% endblock %}
+{% block main %}
+<div class="wd" data-wd>
+  <div class="wd__head">
+    <p class="eyebrow">{{ t('welcome.step', n=3, total=3) }}</p>
+    <h1>{{ t('welcome.direction.title') }}</h1>
+    <p class="lead">{{ t('welcome.direction.sub') }}</p>
+  </div>
+  <form method="post" class="wd__body">{{ csrf() }}
+    <section class="sheet sheet--fields" aria-label="{{ t('welcome.direction.fields') }}">
+      <div class="wf-row">
+        <div class="wf"><label for="f-sector">{{ t('profile.sector') }}</label>
+          <select class="wf__in" id="f-sector" name="sector"><option value="">{{ t('profile.choose') }}</option>{% for k, v in topts(sectors, 'profile.sectors.') %}<option value="{{ k }}" {% if prof.sector == k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+        <div class="wf"><label for="f-size">{{ t('profile.size') }}</label>
+          <select class="wf__in" id="f-size" name="size"><option value="">{{ t('profile.choose') }}</option>{% for k, v in topts(sizes, 'profile.sizes.') %}<option value="{{ k }}" {% if prof.size == k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="wf"><label for="f-vision">{{ icon('eye', 16) }}{{ t('profile.vision') }}</label>
+        <textarea class="wf__in" id="f-vision" name="vision" rows="2" maxlength="600" dir="auto">{{ prof.vision }}</textarea><p class="wf__h">{{ t('profile.vision_hint') }}</p></div>
+      <div class="wf"><label for="f-mission">{{ icon('flag', 16) }}{{ t('profile.mission') }}</label>
+        <textarea class="wf__in" id="f-mission" name="mission" rows="2" maxlength="600" dir="auto">{{ prof.mission }}</textarea><p class="wf__h">{{ t('profile.mission_hint') }}</p></div>
+      <div class="wf"><label for="f-values">{{ icon('heart', 16) }}{{ t('profile.values') }}</label>
+        <input class="wf__in" id="f-values" name="values" maxlength="400" dir="auto" value="{{ prof['values'] }}"><p class="wf__h">{{ t('profile.values_hint') }}</p></div>
+    </section>
+
+    <section class="sheet sheet--ai" data-assist="{{ url_for('shell.direction_draft') }}" data-assist-from="#f-sector,#f-size,#f-about" data-assist-failed="{{ t('profile.draft.failed') }}">
+      <div class="ai__head"><span class="ai__orb">{{ icon('bulb', 22) }}</span><div><b>{{ t('welcome.direction.ai_title') }}</b><small>{{ t('profile.draft.sub') }}</small></div></div>
+      <div class="ai__ask">
+        <input class="wf__in" id="f-about" name="about" maxlength="300" dir="auto" autocomplete="off" placeholder="{{ t('profile.draft.about') }}">
+        <button class="wbtn wbtn--sm" type="button" data-assist-run>{{ icon('bulb', 16) }}<span>{{ t('profile.draft.btn') }}</span></button>
+      </div>
+      <div class="ai__out" data-assist-out aria-live="polite"><p class="ai__empty">{{ t('welcome.direction.ai_empty') }}</p></div>
+    </section>
+
+    <div class="wd__act">
+      <button class="wbtn" type="submit"><span>{{ t('welcome.direction.go') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
+      <button class="wlink" type="submit" name="skip" value="1" formnovalidate>{{ t('welcome.direction.skip') }}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

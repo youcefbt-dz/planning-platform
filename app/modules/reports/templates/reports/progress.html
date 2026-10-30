@@ -1,0 +1,32 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import badge, meter, stackbar, legend, empty %}
+{% block title %}{{ t('reports.progress.title') }}{% endblock %}
+{% block content %}
+{% include "reports/_head.html" %}
+{% if data.count %}
+<div class="box" style="margin-block-end:var(--sp-5)"><div class="box-body">
+  <div class="tiles" style="margin-block-end:var(--sp-4)">
+    <div class="tile"><div class="k">{{ t('goals.widget.objectives') }}</div><div class="v num">{{ n(data.count) }}</div></div>
+    <div class="tile"><div class="k">{{ t('common.avg_progress') }}</div><div class="v num">{{ pct(data.avg) }}</div></div>
+    <div class="tile"><div class="k">{{ t('status.on_track') }}</div><div class="v num">{{ n(data.stats.on_track) }}</div></div>
+    <div class="tile"><div class="k">{{ t('status.at_risk') }}</div><div class="v num">{{ n(data.stats.at_risk) }}</div></div>
+    <div class="tile"><div class="k">{{ t('status.off_track') }}</div><div class="v num">{{ n(data.stats.off_track) }}</div></div>
+  </div>
+  {{ stackbar(data.stats) }}{{ legend(data.stats) }}
+</div></div>
+<div class="box">
+  <table class="table">
+    <thead><tr><th>{{ t('reports.cols.title') }}</th><th>{{ t('reports.cols.owner') }}</th><th>{{ t('reports.cols.unit') }}</th><th class="num-col">{{ t('reports.cols.current') }}</th><th class="num-col">{{ t('reports.cols.target') }}</th><th style="min-width:170px">{{ t('reports.cols.progress') }}</th><th>{{ t('common.status') }}</th></tr></thead>
+    <tbody>
+    {% for r in data.rows %}
+    <tr {% if r.kind == 'objective' %}style="background:var(--c-subtle)"{% endif %}>
+      <td style="padding-inline-start:{{ 14 + r.level * 22 }}px">{% if r.kind == 'objective' %}<b class="ink">{{ r.title }}</b>{% else %}<span>{{ icon('flag', 13) }} {{ r.title }}</span>{% endif %}</td>
+      <td>{{ r.owner }}</td><td>{{ r.unit }}</td><td class="num-col num">{{ r.current }}</td><td class="num-col num">{{ r.target }}</td>
+      <td>{{ meter(r.progress, r.status, r.expected) }}</td><td>{{ badge(r.status) }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}<div class="box">{% call empty('report', t('reports.empty')) %}{% endcall %}</div>{% endif %}
+{% endblock %}

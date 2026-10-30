@@ -1,0 +1,52 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, field, select, delete_button, avatar, sec %}
+{% set no_subnav = true %}
+{% block title %}{{ t('settings.units.title') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/units.css') }}">{% endblock %}
+
+{% macro card(u, depth) %}
+<li class="uc" id="u{{ u.id }}" style="--d:{{ depth }}">
+  <span class="uc__ic" data-kind="{{ u.kind }}">{{ icon('building' if u.kind == 'company' else 'users-group' if u.kind == 'team' else 'sitemap', 18) }}</span>
+  <div class="uc__name"><b>{{ u.name }}</b><small>{{ t('settings.units.kind.' ~ u.kind) }} · {{ tn('settings.units.members_count', count.get(u.id, 0)) }}</small></div>
+  <form class="uc__head" method="post" action="{{ url_for('shell.unit_head', uid=u.id) }}">{{ csrf() }}
+    <label>{{ t('settings.units.head') }}
+      {% if can('settings.manage') %}<select class="select select-sm" name="head_id" onchange="this.form.submit()">
+        <option value="">{{ t('settings.units.head_none') }}</option>
+        {% for m in members %}<option value="{{ m.user_id }}" {% if u.head_id == m.user_id %}selected{% endif %}>{{ m.user.name }}</option>{% endfor %}
+      </select>{% else %}<span>{% if u.head %}{{ u.head.name }}{% else %}—{% endif %}</span>{% endif %}
+    </label>
+  </form>
+  <span class="uc__act">
+    {% if modules.is_enabled('orgmap') %}<a class="btn btn-sm" href="{{ url_for('orgmap.unit', id=u.id) }}">{{ t('settings.units.open') }}</a>{% endif %}
+    {% if u.kind != 'company' and can('settings.manage') %}{{ delete_button(url_for('shell.unit_delete', uid=u.id), label='', cls='btn btn-ghost btn-sm btn-icon btn-danger') }}{% endif %}
+  </span>
+</li>
+{% for c in by_parent.get(u.id, []) %}{{ card(c, depth + 1) }}{% endfor %}
+{% endmacro %}
+
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ t('settings.units.title') }}</h1><p class="sub">{{ t('settings.units.sub') }}</p></div>
+  <dl class="hstats">
+    <div><dt>{{ t('settings.units.title') }}</dt><dd class="num">{{ n(all_units|length) }}</dd></div>
+    <div><dt>{{ t('settings.units.with_head') }}</dt><dd class="num">{{ n(all_units|selectattr('head_id')|list|length) }}</dd></div>
+    <div><dt>{{ t('settings.members.title') }}</dt><dd class="num">{{ n(members|length) }}</dd></div>
+  </dl>
+</div>
+
+{% call sec('structure', 'sitemap', t('settings.units.s_structure'), t('settings.units.s_structure_sub')) %}
+<ul class="ucs">{% for u in by_parent.get(None, []) %}{{ card(u, 0) }}{% endfor %}</ul>
+{% endcall %}
+
+{% if can('settings.manage') %}
+{% call sec('add', 'plus', t('settings.units.add'), t('settings.units.add_sub')) %}
+<form method="post" class="uadd">
+  {{ csrf() }}
+  {{ field(t('settings.units.name'), 'name', required=true) }}
+  {{ select(t('settings.units.kind_label'), 'kind', [('department', t('settings.units.kind.department')), ('team', t('settings.units.kind.team'))], 'department') }}
+  {{ select(t('settings.units.parent'), 'parent_id', opts(all_units, 'id', 'name'), all_units[0].id if all_units else none) }}
+  <button class="btn btn-primary" type="submit">{{ t('common.add') }}</button>
+</form>
+{% endcall %}
+{% endif %}
+{% endblock %}

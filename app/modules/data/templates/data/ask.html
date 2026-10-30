@@ -1,0 +1,82 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, empty %}
+{% from "data/_macros.html" import sec %}
+{% block title %}{{ t('data.ask.title') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dash.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css') }}">{% endblock %}
+{% block content %}
+{% if no_data %}
+<div class="page-head page-head--plain"><div class="page-head__title"><h1>{{ icon('sparkles', 22) }}{{ t('data.ask.title') }}</h1><p class="sub">{{ t('data.ask.sub') }}</p></div></div>
+<div class="box dash-empty">{% call empty('sparkles', t('data.dash.empty_title'), t('data.dash.empty_text')) %}<a class="btn btn-primary" href="{{ url_for('data.index') }}">{{ t('data.upload_go') }}</a>{% endcall %}</div>
+{% else %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ t('data.ask.title') }}</h1><p class="sub">{{ t('data.ask.sub') }}</p></div>
+  <dl class="hstats">
+    <div><dt>{{ t('data.ask.h_reader') }}</dt><dd style="font-size:var(--fs-base)">{% if ai_hint.local or (ai_hint.external and not ai_hint.needs_consent) %}{{ t('data.ask.reader_model') }}{% else %}{{ t('data.ask.reader_rules') }}{% endif %}</dd></div>
+    <div><dt>{{ t('data.ask.h_measures') }}</dt><dd class="num">{{ n(ms|length) }}</dd></div>
+  </dl>
+</div>
+
+<div class="askpg">
+  <div class="askpg__main">
+    {% call sec('q', 'message-question', t('data.ask.s_ask'), t('data.ask.s_ask_sub')) %}
+    <form class="ask" method="get" action="{{ url_for('data.ask') }}" role="search">
+      <input type="hidden" name="m" value="{{ sel.id }}">
+      <span class="ask__ic">{{ icon('bulb', 18) }}</span>
+      <input id="ask-q" class="input ask__input" name="q" value="{{ q }}" maxlength="200" placeholder="{{ t('data.dash.ask_ph') }}" aria-label="{{ t('data.dash.ask_title') }}" autocomplete="off">
+      <button class="btn btn-primary" type="submit">{{ t('data.dash.ask_go') }}</button>
+    </form>
+    <p class="ask__hint">{% for ex in examples %}<a class="chip chip-primary" href="{{ url_for('data.ask', q=ex, m=sel.id) }}">{{ ex }}</a>{% endfor %}</p>
+    {% endcall %}
+
+    {% if ask %}
+    {% call sec('a', 'chart-dots', t('data.ask.s_answer'), t('data.ask.s_answer_sub')) %}
+    <div class="answer" aria-live="polite">
+      {% if ask.note %}<p class="ai-why">{{ icon('info-circle', 16) }}<span>{{ ask.note }}</span></p>{% endif %}
+      {% if ask.why %}<p class="ai-why">{{ icon('lock' if ask.why.code == 'consent' else 'info-circle', 16) }}<span>{{ t('data.dash.why.' ~ ask.why.code, detail=ask.why.detail or '') }}
+        {% if ask.why.code == 'consent' and ask.why.action %}<a href="{{ url_for('shell.settings_ai') }}">{{ t('data.ai.enable') }}</a>{% endif %}</span></p>{% endif %}
+      {% if ask.charts %}
+        <p class="answer__head">{{ icon('check', 16) }}<b>{{ ask.q }}</b><span class="muted">· {{ t('data.dash.ask_by_model') if ask.model else t('data.dash.ask_by_rules') }}</span>
+          <a class="answer__close" href="{{ url_for('data.ask', m=sel.id) }}" aria-label="{{ t('data.dash.close') }}">{{ icon('x', 16) }}</a></p>
+        <div class="answer__charts">{% for c in ask.charts %}{% include "data/_chart.html" %}{% endfor %}</div>
+      {% elif ask.ask %}
+        <div class="box answer__ask">
+          <p>{{ icon('help-circle', 18) }}<b>{{ t('data.dash.which_title') }}</b></p>
+          {% if ask.missing %}<p>{{ t('data.dash.missing', words=ask.missing|join('، ')) }}</p>{% endif %}
+          <p class="muted">{{ t('data.dash.which_text_missing') if ask.missing else t('data.dash.which_text', q=ask.q) }}</p>
+          <div class="chips">{% for o in ask.choices %}<a class="chip chip-primary" href="{{ o.href }}">{{ o.label }}</a>{% endfor %}</div>
+        </div>
+      {% else %}
+        <p class="note note-warn">{{ icon('alert-triangle', 16) }}{{ t('data.dash.ask_unavailable') if ask.error == 'unavailable' else t('data.dash.ask_none') }}</p>
+      {% endif %}
+    </div>
+    {% endcall %}
+    {% endif %}
+  </div>
+
+  <aside class="askpg__side">
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('sparkles', 20) }}</span>{{ t('data.ask.s_reader') }}</h2></header>
+      <div class="rc__body">
+        {% if ai_hint.needs_consent %}
+          <p class="ai-why ai-why--consent">{{ icon('lock', 16) }}<span>{{ t('data.dash.why.consent_idle') }}</span></p>
+          <p class="muted">{{ t('data.dash.why.consent_ask') }}</p>
+          {% if can('settings.manage') %}<form method="post" action="{{ url_for('shell.settings_ai') }}">{{ csrf() }}<input type="hidden" name="ai_consent" value="on"><input type="hidden" name="next" value="{{ request.full_path }}"><button class="btn btn-primary" type="submit">{{ t('data.dash.why.consent_btn') }}</button></form>
+          {% else %}<p class="muted">{{ t('data.dash.why.consent_owner') }}</p>{% endif %}
+        {% elif ai_hint.external or ai_hint.local %}
+          <p class="ai-why">{{ icon('check', 16) }}<span>{{ t('data.ask.reader_on') }}</span></p>
+        {% else %}
+          <p class="ai-why">{{ icon('info-circle', 16) }}<span>{{ t('data.dash.why.none_idle') }}</span></p>
+        {% endif %}
+        <p class="muted">{{ t('data.ask.privacy') }}</p>
+      </div>
+    </section>
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('list-details', 20) }}</span>{{ t('data.ask.s_what') }}</h2></header>
+      <div class="rc__body"><ul class="askpg__list"><li>{{ t('data.ask.can1') }}</li><li>{{ t('data.ask.can2') }}</li><li>{{ t('data.ask.can3') }}</li></ul>
+        <a class="golink" href="{{ url_for('data.charts', m=sel.id) }}">{{ icon('chart-dots', 16) }}{{ t('data.ask.to_charts') }}</a></div>
+    </section>
+  </aside>
+</div>
+{% endif %}
+{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/dash.js') }}" defer></script>{% endblock %}

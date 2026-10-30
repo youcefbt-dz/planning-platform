@@ -1,0 +1,45 @@
+# ============================================================================
+# MODULES — switch product features on/off, reorder them, without touching code.
+#
+# Each entry is a package app/modules/<id>/ exposing `manifest` (see
+# app/core/modules.py and docs/ADDING_A_MODULE.md).
+#
+#   enabled : load the module (blueprint, nav, search, dashboard widgets…)
+#   order   : position in the top navigation (lower = earlier)
+#
+# Disabling a module hides it everywhere (nav, create menu, search, overview
+# widgets). Its database tables stay — data is never dropped by a toggle.
+# Modules that depend on a disabled module are refused at boot with a clear
+# message; optional links to a disabled module simply disappear from the UI.
+# ============================================================================
+
+modules:
+  data:
+    enabled: true
+    order: 10
+  goals:
+    enabled: true
+    order: 20
+  initiatives:
+    enabled: false           # hidden in v2 (kept intact, switch back on here)
+    order: 25
+  strategy:
+    enabled: false           # off in 1.1 (kept intact, switch back on here)
+    order: 30
+  orgmap:
+    enabled: true
+    order: 35
+  reports:
+    enabled: true
+    order: 40
+
+# Default behaviour of the product (can be overridden per organization later).
+defaults:
+  language: ar
+  languages: [ar]
+  digits: latin            # latin | native  (native = ٠١٢٣ in Arabic)
+  arabic_locale: ar        # ar = Modern Standard month names | ar_DZ = Algerian
+  checkin_cadence_days: 14 # a goal without a check-in for this long is "stale"
+  status_thresholds:       # gap = expected progress − actual progress (points)
+    on_track: 10
+    at_risk: 25

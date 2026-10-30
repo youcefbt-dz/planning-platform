@@ -1,0 +1,36 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import dot, meter, avatar, empty %}
+{% block title %}{{ t('initiatives.module') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ icon('rocket', 22) }}{{ t('initiatives.module') }}</h1><p class="sub">{{ t('initiatives.sub') }}</p></div>
+  <div class="actions">{% if can('initiatives.edit') %}<a class="btn btn-primary" href="{{ url_for('initiatives.new') }}">{{ icon('plus', 16) }}{{ t('initiatives.create') }}</a>{% endif %}</div>
+</div>
+<form class="filters" method="get" data-autosubmit>
+  <select class="select select-sm" name="unit" aria-label="{{ t('common.unit') }}"><option value="">{{ t('common.all_units') }}</option>{% for u in units %}<option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.name }}</option>{% endfor %}</select>
+  <input class="input input-sm grow" type="search" name="q" value="{{ q }}" placeholder="{{ t('initiatives.filter_placeholder') }}">
+  {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+  <button class="btn btn-sm" type="submit">{{ icon('filter', 14) }}{{ t('common.filter') }}</button>
+</form>
+<div class="box">
+  <div class="box-head"><div class="seg">
+    <a href="{{ url_for('initiatives.index', unit=unit_id, q=q or None) }}" {% if not status %}aria-current="true"{% endif %}>{{ t('common.all') }}</a>
+    {% for s in ('on_track','at_risk','off_track','not_started','on_hold','completed') %}{% if counts.get(s) %}<a href="{{ url_for('initiatives.index', status=s, unit=unit_id, q=q or None) }}" {% if status == s %}aria-current="true"{% endif %}>{{ t('status.' ~ s) }} <span class="num">{{ n(counts[s]) }}</span></a>{% endif %}{% endfor %}
+  </div></div>
+  {% for v in rows %}
+  <div class="box-row">
+    {{ dot(v.status) }}
+    <div class="main"><a class="title" href="{{ url_for('initiatives.detail', id=v.obj.id) }}">{{ v.obj.title }}</a>
+      <div class="meta">
+        {% if v.obj.unit %}<span>{{ icon('building', 13) }}{{ v.obj.unit.name }}</span>{% endif %}
+        {% if v.obj.owner %}<span>{{ avatar(v.obj.owner, 'avatar-sm') }}{{ v.obj.owner.name }}</span>{% endif %}
+        {% if v.obj.end_date %}<span>{{ icon('calendar', 13) }}{{ d(v.obj.end_date) }}</span>{% endif %}
+        {% if v.total %}<span>{{ icon('checklist', 13) }}{{ v.done }}/{{ v.total }} {{ t('initiatives.milestones') }}</span>{% endif %}
+        {% if v.overdue %}<span class="stale">{{ icon('alert-circle', 13) }}{{ tn('initiatives.overdue', v.overdue) }}</span>{% endif %}
+        <span class="chip">{{ t('initiatives.state.' ~ v.obj.state) }}</span>
+      </div></div>
+    <div class="side" style="width:230px">{{ meter(v.progress, v.status, v.expected if v.obj.state == 'active' else none) }}</div>
+  </div>
+  {% else %}{% call empty('rocket', t('initiatives.empty_title'), t('initiatives.empty_text')) %}{% if can('initiatives.edit') %}<a class="btn btn-primary" href="{{ url_for('initiatives.new') }}">{{ icon('plus', 16) }}{{ t('initiatives.create') }}</a>{% endif %}{% endcall %}{% endfor %}
+</div>
+{% endblock %}

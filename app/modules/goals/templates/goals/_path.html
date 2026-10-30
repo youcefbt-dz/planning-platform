@@ -1,0 +1,14 @@
+{# The path chart. Expects `pc` (path.build). Colour is never alone: each line has a legend entry with a word. #}
+<div class="pathc">
+  <svg class="pathc__svg" viewBox="0 0 {{ pc.w }} {{ pc.h }}" dir="ltr" role="img" aria-label="{{ t('goals.path.aria') }}">
+    {% for tk in pc.ticks %}<line x1="46" x2="{{ pc.w - 46 }}" y1="{{ tk.y }}" y2="{{ tk.y }}" class="pathc__grid"/><text x="40" y="{{ tk.y + 4 }}" text-anchor="end" class="pathc__tick">{{ val(tk.v, pc.unit) }}</text>{% endfor %}
+    <line x1="{{ pc.today_x }}" x2="{{ pc.today_x }}" y1="22" y2="{{ pc.h - 22 }}" class="pathc__today"/><text x="{{ pc.today_x }}" y="14" text-anchor="middle" class="pathc__tick">{{ t('goals.path.today') }}</text>
+    <line x1="46" x2="{{ pc.end_x }}" y1="{{ pc.target_y }}" y2="{{ pc.target_y }}" class="pathc__target"/>
+    <line x1="{{ pc.required[0] }}" y1="{{ pc.required[1] }}" x2="{{ pc.required[2] }}" y2="{{ pc.required[3] }}" class="pathc__req"/>
+    {% if pc.proj %}<polygon points="{{ pc.proj.band }}" class="pathc__band"/><line x1="{{ pc.proj['from'][0] }}" y1="{{ pc.proj['from'][1] }}" x2="{{ pc.proj.mid[0] }}" y2="{{ pc.proj.mid[1] }}" class="pathc__proj"/>{% endif %}
+    {% if pc.actual %}<polyline points="{{ pc.actual }}" class="pathc__act"/>{% if pc.last %}<circle cx="{{ pc.last[0] }}" cy="{{ pc.last[1] }}" r="4.5" class="pathc__dot"/>{% endif %}{% endif %}
+    <text x="46" y="{{ pc.h - 4 }}" class="pathc__tick">{{ d(pc.d0, 'month') }}</text><text x="{{ pc.end_x }}" y="{{ pc.h - 4 }}" text-anchor="end" class="pathc__tick">{{ d(pc.d1, 'month') }}</text>
+    <circle cx="{{ pc.end_x }}" cy="{{ pc.target_y }}" r="5" class="pathc__goal"/>
+  </svg>
+  <p class="legend legend--chart"><span class="item"><i class="sw"></i>{{ t('goals.path.actual') }}</span><span class="item"><i class="sw sw--prior"></i>{{ t('goals.path.required') }}</span>{% if pc.proj %}<span class="item"><i class="sw sw--proj"></i>{{ t('goals.path.projected') }}</span>{% endif %}</p>
+</div>

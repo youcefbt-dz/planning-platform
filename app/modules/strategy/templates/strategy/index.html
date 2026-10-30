@@ -1,0 +1,66 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, textarea, field, meter, dot, empty %}
+{% block title %}{{ t('strategy.module') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('compass', 22) }}{{ t('strategy.foundation.title') }}</h1><p class="sub">{{ t('strategy.foundation.sub') }}</p></div></div>
+
+<div class="box">
+  <div class="box-head"><h2>{{ icon('eye', 18) }}{{ t('strategy.vision') }} · {{ icon('flag-3', 18) }}{{ t('strategy.mission') }}</h2></div>
+  {% if can('strategy.edit') %}
+  <form method="post" action="{{ url_for('strategy.foundation_save') }}" class="box-body">{{ csrf() }}
+    <div class="form-grid">
+      {{ textarea(t('strategy.vision'), 'vision', vision.text if vision else '', hint=t('strategy.vision_hint'), rows=3) }}
+      {{ textarea(t('strategy.mission'), 'mission', mission.text if mission else '', hint=t('strategy.mission_hint'), rows=3) }}
+    </div>
+    <button class="btn btn-primary btn-sm" type="submit">{{ t('common.save') }}</button>
+  </form>
+  {% else %}
+  <div class="box-body"><div class="foundation">
+    <div><div class="side-title">{{ t('strategy.vision') }}</div><p class="quote">{{ vision.text if vision and vision.text else '—' }}</p></div>
+    <div><div class="side-title">{{ t('strategy.mission') }}</div><p class="quote">{{ mission.text if mission and mission.text else '—' }}</p></div>
+  </div></div>
+  {% endif %}
+</div>
+
+<div class="box" id="values">
+  <div class="box-head"><h2>{{ icon('heart', 18) }}{{ t('strategy.values') }}</h2><span class="count">{{ n(values|length) }}</span></div>
+  {% for v in values %}
+  <div class="box-row"><div class="main"><span class="title">{{ v.title }}</span>{% if v.text %}<div class="meta">{{ v.text }}</div>{% endif %}</div>
+    {% if can('strategy.edit') %}<form method="post" action="{{ url_for('strategy.value_delete', id=v.id) }}" data-confirm="{{ t('common.confirm_delete') }}">{{ csrf() }}<button class="btn btn-sm btn-ghost btn-icon btn-danger" type="submit" aria-label="{{ t('common.delete') }}">{{ icon('trash', 14) }}</button></form>{% endif %}</div>
+  {% else %}{% call empty('heart', t('strategy.no_values')) %}{% endcall %}{% endfor %}
+  {% if can('strategy.edit') %}
+  <form method="post" action="{{ url_for('strategy.value_add') }}" class="inline-edit" style="grid-template-columns:200px 1fr auto">{{ csrf() }}
+    <input class="input input-sm" name="title" placeholder="{{ t('strategy.value_name') }}" required aria-label="{{ t('strategy.value_name') }}">
+    <input class="input input-sm" name="text" placeholder="{{ t('strategy.value_text') }}" aria-label="{{ t('strategy.value_text') }}">
+    <button class="btn btn-sm btn-primary" type="submit">{{ icon('plus', 14) }}{{ t('common.add') }}</button></form>{% endif %}
+</div>
+
+<div id="priorities" style="margin-block-start:var(--sp-5)">
+  <div class="page-head page-head--plain" style="margin-block-end:var(--sp-3)"><div><h2>{{ icon('flag-3', 20) }} {{ t('strategy.priorities') }}</h2><p class="sub">{{ t('strategy.priorities_sub') }}</p></div></div>
+  {% for p in priorities %}
+  {% set r = rolled.get(p.id) %}
+  <div class="box" id="priority-{{ p.id }}">
+    <div class="box-head"><h3>{{ p.title }}</h3>
+      <div class="actions">{% if r and r.avg is not none %}<div style="width:200px">{{ meter(r.avg) }}</div>{% endif %}
+        {% if can('strategy.edit') %}<form method="post" action="{{ url_for('strategy.priority_delete', id=p.id) }}" data-confirm="{{ t('common.confirm_delete') }}">{{ csrf() }}<button class="btn btn-sm btn-ghost btn-icon btn-danger" type="submit" aria-label="{{ t('common.delete') }}">{{ icon('trash', 14) }}</button></form>{% endif %}</div></div>
+    {% if p.description %}<div class="box-body" style="padding-block-end:0">{{ p.description }}</div>{% endif %}
+    {% if goals_on %}
+      {% for v in (r.objectives if r else []) %}
+      <div class="box-row">{{ dot(v.status) }}<div class="main"><a class="title" href="{{ url_for('goals.detail', id=v.obj.id) }}">{{ v.obj.title }}</a></div><div class="side" style="width:200px">{{ meter(v.progress, v.status, v.expected) }}</div>
+        {% if can('strategy.edit') %}<form method="post" action="{{ url_for('strategy.priority_detach', id=p.id, oid=v.obj.id) }}">{{ csrf() }}<button class="btn btn-sm btn-ghost btn-icon" type="submit" aria-label="{{ t('common.remove') }}">{{ icon('x', 14) }}</button></form>{% endif %}</div>
+      {% endfor %}
+      {% if can('strategy.edit') and options %}
+      <form method="post" action="{{ url_for('strategy.priority_attach', id=p.id) }}" class="inline-edit" style="grid-template-columns:1fr auto">{{ csrf() }}
+        <select class="select select-sm" name="objective_id" aria-label="{{ t('strategy.attach_objective') }}">{% for o in options %}<option value="{{ o.obj.id }}">{{ o.obj.title }}</option>{% endfor %}</select>
+        <button class="btn btn-sm" type="submit">{{ icon('link', 14) }}{{ t('strategy.attach') }}</button></form>{% endif %}
+    {% endif %}
+  </div>
+  {% else %}<div class="box">{% call empty('flag-3', t('strategy.no_priorities')) %}{% endcall %}</div>{% endfor %}
+  {% if can('strategy.edit') %}
+  <form method="post" action="{{ url_for('strategy.priority_add') }}" class="box" style="margin-block-start:var(--sp-4)">{{ csrf() }}
+    <div class="inline-edit" style="grid-template-columns:240px 1fr auto;border:0">
+      <input class="input input-sm" name="title" placeholder="{{ t('strategy.priority_name') }}" required aria-label="{{ t('strategy.priority_name') }}">
+      <input class="input input-sm" name="description" placeholder="{{ t('common.description') }}" aria-label="{{ t('common.description') }}">
+      <button class="btn btn-sm btn-primary" type="submit">{{ icon('plus', 14) }}{{ t('strategy.add_priority') }}</button></div></form>{% endif %}
+</div>
+{% endblock %}

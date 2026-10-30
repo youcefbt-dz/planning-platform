@@ -1,0 +1,51 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import empty %}
+{% block title %}{{ t('shell.overview') }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title">
+    <h1>{{ icon('home', 22) }}{{ t('shell.overview') }}</h1>
+    {% if cycle %}<p class="sub"><bdi>{{ d(cycle.start_date, 'day') }} – {{ d(cycle.end_date, 'medium') }}</bdi></p>{% else %}<p class="sub">{{ t('shell.no_cycle') }}</p>{% endif %}
+  </div>
+  <div class="actions">
+    {% if modules.is_enabled('reports') %}<a class="btn" href="{{ url_for('reports.index') }}">{{ icon('report-analytics', 16) }}{{ t('reports.module') }}</a>{% endif %}
+  </div>
+</div>
+
+{% if widgets %}
+{% set wide = widgets|selectattr('w.span', 'equalto', 2)|list %}
+{% set narrow = widgets|rejectattr('w.span', 'equalto', 2)|list %}
+<div class="widgets">
+  {% for item in wide %}{% set data = item.data %}<div class="widgets__wide">{% include item.w.template %}</div>{% endfor %}
+  {% if narrow %}<div class="widgets__cols">
+    {% for col in (narrow[0::2], narrow[1::2]) %}{% if col %}<div class="widgets__col">
+      {% for item in col %}{% set data = item.data %}{% include item.w.template %}{% endfor %}
+    </div>{% endif %}{% endfor %}
+  </div>{% endif %}
+</div>
+{% else %}
+<div class="box">{% call empty('puzzle', t('shell.no_modules_title'), t('shell.no_modules_text')) %}{% endcall %}</div>
+{% endif %}
+
+<section class="orb" style="margin-block-start:var(--sp-5)">
+  <header class="orb__head"><h2>{{ icon('history', 18) }}{{ t('shell.activity') }}</h2></header>
+  {% if feed %}
+  <div class="timeline">
+    {% for a in feed %}
+    <div class="tl-item">
+      <span class="avatar">{{ a.user.initials if a.user else '–' }}</span>
+      <div class="body">
+        <div class="who">{{ a.user.name if a.user else t('common.system') }}<span class="when">{{ a.created_at|ago }}</span></div>
+        <p>{{ t('activity.' ~ a.verb) }}
+          {% if a.url %}<a href="{{ a.url }}">{{ a.entity_title }}</a>{% else %}<b class="ink">{{ a.entity_title }}</b>{% endif %}
+          <span class="muted">· {{ t('activity.type.' ~ a.entity_type) }}</span></p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    {% call empty('history', t('shell.activity_empty')) %}{% endcall %}
+  {% endif %}
+</section>
+{% endblock %}

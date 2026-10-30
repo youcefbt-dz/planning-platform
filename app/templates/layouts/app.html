@@ -1,0 +1,148 @@
+{% extends "layouts/base.html" %}
+{% from "components/ui.html" import flashes, csrf, org_tile %}
+{% block css %}
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cards.css') }}">
+  {% block css_page %}{% endblock %}
+{% endblock %}
+{% block body_class %}app-body{% endblock %}
+
+{% block body %}
+{% set is_settings = request.endpoint and request.endpoint.startswith('shell.settings') %}
+{% set active_mod = (nav|selectattr('active')|list|first) %}
+<div class="app">
+  {% if read_only %}
+  <div class="demo-banner"><div class="wrap">
+    {{ icon('eye', 16) }}<span>{{ t('demo.banner') }}</span>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('auth.register') }}">{{ t('demo.cta') }}</a>
+  </div></div>
+  {% endif %}
+
+  <header class="topbar">
+    <div class="wrap topbar__inner">
+      <a class="brand-link" href="{{ url_for('shell.overview') }}" aria-label="{{ brand_name }}">
+        {{ logo('full', 'on_dark') }}{{ logo('mark', 'on_dark') }}
+      </a>
+
+      <nav class="mainnav" aria-label="{{ t('shell.modules') }}">
+        <a href="{{ url_for('shell.overview') }}" {% if request.endpoint == 'shell.overview' %}aria-current="page"{% endif %}>{{ icon('home', 17) }}<span>{{ t('shell.overview') }}</span></a>
+        {% for m in nav %}<a href="{{ m.href }}" {% if m.active %}aria-current="page"{% endif %}>{{ icon(m.icon, 17) }}<span>{{ t(m.label_key) }}</span></a>{% endfor %}
+      </nav>
+
+      <div class="topbar__tools">
+        <form class="topsearch" action="{{ url_for('shell.search') }}" role="search">
+          {{ icon('search', 16) }}
+          <input type="search" name="q" placeholder="{{ t('shell.search_placeholder') }}" aria-label="{{ t('shell.search') }}" autocomplete="off">
+          <kbd aria-hidden="true">/</kbd>
+        </form>
+
+        {% if create_actions %}
+        <details class="menu">
+          <summary class="tbtn tbtn--solid" aria-label="{{ t('shell.create') }}">{{ icon('plus', 16) }}<span class="lbl">{{ t('shell.create') }}</span></summary>
+          <div class="menu__panel">
+            {% for a in create_actions %}<a href="{{ url_for(a.endpoint) }}"><span class="menu__ic">{{ icon(a.icon, 16) }}</span>{{ t(a.key) }}</a>{% endfor %}
+          </div>
+        </details>
+        {% endif %}
+
+        {% if me.is_authenticated %}
+        <details class="menu">
+          <summary class="tbtn" aria-label="{{ t('shell.org_menu') }}">{{ icon('building', 16) }}<span class="lbl truncate">{{ org.name }}</span>{{ icon('chevron-down', 13) }}</summary>
+          <div class="menu__panel">
+            <div class="menu__head">{{ org_tile(org, 'sm') }}<div><b class="truncate">{{ org.name }}</b><span class="muted">{{ t('role.' ~ role) if role else '' }}</span></div></div>
+            {% if can('settings.view') %}
+            <a href="{{ url_for('shell.settings_general') }}"><span class="menu__ic">{{ icon('building', 16) }}</span>{{ t('settings.general.title') }}</a>
+            <a href="{{ url_for('shell.settings_members') }}"><span class="menu__ic">{{ icon('users', 16) }}</span>{{ t('settings.members.title') }}</a>
+            <a href="{{ url_for('shell.settings_units') }}"><span class="menu__ic">{{ icon('sitemap', 16) }}</span>{{ t('settings.units.title') }}</a>
+            <a href="{{ url_for('shell.settings_cycles') }}"><span class="menu__ic">{{ icon('calendar', 16) }}</span>{{ t('settings.cycles.title') }}</a>
+            <a href="{{ url_for('shell.settings_ai') }}"><span class="menu__ic">{{ icon('bulb', 16) }}</span>{{ t('ai.settings.title') }}</a>
+            <div class="menu__sep"></div>
+            {% endif %}
+            {% if my_orgs()|length > 1 %}
+            <div class="menu__label">{{ t('shell.workspaces') }}</div>
+            {% for o in my_orgs() %}<a href="{{ url_for('shell.overview', org_slug=o.slug) }}" {% if o.id == org.id %}aria-current="true"{% endif %}><span class="menu__ic">{{ icon('building', 16) }}</span><span class="truncate">{{ o.name }}</span></a>{% endfor %}
+            {% endif %}
+            <a href="{{ url_for('auth.register') }}"><span class="menu__ic">{{ icon('plus', 16) }}</span>{{ t('shell.new_workspace') }}</a>
+          </div>
+        </details>
+
+        <details class="menu">
+          <summary class="tbtn tbtn--round" aria-label="{{ t('shell.account') }}"><span class="avatar">{{ me.initials }}</span></summary>
+          <div class="menu__panel">
+            <div class="menu__head"><span class="avatar avatar-lg">{{ me.initials }}</span><div><b class="truncate">{{ me.name }}</b><span class="muted truncate">{{ me.email }}</span></div></div>
+            <form method="post" action="{{ url_for('auth.logout') }}">{{ csrf() }}<button type="submit"><span class="menu__ic">{{ icon('logout', 16, flip=true) }}</span>{{ t('auth.logout') }}</button></form>
+          </div>
+        </details>
+        {% else %}
+        <a class="tbtn" href="{{ url_for('auth.login') }}">{{ icon('login', 16, flip=true) }}<span class="lbl">{{ t('auth.login') }}</span></a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% set tabs_nav = none %}
+  {% if is_settings and can('settings.view') %}{% set tabs_nav = 'settings' %}
+  {% elif active_mod and not no_subnav and active_mod.tabs|length > 1 %}{% set tabs_nav = 'module' %}{% endif %}
+  <section class="band{% if tabs_nav %} band--tabs{% endif %}" aria-label="{{ org.name }}">
+    <div class="wrap band__inner">
+      <div class="orgcard">
+        {{ org_tile(org, 'lg') }}
+        <div class="orgcard__text">
+          <p class="orgcard__name">{{ org.name }}</p>
+          <p class="orgcard__meta">
+            {% if band_cycle %}<span>{{ icon('calendar', 15) }}{{ t('shell.current_cycle') }}: <bdi>{{ band_cycle.name }}</bdi></span>{% endif %}
+            {% if band_sector %}<span>{{ icon('briefcase', 15) }}{{ band_sector }}</span>{% endif %}
+          </p>
+        </div>
+      </div>
+      {% if setup and not setup.complete and setup.next %}
+      <a class="setup-chip" href="{{ setup.next.href }}">
+        <span class="setup-chip__dots" aria-hidden="true">{% for s in setup.steps if s.required %}<i {% if s.done %}data-done="true"{% endif %}></i>{% endfor %}</span>
+        <span><b>{{ t('setup.chip', done=setup.done, total=setup.total) }}</b><small>{{ t(setup.next.label_key) }}</small></span>
+        {{ icon('chevron-left', 16, flip=true) }}
+      </a>
+      {% endif %}
+    </div>
+    {% if tabs_nav == 'settings' %}
+    <div class="wrap"><nav class="bandtabs" aria-label="{{ t('shell.settings') }}">
+      {% for ep, ic, key in [('shell.settings_general','building','settings.general.title'),('shell.settings_members','users','settings.members.title'),('shell.settings_units','sitemap','settings.units.title'),('shell.settings_cycles','calendar','settings.cycles.title'),('shell.settings_ai','bulb','ai.settings.title')] %}
+      <a href="{{ url_for(ep) }}" {% if request.endpoint == ep %}aria-current="page"{% endif %}>{{ icon(ic, 16) }}{{ t(key) }}</a>
+      {% endfor %}
+    </nav></div>
+    {% elif tabs_nav == 'module' %}
+    <div class="wrap"><nav class="bandtabs" aria-label="{{ t(active_mod.label_key) }}">
+      {% for tab in active_mod.tabs %}<a href="{{ tab.href }}" {% if tab.current %}aria-current="page"{% endif %}>{{ icon(tab.icon, 16) }}{{ t(tab.key) }}</a>{% endfor %}
+    </nav></div>
+    {% endif %}
+  </section>
+
+  <main class="page">
+    <div class="wrap">
+      {{ flashes() }}
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="wrap">
+      <span>© {{ today.year }} <bdi>{{ brand_name }}</bdi></span>
+      {% if brand.placeholder %}<span>{{ t('shell.placeholder_notice') }}</span>{% endif %}
+    </div>
+  </footer>
+</div>
+{% endblock %}
+
+{% block js %}
+<template id="think-tpl">
+  <div class="think" role="status" aria-live="polite">
+    <span class="think__mark" aria-hidden="true"><i></i><i></i><i></i></span>
+    <div class="think__body"><b>{{ t('think.title') }}</b>
+      <ol class="think__steps">{% for k in ('s1','s2','s3') %}<li>{{ t('think.' ~ k) }}</li>{% endfor %}</ol></div>
+  </div>
+</template>
+<script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/assist.js') }}" defer></script>
+{% block js_page %}{% endblock %}
+{% endblock %}

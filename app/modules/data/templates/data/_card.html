@@ -1,0 +1,56 @@
+{# One column. Expects `card` (service.column_cards item), `ds`, `roles`, `aggs`. Hooks for data.js: data-colrow, data-f=…, data-q #}
+{% set c = card.col %}{% set q = card.q %}
+{% set ricon = {'date':'calendar','measure':'chart-bar','dimension':'category','ignore':'circle-dashed'} %}
+<details class="ccard" id="col-{{ c.index }}" data-colrow="{{ c.index }}" data-idx="{{ c.index }}" data-role="{{ c.role }}" data-state="{{ 'ask' if q else 'ok' }}" {% if q %}open{% endif %}>
+  <summary class="ccard__head">
+    <span class="letter" data-f="letter">{{ card.letter }}</span>
+    <span class="ccard__id">
+      <b class="ccard__name" data-f="label2">{{ c.label }}</b>
+      <span class="ccard__ex">{{ (c.examples or [])[:2]|join('  ·  ') }}</span>
+    </span>
+    <span class="ccard__badges">
+      <span class="ccard__meta" data-f="meta">{% if c.role == 'measure' %}{% if c.unit %}{{ c.unit }} · {% endif %}{{ t('data.agg_short.' ~ c.aggregation) }}{% endif %}</span>
+      <span class="ccard__note" data-f="noteflag" title="{{ t('data.explain.has_note') }}" {% if not card.note %}hidden{% endif %}>{{ icon('message', 14) }}</span>
+      <span class="role-chip" data-role="{{ c.role }}" data-f="chip">{{ icon(ricon[c.role], 13) }}<span data-f="rolename">{{ t('data.role.' ~ c.role) }}</span></span>
+      <span class="ccard__qmark" data-f="qmark" {% if not q %}hidden{% endif %} title="{{ t('data.unsure') }}">?</span>
+    </span>
+    {{ icon('chevron-down', 16, cls='ccard__chev') }}
+  </summary>
+  <div class="ccard__body">
+    <p class="ccard__about" data-f="about">{{ card.about }}</p>
+    {% if q %}
+    <div class="ccard__ask" data-q="{{ c.index }}">
+      <p class="ccard__askq" dir="auto">{{ q.question }}</p>
+      <div class="ccard__opts">
+        {% for o in q.options %}
+        <form method="post" action="{{ url_for('data.column', id=ds.id, idx=c.index) }}" data-ajax>{{ csrf() }}<input type="hidden" name="option" value="{{ loop.index0 }}">
+          <button class="btn btn-sm" type="submit" {% if not can('data.edit') %}disabled{% endif %}>{{ o.label }}</button></form>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if can('data.edit') %}
+    <details class="ccard__noteopt" {% if card.note %}open{% endif %}>
+      <summary class="muted">{{ icon('message', 14) }}{{ t('data.explain.add_note') }}</summary>
+      <div class="ccard__explain">
+        <span class="saved" data-saved hidden>{{ icon('check', 12) }}{{ t('data.explain.saved') }}</span>
+        <div class="chips">{% for k in ('amount','thousands','count','percent') %}<button class="chip-btn" type="button" data-fill="{{ t('data.explain.col_chips.' ~ k) }}" data-target="#note-{{ c.index }}">{{ t('data.explain.col_chips.' ~ k) }}</button>{% endfor %}</div>
+        <textarea class="textarea" id="note-{{ c.index }}" name="note_{{ c.index }}" form="notes-form" rows="2" maxlength="400" placeholder="{{ t('data.explain.col_ph') }}" data-note>{{ card.note }}</textarea>
+      </div>
+    </details>
+    <details class="ccard__manual">
+      <summary>{{ icon('pencil', 13) }}{{ t('data.cols.manual') }}</summary>
+      <form method="post" action="{{ url_for('data.column', id=ds.id, idx=c.index) }}" class="colform" data-ajax>{{ csrf() }}
+        <div class="field"><label>{{ t('data.col.role') }}</label><select class="select select-sm" name="role">{% for r in roles %}<option value="{{ r }}" {% if r == c.role %}selected{% endif %}>{{ t('data.role.' ~ r) }}</option>{% endfor %}</select></div>
+        <div class="field"><label>{{ t('data.col.label') }}</label><input class="input input-sm" name="label" value="{{ c.label }}" maxlength="80"></div>
+        <div class="field"><label>{{ t('data.col.unit') }}</label><input class="input input-sm" name="unit" value="{{ c.unit }}" maxlength="12" placeholder="DZD, %, kg"></div>
+        <div class="field"><label>{{ t('data.col.agg') }}</label><select class="select select-sm" name="aggregation">{% for a in aggs %}<option value="{{ a }}" {% if a == c.aggregation %}selected{% endif %}>{{ t('data.agg.' ~ a) }}</option>{% endfor %}</select></div>
+        <div class="field"><label>{{ t('data.col.direction') }}</label><select class="select select-sm" name="direction">{% for dd in ('higher_better','lower_better') %}<option value="{{ dd }}" {% if dd == c.direction %}selected{% endif %}>{{ t('data.dir.' ~ dd) }}</option>{% endfor %}</select></div>
+        <div class="colform__save"><button class="btn btn-sm btn-primary" type="submit">{{ t('common.save') }}</button></div>
+      </form>
+    </details>
+    {% elif card.note %}
+    <p class="ccard__readnote">{{ icon('message', 14) }}{{ card.note }}</p>
+    {% endif %}
+  </div>
+</details>

@@ -1,0 +1,14 @@
+{% extends "layouts/app.html" %}
+{% block title %}{{ t('reports.module') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('report-analytics', 22) }}{{ t('reports.module') }}</h1><p class="sub">{{ t('reports.sub') }}</p></div></div>
+<div class="grid-2">
+  {% for key, spec in reports.items() %}
+  <a class="box" href="{{ url_for('reports.show', key=key) }}" style="text-decoration:none;margin:0">
+    <div class="box-body" style="display:flex;gap:var(--sp-4);align-items:flex-start">
+      <span class="status-dot" style="width:44px;height:44px;background:var(--c-primary-soft);color:var(--c-primary-text);flex:none">{{ icon(spec.icon, 22) }}</span>
+      <div><h3>{{ t('reports.' ~ key ~ '.title') }}</h3><p class="muted" style="margin:4px 0 0;font-size:var(--fs-sm)">{{ t('reports.' ~ key ~ '.text') }}</p></div>
+    </div></a>
+  {% endfor %}
+</div>
+{% endblock %}

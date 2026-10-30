@@ -1,0 +1,172 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, badge, dot, meter, avatar, delete_button, status_select, empty, quick_notes %}
+{% block title %}{{ o.title }}{% endblock %}
+
+{% set kr_end = o.end_date or (o.cycle.end_date if o.cycle else none) %}
+{% set stale_days = 62 %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/goals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dash.css') }}">{% if data_series_options is defined %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}">{% endif %}{% endblock %}
+{% block content %}
+<div class="crumbs">
+  <a href="{{ url_for('goals.index') }}">{{ t('goals.module') }}</a>{{ icon('chevron-right', 13, flip=true) }}
+  {% if parent_view %}<a href="{{ url_for('goals.detail', id=parent_view.obj.id) }}">{{ parent_view.obj.title }}</a>{{ icon('chevron-right', 13, flip=true) }}{% endif %}
+  <span>{{ t('goals.entity.objective') }}</span>
+</div>
+<div class="page-head">
+  <div style="min-width:0;flex:1">
+    <h1>{{ o.title }}</h1>
+    <p class="sub row-wrap" style="gap:var(--sp-3)">{{ badge(v.status) }}<span class="chip-type" data-commit="{{ o.commitment }}" title="{{ t('goals.commitment_hint.' ~ o.commitment) }}">{{ icon('flag-3' if o.commitment == 'committed' else 'mountain', 13) }}{{ t('goals.commitment.' ~ o.commitment) }}</span>
+      {% if v.stale %}<span class="stale">{{ icon('clock', 14) }}{{ t('goals.stale_since', ago=(v.last_update|ago) if v.last_update else t('goals.never')) }}</span>{% endif %}
+    </p>
+  </div>
+  <div class="actions">
+    {% if can_edit_goal(o) %}<a class="btn" href="{{ url_for('goals.edit', id=o.id) }}">{{ icon('pencil', 15) }}{{ t('common.edit') }}</a>
+    <a class="btn" href="{{ url_for('goals.new', parent=o.id) }}">{{ icon('plus', 15) }}{{ t('goals.add_child') }}</a>{% endif %}
+    {% if can('goals.delete') and can_edit_goal(o) %}{{ delete_button(url_for('goals.delete', id=o.id), confirm=t('goals.confirm_delete')) }}{% endif %}
+  </div>
+  {% set gp = ((v.progress - v.expected) * 100)|round(0)|int %}
+  {% set left = ((kr_end - today).days if kr_end else none) %}
+  <dl class="hstats">
+    <div><dt>{{ t('common.progress') }}</dt><dd class="num">{{ pct(v.progress) }}</dd></div>
+    <div><dt>{{ t('common.expected') }}</dt><dd class="num">{{ pct(v.expected) }}</dd></div>
+    <div data-s="{{ 'on_track' if gp >= 0 else 'off_track' }}"><dt>{{ t('goals.col.gap') }}</dt><dd class="num"><bdi dir="ltr">{{ '+' if gp > 0 else ('−' if gp < 0 else '') }}{{ n(gp|abs) }}</bdi></dd></div>
+    {% if left is not none and left >= 0 %}<div><dt>{{ t('goals.widget.days_label') }}</dt><dd class="num">{{ n(left) }}</dd></div>{% endif %}
+    <div><dt>{{ t('goals.entity.key_results') }}</dt><dd class="num">{{ n(v.krs|length) }}</dd></div>
+  </dl>
+</div>
+
+<div class="layout-side">
+  <div class="stack">
+    <div class="box">
+      <div class="box-head"><h2>{{ icon('target-arrow', 18) }}{{ t('goals.col.progress') }}</h2></div>
+      <div class="box-body">
+        {{ meter(v.progress, v.status, v.expected, lg=true) }}
+        <p class="pacekey">{{ t('goals.pace_hint') }}{% set gap = ((v.expected - v.progress) * 100)|round(0)|int %} — {% if gap > 0 %}{{ t('common.behind_by') }} <b class="num ink">{{ n(gap) }} {{ t('common.points') }}</b>{% elif gap < 0 %}{{ t('common.ahead_by') }} <b class="num ink">{{ n(-gap) }} {{ t('common.points') }}</b>{% else %}{{ t('common.on_plan') }}{% endif %}</p>
+        {% if chart %}
+        <details class="disclosure" style="margin-block-start:var(--sp-4)"><summary>{{ icon('chart-line', 15) }}{{ t('goals.history') }}</summary>
+          {% include "components/line_chart.html" %}
+        </details>{% endif %}
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="box-head"><h2>{{ icon('flag', 18) }}{{ t('goals.entity.key_results') }}</h2><span class="count">{{ n(v.krs|length) }}</span></div>
+      {% for k in v.krs %}
+      {% include "goals/_kr.html" %}
+      {% else %}
+        {% call empty('flag', t('goals.no_krs_title'), t('goals.no_krs_text')) %}{% endcall %}
+      {% endfor %}
+      {% if can_edit_goal(o) %}
+      <details class="disclosure" style="padding:12px 16px;background:var(--c-subtle);border-block-start:1px solid var(--c-line)">
+        <summary>{{ icon('plus', 15) }}{{ t('goals.add_kr') }}</summary>
+        <form method="post" action="{{ url_for('goals.kr_add', id=o.id) }}">{{ csrf() }}
+          <div class="form-grid">
+            <div class="field span-2"><label for="kr-title">{{ t('common.title') }}</label><input class="input" id="kr-title" name="title" required></div>
+            <div class="field"><label for="kr-start">{{ t('goals.start_value') }}</label><input class="input" id="kr-start" name="start_value" inputmode="decimal" value="0"></div>
+            <div class="field"><label for="kr-target">{{ t('goals.target_value') }}</label><input class="input" id="kr-target" name="target_value" inputmode="decimal" value="100"></div>
+            <div class="field"><label for="kr-unit">{{ t('goals.unit_label') }}</label><input class="input" id="kr-unit" name="unit_label" maxlength="24" placeholder="DZD, %, …"></div>
+            <div class="field"><label for="kr-kind">{{ t('goals.kr_type_h') }}</label><select class="select" id="kr-kind" name="kr_type">{% for kt in kr_types %}<option value="{{ kt }}">{{ t('goals.kr_type.' ~ kt) }}</option>{% endfor %}</select></div>
+            <div class="field"><label for="kr-type">{{ t('goals.metric_type') }}</label><select class="select" id="kr-type" name="metric_type">{% for m in ('number','percent') %}<option value="{{ m }}">{{ t('goals.metric.' ~ m) }}</option>{% endfor %}</select></div>
+          </div>
+          {% with name='series_id', selected=none, uid='a', end=(kr_end.isoformat() if kr_end else ''), end_from='', target_from='#kr-target', start_to='#kr-start', unit_to='#kr-unit', goal='' %}{% include "data/_kr_measure.html" %}{% endwith %}
+          <button class="btn btn-primary" type="submit">{{ t('common.add') }}</button>
+        </form>
+      </details>
+      {% endif %}
+    </div>
+
+    {% set ns = namespace(any=false) %}{% for k in v.krs %}{% if infos[k.kr.id].path %}{% set ns.any = true %}{% endif %}{% endfor %}
+    {% if ns.any %}
+    <div class="box" id="paths">
+      <div class="box-head"><h2>{{ icon('chart-line', 18) }}{{ t('goals.paths_title') }}</h2></div>
+      {% for k in v.krs %}{% set inf = infos[k.kr.id] %}{% if inf.path %}
+      <details class="pathrow">
+        <summary><span class="pathrow__t" dir="auto">{{ k.kr.title }}</span>{% if inf.row %}{{ badge(inf.row.status) }}{% endif %}{{ icon('chevron-down', 16) }}</summary>
+        <div class="box-body">
+          {% if inf.row and inf.data and inf.data.projected %}{% set pr = inf.data.projected %}
+          <p class="insight" style="margin:0 0 var(--sp-3)">{{ icon('bulb', 16) }}<span>{{ t('goals.path.sentence_' ~ inf.row.status, mid=val(pr.mid, k.kr.unit_label), low=val(pr.low, k.kr.unit_label), high=val(pr.high, k.kr.unit_label), target=val(k.kr.target_value, k.kr.unit_label), end=d(kr_end)) }}</span></p>
+          {% elif not inf.data %}<p class="muted" style="margin:0 0 var(--sp-3)">{{ t('goals.path.manual_note') }}</p>{% endif %}
+          {% set pc = inf.path %}{% include "goals/_path.html" %}
+          {% if inf.branches %}{% set c = inf.branches %}{% include "data/_chart.html" %}{% endif %}
+        </div>
+      </details>
+      {% endif %}{% endfor %}
+    </div>
+    {% endif %}
+
+    {% if o.rationale %}<div class="box"><div class="box-head"><h2>{{ icon('bulb', 18) }}{{ t('goals.rationale') }}</h2></div><div class="box-body" style="white-space:pre-line" dir="auto">{{ o.rationale }}</div></div>{% endif %}
+    {% if o.description %}<div class="box"><div class="box-head"><h2>{{ t('common.description') }}</h2></div><div class="box-body" style="white-space:pre-line">{{ o.description }}</div></div>{% endif %}
+
+    <div class="box" id="events">
+      <div class="box-head"><h2>{{ icon('gavel', 18) }}{{ t('goals.events.title') }}</h2><span class="count">{{ n(events|length) }}</span></div>
+      <div class="box-body events">
+        {% for e in events %}<div class="events__item">{{ icon('target-arrow' if e.kind == 'target' else 'gavel', 16) }}<div>
+          <b>{% if e.kind == 'target' %}{{ t('goals.events.target_changed', old=n(e.old_value), new=n(e.new_value)) }}{% else %}{{ t('goals.events.decision') }}{% endif %}</b>
+          <span class="muted"> · {{ e.user.name if e.user else t('common.system') }} · {{ e.created_at|ago }}</span>
+          {% if e.text %}<p style="margin:2px 0 0" dir="auto">{{ e.text }}</p>{% elif e.kind == 'target' %}<p class="muted" style="margin:2px 0 0">{{ t('goals.events.no_reason') }}</p>{% endif %}</div></div>
+        {% else %}<p class="muted" style="margin:0">{{ t('goals.events.none') }}</p>{% endfor %}
+        {% if can_edit_goal(o) %}<form method="post" action="{{ url_for('goals.decision_add', id=o.id) }}" class="row-wrap">{{ csrf() }}
+          <input class="input" name="text" maxlength="500" required placeholder="{{ t('goals.events.ph') }}" aria-label="{{ t('goals.events.decision') }}" style="flex:1;min-width:220px"><button class="btn btn-primary btn-sm" type="submit">{{ t('goals.events.add') }}</button></form>{% endif %}
+      </div>
+    </div>
+
+    <div class="box" id="feed">
+      <div class="box-head"><h2>{{ icon('message-circle', 18) }}{{ t('goals.checkins') }}</h2></div>
+      {% if can_update_goal(o) %}
+      <form method="post" action="{{ url_for('goals.checkin', id=o.id) }}" class="box-body" style="border-block-end:1px solid var(--c-line)">{{ csrf() }}
+        <div class="field"><label for="ci-comment">{{ t('goals.checkin_prompt') }}</label><textarea class="textarea" id="ci-comment" name="comment" rows="2"></textarea>{{ quick_notes('#ci-comment') }}</div>
+        <div class="row-wrap">{{ status_select() }}<button class="btn btn-primary btn-sm" type="submit">{{ icon('message', 15) }}{{ t('goals.post_checkin') }}</button>
+          <span class="hint">{{ t('goals.checkin_hint') }}</span></div>
+      </form>{% endif %}
+      {% if feed %}
+      <div class="timeline">
+        {% for c in feed if c.comment or c.status or c.entity_type == 'key_result' %}
+        <div class="tl-item">
+          <span class="avatar">{{ c.user.initials if c.user else '–' }}</span>
+          <div class="body">
+            <div class="who">{{ c.user.name if c.user else t('common.system') }}<span class="when">{{ c.created_at|ago }}</span></div>
+            {% if c.entity_type == 'key_result' %}<div class="change">{{ icon('flag', 13) }}{{ kr_titles.get(c.entity_id, '') }}{% if c.value is not none %} → <b class="ink num">{{ n(c.value) }}</b>{% endif %}</div>{% endif %}
+            {% if c.status %}<div class="change">{{ badge(c.status) }}</div>{% endif %}
+            {% if c.comment == '@data' %}<p class="muted">{{ icon('refresh', 13) }}{{ t('goals.updated_from_data') }}</p>{% elif c.comment %}<p>{{ c.comment }}</p>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}{% call empty('message-circle', t('goals.no_checkins')) %}{% endcall %}{% endif %}
+    </div>
+  </div>
+
+  <aside class="stack">
+    <div class="box"><div class="box-body">
+      <dl class="kv">
+        <div><dt>{{ t('common.owner') }}</dt><dd>{% if o.owner %}{{ avatar(o.owner, 'avatar-sm') }}{{ o.owner.name }}{% else %}<span class="muted">{{ t('common.unassigned') }}</span>{% endif %}</dd></div>
+        <div><dt>{{ t('common.unit') }}</dt><dd>{{ o.unit.name if o.unit else '—' }}</dd></div>
+        <div><dt>{{ t('common.cycle') }}</dt><dd>{{ o.cycle.name if o.cycle else '—' }}</dd></div>
+        <div><dt>{{ t('common.dates') }}</dt><dd class="num">{{ d(o.start_date or (o.cycle.start_date if o.cycle else none), 'day') }} → {{ d(o.end_date or (o.cycle.end_date if o.cycle else none)) }}</dd></div>
+        {% if o.perspective %}<div><dt>{{ t('goals.perspective') }}</dt><dd>{{ t('goals.perspectives.' ~ o.perspective) }}</dd></div>{% endif %}
+        <div><dt>{{ t('goals.progress_driver') }}</dt><dd>{{ t('goals.drivers.' ~ o.progress_driver) }}</dd></div>
+        {% if o.parent_id %}<div><dt>{{ t('goals.weight') }}</dt><dd class="num">{{ n(o.weight) }}</dd></div>{% endif %}
+      </dl>
+    </div></div>
+
+    <div class="box" id="quality">
+      <div class="box-head"><h3>{{ icon('clipboard-check', 16) }}{{ t('goals.coach.title') }}</h3><span class="count {% if quality.open %}count-warn{% endif %}">{{ n(quality.passed) }}/{{ n(quality.total) }}</span></div>
+      {% set res = quality %}{% include "goals/_checks.html" %}
+    </div>
+    {% if v.children %}
+    <div class="box"><div class="box-head"><h3>{{ icon('sitemap', 16) }}{{ t('goals.children') }}</h3><span class="count">{{ n(v.children|length) }}</span></div>
+      {% for c in v.children|sort(attribute='obj.id') %}
+      <div class="box-row" style="flex-wrap:wrap;gap:var(--sp-2)"><div class="main"><a class="title" href="{{ url_for('goals.detail', id=c.obj.id) }}">{{ c.obj.title }}</a></div>
+        <div style="width:100%">{{ meter(c.progress, c.status) }}</div></div>
+      {% endfor %}
+    </div>{% endif %}
+
+    {% if modules.is_enabled('initiatives') %}
+    <div class="box"><div class="box-head"><h3>{{ icon('rocket', 16) }}{{ t('goals.supporting_initiatives') }}</h3><span class="count">{{ n(supporters|length) }}</span>
+      <div class="actions">{% if can('initiatives.edit') %}<a class="btn btn-sm btn-ghost btn-icon" href="{{ url_for('initiatives.new', goal=o.id) }}" title="{{ t('initiatives.create') }}">{{ icon('plus', 15) }}</a>{% endif %}</div></div>
+      {% for s in supporters %}<div class="box-row"><div class="main"><a class="title" href="{{ s.url }}">{{ s.title }}</a></div></div>
+      {% else %}<div class="box-body muted" style="font-size:var(--fs-sm)">{{ t('goals.no_initiatives') }}</div>{% endfor %}
+    </div>{% endif %}
+  </aside>
+</div>
+{% endblock %}
+{% block js_page %}{% if data_series_options is defined %}<script src="{{ url_for('static', filename='js/reality.js') }}" defer></script>{% endif %}<script src="{{ url_for('static', filename='js/goals.js') }}" defer></script>{% endblock %}

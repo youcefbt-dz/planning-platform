@@ -1,0 +1,39 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, empty %}
+{% set no_subnav = true %}
+{% block title %}{{ t('ai.settings.title') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}">{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('bulb', 22) }}{{ t('ai.settings.title') }}</h1><p class="sub">{{ t('ai.settings.sub') }}</p></div></div>
+<div class="stack" style="max-width:860px">
+  <div class="box"><div class="box-head"><h2>{{ icon('layers-intersect', 18) }}{{ t('ai.settings.status') }}</h2></div>
+    {% for s in status %}
+    <div class="box-row"><div class="main"><span class="title">{{ t('ai.provider.' ~ s.name) }}</span>
+      <div class="meta"><span>{{ t('ai.settings.local') if s.local else t('ai.settings.cloud') }}</span></div></div>
+      <div class="side">{% if s.available %}<span class="badge" data-status="on_track">{{ icon('circle-check', 13) }}{{ t('ai.settings.available') }}</span>{% else %}<span class="badge" data-status="not_started">{{ t('ai.settings.not_configured') }}</span>{% endif %}</div></div>
+    {% endfor %}
+  </div>
+
+  <form method="post" class="box">{{ csrf() }}
+    <div class="box-head"><h2>{{ icon('shield-check', 18) }}{{ t('ai.settings.consent_title') }}</h2></div>
+    <div class="box-body stack-sm">
+      {% if cloud %}
+      <p style="margin:0">{{ t('ai.settings.consent_text', rows=rows) }}</p>
+      <label class="row" style="gap:10px;font-weight:600;color:var(--c-ink)"><input type="checkbox" name="ai_consent" {% if consent %}checked{% endif %} {% if not can('settings.manage') %}disabled{% endif %}>{{ t('ai.settings.consent_on') }}</label>
+      {% if can('settings.manage') %}<div><button class="btn btn-primary" type="submit">{{ t('common.save') }}</button></div>{% endif %}
+      {% else %}<p class="muted" style="margin:0">{{ icon('info-circle', 16) }} {{ t('ai.settings.no_cloud') }}</p>{% endif %}
+    </div>
+  </form>
+
+  <div class="box"><div class="box-head"><h2>{{ icon('history', 18) }}{{ t('ai.settings.calls') }}</h2></div>
+    {% if calls %}
+    <table class="table"><thead><tr><th>{{ t('ai.settings.col_task') }}</th><th>{{ t('ai.settings.col_provider') }}</th><th>{{ t('ai.settings.col_when') }}</th><th>{{ t('ai.settings.col_sent') }}</th></tr></thead>
+      <tbody>{% for c in calls %}<tr>
+        <td>{{ c.task }}{% if not c.ok %} <span class="badge" data-status="off_track">{{ t('ai.settings.failed') }}</span>{% endif %}</td>
+        <td>{{ t('ai.provider.' ~ c.provider) }}{% if c.model %}<div class="muted" style="font-size:var(--fs-xs)">{{ c.model }}</div>{% endif %}</td>
+        <td class="muted">{{ d(c.created_at.date()) }} {{ c.created_at.strftime('%H:%M') }}</td>
+        <td>{% if c.sent_preview %}<details><summary class="muted" style="cursor:pointer">{{ t('ai.settings.sent_view') }} ({{ n(c.sent_chars) }})</summary><pre style="white-space:pre-wrap;max-width:420px;max-height:260px;overflow:auto;font-size:11px;background:var(--c-subtle);padding:8px;border-radius:var(--r-sm);direction:ltr;text-align:left">{{ c.sent_preview }}</pre></details>{% else %}<span class="muted">—</span>{% endif %}</td></tr>{% endfor %}</tbody></table>
+    {% else %}<p class="box-body muted">{{ t('ai.settings.no_calls') }}</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

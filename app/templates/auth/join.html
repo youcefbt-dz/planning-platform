@@ -1,0 +1,27 @@
+{% extends "layouts/gate.html" %}
+{% from "components/ui.html" import csrf, flashes %}
+{% from "auth/_fields.html" import gfield %}
+{% block title %}{{ t('auth.join.title') }}{% endblock %}
+{% block mode %}join{% endblock %}
+{% block fixed_org %}{{ org.name if inv else '' }}{% endblock %}
+{% block topnav %}{% if inv and not current_user.is_authenticated %}<a class="gate__alt" href="{{ url_for('auth.login', next=request.path) }}">{{ t('auth.join.have_account') }} <b>{{ t('auth.login') }}</b></a>{% endif %}{% endblock %}
+{% block card %}
+  {% if not inv %}
+  <h1>{{ t('auth.join.invalid_title') }}</h1><p class="gate__sub">{{ t('auth.join.invalid') }}</p>
+  <a class="gbtn gbtn--soft" href="{{ url_for('site.landing') }}">{{ t('errors.home') }}</a>
+  {% else %}
+  <h1>{{ t('auth.join.heading', org=org.name) }}</h1>
+  <p class="gate__sub">{{ t('auth.join.sub', role=t('role.' ~ inv.role)) }}</p>
+  {{ flashes() }}
+  <form method="post" class="gform" data-gform>{{ csrf() }}
+    {% if current_user.is_authenticated %}
+      <p class="gate__as">{{ icon('user-circle', 20) }}<span>{{ t('auth.join.as', name=current_user.name) }}</span></p>
+    {% else %}
+      {{ gfield(t('auth.name'), 'name', 'user', value=form.get('name', ''), required=true, auto='name', live='user') }}
+      {{ gfield(t('auth.email'), 'email', 'mail', 'email', value=form.get('email', ''), required=true, auto='username', live='email') }}
+      {{ gfield(t('auth.password'), 'password', 'key', 'password', required=true, auto='new-password', live='password', hint=t('auth.password_hint')) }}
+    {% endif %}
+    <button class="gbtn" type="submit"><span>{{ t('auth.join.accept') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
+  </form>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, meter, dot, empty %}
+{% block title %}{{ t('strategy.tabs.map') }}{% endblock %}
+{% set lane_icons = {'financial': 'chart-bar', 'customer': 'users', 'process': 'refresh', 'learning': 'bulb'} %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('route', 22) }}{{ t('strategy.map.title') }}</h1><p class="sub">{{ t('strategy.map.sub') }}</p></div></div>
+<div class="smap" data-edges='{{ edges|tojson }}'>
+  <svg class="links" aria-hidden="true"><defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z"/></marker></defs></svg>
+  {% for lane, items in lanes.items() %}
+  <section class="smap-lane">
+    <h3>{{ icon(lane_icons[lane], 18) }}{{ t('goals.perspectives.' ~ lane) }}</h3>
+    <div class="nodes">
+      {% for v in items %}
+      <a class="smap-node" href="{{ url_for('goals.detail', id=v.obj.id) }}" data-node="{{ v.obj.id }}"><b>{{ v.obj.title }}</b>{{ meter(v.progress, v.status, v.expected) }}</a>
+      {% else %}<span class="muted" style="font-size:var(--fs-sm)">{{ t('strategy.map.lane_empty') }}</span>{% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% if unassigned %}<p class="muted" style="margin-block-start:var(--sp-3);font-size:var(--fs-sm)">{{ icon('info-circle', 14) }} {{ tn('strategy.map.unassigned', unassigned|length) }}</p>{% endif %}
+
+{% if can('strategy.edit') and top|length > 1 %}
+<div class="box" style="margin-block-start:var(--sp-5)"><div class="box-head"><h2>{{ icon('link', 18) }}{{ t('strategy.map.add_link') }}</h2></div>
+  <form method="post" action="{{ url_for('strategy.map_link') }}" class="inline-edit" style="grid-template-columns:1fr auto 1fr auto;align-items:center">{{ csrf() }}
+    <select class="select select-sm" name="source_id" aria-label="{{ t('strategy.map.from') }}">{% for v in top %}<option value="{{ v.obj.id }}">{{ v.obj.title }}</option>{% endfor %}</select>
+    <span class="muted">{{ icon('arrow-right', 16, flip=true) }}</span>
+    <select class="select select-sm" name="target_id" aria-label="{{ t('strategy.map.to') }}">{% for v in top %}<option value="{{ v.obj.id }}">{{ v.obj.title }}</option>{% endfor %}</select>
+    <button class="btn btn-sm btn-primary" type="submit">{{ t('common.add') }}</button></form>
+  {% if edges %}<div class="box-body" style="border-block-start:1px solid var(--c-line)">
+    {% set titles = {} %}{% for v in top %}{% set _ = titles.update({v.obj.id: v.obj.title}) %}{% endfor %}
+    {% for e in edges %}<form method="post" action="{{ url_for('strategy.map_unlink') }}" class="row" style="margin-block-end:6px;font-size:var(--fs-sm)">{{ csrf() }}
+      <input type="hidden" name="source_id" value="{{ e['from'] }}"><input type="hidden" name="target_id" value="{{ e.to }}">
+      <span>{{ titles[e['from']] }}</span>{{ icon('arrow-right', 14, flip=true) }}<span>{{ titles[e.to] }}</span>
+      <button class="btn btn-sm btn-ghost btn-icon btn-danger" type="submit" aria-label="{{ t('common.remove') }}">{{ icon('x', 14) }}</button></form>{% endfor %}
+  </div>{% endif %}
+</div>{% endif %}
+<p class="muted" style="margin-block-start:var(--sp-4);font-size:var(--fs-sm)">{{ t('strategy.map.note') }}</p>
+{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/strategy-map.js') }}" defer></script>{% endblock %}

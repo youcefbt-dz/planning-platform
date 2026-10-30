@@ -1,0 +1,46 @@
+{% from "components/ui.html" import dot, empty, stackbar, orbit_gauge %}
+<section class="ctrl">
+  <header class="ctrl__head"><h2>{{ t('goals.widget.summary') }}</h2>
+    {% if data.cycle %}<span class="chip">{{ data.cycle.name }}</span>{% endif %}
+    <a class="btn btn-sm" href="{{ url_for('goals.index') }}">{{ t('common.view_all') }}</a></header>
+  {% if data.stats.total %}
+  <div class="ctrl__top">
+    <div class="ctrl__gauge">
+      {{ orbit_gauge(data.gauge, data.stats.avg) }}
+      <ul class="ctrl__key">
+        {% if data.gauge.outer %}<li><i class="k-time"></i>{{ t('goals.widget.time_passed') }} <b class="num">{{ n(data.gauge.outer.pct) }}%</b></li>{% endif %}
+        <li><i class="k-prog"></i>{{ t('common.avg_progress') }} <b class="num">{{ pct(data.stats.avg) }}</b></li>
+      </ul>
+    </div>
+    <div class="ctrl__side">
+      <p class="ctrl__verdict" data-tone="{{ 'good' if data.gap >= 0 else 'bad' }}">
+        {{ icon('trending-up' if data.gap >= 0 else 'trending-down', 18) }}
+        <span>{% if data.gap >= 0 %}{{ t('goals.widget.ahead', gap=n(data.gap)) }}{% else %}{{ t('goals.widget.behind', gap=n(-data.gap)) }}{% endif %}
+          {% if data.days_left is not none %}<small>{{ tn('goals.widget.days_left', data.days_left) }}</small>{% endif %}</span>
+      </p>
+      <div class="figs">
+        <div class="fig"><b class="num">{{ n(data.stats.total) }}</b><span>{{ t('goals.widget.objectives') }}</span></div>
+        <div class="fig" data-status="on_track"><b class="num">{{ n(data.stats.counts.on_track + data.stats.counts.completed) }}</b><span>{{ icon('circle-check', 14) }}{{ t('status.on_track') }}</span></div>
+        <div class="fig" data-status="at_risk"><b class="num">{{ n(data.stats.counts.at_risk) }}</b><span>{{ icon('alert-triangle', 14) }}{{ t('status.at_risk') }}</span></div>
+        <div class="fig" data-status="off_track"><b class="num">{{ n(data.stats.counts.off_track) }}</b><span>{{ icon('circle-x', 14) }}{{ t('status.off_track') }}</span></div>
+      </div>
+      {{ stackbar(data.stats.counts) }}
+    </div>
+  </div>
+  <ul class="tracks">
+    {% for v in data.top %}
+    <li class="track" data-status="{{ v.status }}">
+      <a class="track__title" href="{{ url_for('goals.detail', id=v.obj.id) }}">{{ dot(v.status) }}<span>{{ v.obj.title }}</span></a>
+      <div class="track__rail" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ (v.progress * 100)|round|int }}">
+        <span class="track__fill" style="width:{{ (v.progress * 100)|round|int }}%"></span>
+        <span class="track__pace" style="inset-inline-start:{{ (v.expected * 100)|round|int }}%" title="{{ t('common.expected') }}: {{ pct(v.expected) }}"></span>
+      </div>
+      <span class="track__val num">{{ pct(v.progress) }}</span>
+      {% set gp = ((v.progress - v.expected) * 100)|round|int %}
+      <span class="track__gap" data-tone="{{ 'good' if gp >= 0 else 'bad' }}"><bdi dir="ltr">{{ '+' if gp > 0 else ('−' if gp < 0 else '') }}{{ n(gp|abs) }}</bdi></span>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="ctrl__legend"><i class="pace"></i>{{ t('goals.widget.pace_key') }}</p>
+  {% else %}{% call empty('target-arrow', t('goals.empty_title'), t('goals.empty_text')) %}{% endcall %}{% endif %}
+</section>

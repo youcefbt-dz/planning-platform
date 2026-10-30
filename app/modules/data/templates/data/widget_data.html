@@ -1,0 +1,18 @@
+{% from "components/ui.html" import empty %}
+<section class="orb">
+  <header class="orb__head"><h2>{{ icon('table', 18) }}{{ t('data.widget.title') }}</h2><a class="btn btn-sm" href="{{ url_for('data.index') }}">{{ t('common.view_all') }}</a></header>
+  {% set tot = data['series']|selectattr('dimension', 'none')|list %}
+  {% if tot %}
+  <ul class="serie">
+    {% for s in tot %}{% set lp = s.latest %}{% set sp = spark(s.pairs()) %}
+    <li class="sr">
+      <a class="sr__name" href="{{ url_for('data.series', id=s.id) }}" dir="auto">{{ s.name }}</a>
+      <b class="sr__val num"><bdi dir="ltr">{{ val(lp[1], s.unit) if lp else '—' }}</bdi></b>
+      <span class="sr__when">{{ lp and d(lp[0], 'month') }}</span>
+      {% if sp %}<svg class="sr__spark" viewBox="0 0 96 28" preserveAspectRatio="none" aria-hidden="true"><path d="{{ sp }}"/></svg>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}{% call empty('upload', t('data.widget.empty_title'), t('data.widget.empty_text')) %}{% if can('data.edit') %}<a class="btn btn-primary btn-sm" href="{{ url_for('data.index') }}">{{ icon('upload', 15) }}{{ t('data.upload_go') }}</a>{% endif %}{% endcall %}{% endif %}
+  {% if data['drafts'] %}<a class="orb__note" href="{{ url_for('data.index') }}">{{ icon('help-circle', 15) }} {{ tn('data.widget.drafts', data['drafts']) }}</a>{% endif %}
+</section>

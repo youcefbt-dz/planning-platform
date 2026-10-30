@@ -1,0 +1,23 @@
+{# Fragment: key results proposed from the organization's own data. items, matched, empty, advice #}
+{% if empty == 'title' %}
+  <p class="muted sug__note">{{ icon('info-circle', 14) }}{{ t('goals.suggest.need_title') }}</p>
+{% elif empty == 'series' %}
+  <p class="muted sug__note">{{ icon('info-circle', 14) }}{{ t('goals.suggest.need_series') }}</p>
+{% else %}
+  {% if not items %}<p class="muted sug__note">{{ icon('info-circle', 14) }}{{ t('goals.suggest.none') }}</p>
+  {% elif not matched %}<p class="muted sug__note">{{ icon('info-circle', 14) }}{{ t('goals.suggest.no_close_match') }}</p>{% endif %}
+  {% for it in items %}{% set lv = it.levels %}{% set s = it.series %}
+  <div class="sug" data-sug data-title="{{ it.title }}" data-type="{{ it.type }}" data-series="{{ s.id }}" data-unit="{{ s.unit or '' }}" data-start="{{ (lv.start if lv else s.latest) if (lv or s.latest is not none) else '' }}">
+    <div class="sug__top"><b dir="auto">{{ it.title }}</b><span class="chip-type">{{ t('goals.kr_type.' ~ it.type) }}</span></div>
+    <p class="sug__src muted">{{ icon('table', 13) }}{{ t('goals.measured_from', series=s.name) }}{% if s.latest is not none %} · {{ t('goals.suggest.now', value=val(s.latest, s.unit)) }}{% endif %}</p>
+    {% if lv and not lv.insufficient %}
+    <div class="levelrow" role="group" aria-label="{{ t('goals.levels.title') }}">
+      {% for k in ('conservative', 'ambitious', 'stretch') %}<button type="button" class="level" data-level="{{ k }}" data-value="{{ lv[k] }}"><span>{{ t('goals.level.' ~ k) }}</span><b class="num"><bdi dir="ltr">{{ val(lv[k], s.unit) }}</bdi></b></button>{% endfor %}
+    </div>
+    {% elif lv %}<p class="hint">{{ t('goals.levels.insufficient') }}</p>
+    {% else %}<p class="hint">{{ t('goals.suggest.need_end') }}</p>{% endif %}
+    <button class="btn btn-sm btn-primary" type="button" data-sug-add>{{ icon('plus', 14) }}{{ t('goals.suggest.add') }}</button>
+  </div>
+  {% endfor %}
+  {% if advice %}<p class="advice__foot">{% set a = advice %}{% include "goals/_ai_tag.html" %}</p>{% endif %}
+{% endif %}

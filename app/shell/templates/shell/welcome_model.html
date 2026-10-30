@@ -1,0 +1,64 @@
+{% extends "layouts/welcome.html" %}
+{% from "components/ui.html" import csrf, org_tile %}
+{% block title %}{{ t('welcome.steps.model') }}{% endblock %}
+{% block step %}1{% endblock %}
+{% block main %}
+<div class="wm" data-wm data-mode="{{ mode }}" data-choice="{{ 'allow' if (mode == 'cloud' and consent) or mode == 'local' else 'deny' if mode == 'none' else '' }}">
+  <div class="wm__head">
+    <p class="eyebrow">{{ t('welcome.step', n=1, total=3) }}</p>
+    <h1>{{ t('welcome.model.title') }}</h1>
+    <p class="lead">{{ t('welcome.model.sub') }}</p>
+  </div>
+  <form method="post" class="wm__form" data-wm-form>{{ csrf() }}
+    <div class="flow3">
+      <section class="src" aria-label="{{ t('welcome.model.org_label') }}">
+        <div class="src__org">{{ org_tile(org, 'md') }}<b>{{ org.name }}</b></div>
+        <h2>{{ t('welcome.model.go_title') }}</h2>
+        <ul class="wchips wchips--go">
+          <li style="--i:0">{{ icon('table', 16) }}<span>{{ t('welcome.model.go1') }}</span></li>
+          <li style="--i:1">{{ icon('table', 16) }}<span>{{ t('welcome.model.go2', rows=rows) }}</span></li>
+          <li style="--i:2">{{ icon('target-arrow', 16) }}<span>{{ t('welcome.model.go3') }}</span></li>
+          <li style="--i:3">{{ icon('building', 16) }}<span>{{ t('welcome.model.go4') }}</span></li>
+        </ul>
+        <h2 class="stay-h">{{ icon('lock', 15) }}{{ t('welcome.model.stay_title') }}</h2>
+        <ul class="wchips wchips--stay">
+          <li>{{ icon('table', 16) }}<span>{{ t('welcome.model.stay1') }}</span></li>
+          <li>{{ icon('key', 16) }}<span>{{ t('welcome.model.stay2') }}</span></li>
+        </ul>
+      </section>
+
+      <div class="pipe" aria-hidden="true">
+        <span class="pipe__line"></span>
+        <i class="pkt" style="--i:0"></i><i class="pkt" style="--i:1"></i><i class="pkt" style="--i:2"></i><i class="pkt" style="--i:3"></i>
+        <span class="gate"><b class="gate__bar gate__bar--a"></b><b class="gate__bar gate__bar--b"></b><span class="gate__lock">{{ icon('lock', 20) }}</span></span>
+      </div>
+
+      <section class="mdl" aria-label="{{ t('welcome.model.models_label') }}">
+        <ul class="models">
+          {% for m in models %}
+          <li class="mc {{ 'is-on' if m.on }} {{ 'is-local' if m.local }}" style="--i:{{ loop.index0 }}">
+            <span class="mc__logo"><img src="{{ url_for('static', filename='ai/' ~ m.logo) }}" alt="" width="30" height="30"></span>
+            <span class="mc__txt"><b>{{ m.name }}</b><small>{{ t('welcome.model.kind_local') if m.local else t('welcome.model.kind_cloud') }}</small></span>
+            <em class="mc__st">{% if m.on %}{{ icon('check', 13) }}{{ t('welcome.model.ready') }}{% else %}{{ t('welcome.model.not_set') }}{% endif %}</em>
+          </li>
+          {% endfor %}
+        </ul>
+        <span class="mdl__rules">{{ icon('shield-check', 15) }}{{ t('welcome.model.rules') }}</span>
+      </section>
+    </div>
+
+    {% if mode == 'cloud' %}
+    <div class="choices" role="radiogroup" aria-label="{{ t('welcome.model.title') }}">
+      <label class="pickc pickc--allow"><input type="radio" name="choice" value="allow" required {% if consent %}checked{% endif %}>
+        <span class="pickc__ic">{{ icon('check', 20) }}</span><span class="pickc__t"><b>{{ t('welcome.model.allow_t') }}</b><small>{{ t('welcome.model.allow_d') }}</small></span></label>
+      <label class="pickc pickc--deny"><input type="radio" name="choice" value="deny" required>
+        <span class="pickc__ic">{{ icon('lock', 20) }}</span><span class="pickc__t"><b>{{ t('welcome.model.deny_t') }}</b><small>{{ t('welcome.model.deny_d') }}</small></span></label>
+    </div>
+    {% else %}
+    <p class="note">{{ icon('shield-check', 20) }}<span><b>{{ t('welcome.model.' ~ mode ~ '_t') }}</b> {{ t('welcome.model.' ~ mode ~ '_d') }}</span></p>
+    {% endif %}
+    <div class="wm__foot"><small>{{ icon('info-circle', 15) }}{{ t('welcome.model.audit') }}</small>
+      <button class="wbtn" type="submit"><span>{{ t('welcome.continue') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button></div>
+  </form>
+</div>
+{% endblock %}

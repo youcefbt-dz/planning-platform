@@ -1,0 +1,62 @@
+{# What looks odd in the numbers, per measure column — the user decides, nothing is changed silently.  Expects: ds, report, open_findings #}
+<section class="box" id="quality" aria-labelledby="ql-h">
+  <div class="box-head"><h2 id="ql-h">{{ icon('shield-check', 18) }}{{ t('data.quality.title') }}</h2>
+    <span class="count {% if open_findings %}count-warn{% endif %}">{{ n(open_findings) }}</span></div>
+  <p class="box-body muted" style="padding-block-end:0">{{ t('data.quality.sub') }}</p>
+  {% if not report %}
+    <p class="box-body muted">{{ icon('info-circle', 15) }} {{ t('data.quality.waiting') }}</p>
+  {% endif %}
+  {% for r in report %}
+  {% set warns = r.findings|selectattr('severity', 'equalto', 'warn')|list %}
+  <div class="qcol" data-qcol="{{ r.column }}">
+    <div class="qcol__head">
+      <div><b dir="auto">{{ r.label }}</b>{% if r.unit %} <span class="muted">· {{ r.unit }}</span>{% endif %}</div>
+      {% set qc = quality_chart(r.raw, r.after, warns|map(attribute='period')|select|list) %}
+      {% if qc %}
+      <svg class="qchart" viewBox="0 0 {{ qc.w }} {{ qc.h }}" role="img" aria-label="{{ t('data.quality.chart') }}">
+        <path class="qchart__raw" d="{{ qc.raw }}"/>{% if qc.after %}<path class="qchart__after" d="{{ qc.after }}"/>{% endif %}
+        {% for m in qc.marks %}<circle class="qchart__mark" cx="{{ m.x }}" cy="{{ m.y }}" r="4.5"/>{% endfor %}
+      </svg>{% endif %}
+    </div>
+    {% if qc and qc.after %}<p class="qchart__legend"><span class="k-raw"></span>{{ t('data.quality.legend_raw') }} <span class="k-after"></span>{{ t('data.quality.legend_after') }}</p>{% endif %}
+    {% if not r.findings %}
+      <p class="qok">{{ icon('circle-check', 16) }}{{ t('data.quality.clean') }}</p>
+    {% endif %}
+    <ul class="qlist">
+    {% for f in r.findings %}
+      <li class="qitem" data-sev="{{ f.severity }}" data-state="{{ 'open' if f.open else 'done' if f.options else 'info' }}">
+        <span class="qitem__icon">{{ icon('circle-check' if (f.chosen and f.options) else ('alert-triangle' if f.severity == 'warn' else 'info-circle'), 16) }}</span>
+        <div class="qitem__body">
+          {% if f.code == 'gaps' %}
+            <p>{{ tn('data.quality.gaps', f.data.count, first=data_date(f.data.first), last=data_date(f.data.last)) }}</p>
+          {% elif f.code == 'cumulative' %}
+            <p>{{ t('data.quality.cumulative_' ~ f.data.strength, first=val(f.data.first, r.unit), last=val(f.data.last, r.unit), reset=data_date(f.data.resets[0]) if f.data.resets else '') }}</p>
+            <p class="muted">{{ t('data.quality.cumulative_why') }}</p>
+          {% elif f.code == 'jump' %}
+            <p>{{ t('data.quality.jump_' ~ f.data.kind, period=data_date(f.period), pct=pct(f.data.change|abs, 0), dir=t('data.quality.dir_' ~ ('up' if f.data.change > 0 else 'down')), from=val(f.data['from'], r.unit), to=val(f.data.to, r.unit)) }}</p>
+          {% elif f.code == 'partial_last' %}
+            <p>{{ t('data.quality.partial_last', period=data_date(f.period), pct=pct(f.data.last / f.data.usual, 0)) }}</p>
+          {% elif f.code == 'short' %}
+            <p>{{ t('data.quality.short_' ~ ('ok' if f.data.enough_for_realism else 'few'), n=n(f.data.points)) }}</p>
+          {% endif %}
+          {% if f.options %}
+          <div class="qopts">
+            {% for o in f.options %}
+              {% set label = t('data.quality.opt.' ~ f.code ~ '.' ~ o) %}
+              <form method="post" action="{{ url_for('data.fix', id=ds.id) }}">{{ csrf() }}
+                <input type="hidden" name="column" value="{{ r.column }}"><input type="hidden" name="code" value="{{ f.code }}"><input type="hidden" name="option" value="{{ o }}">{% if f.code == 'jump' %}<input type="hidden" name="period" value="{{ f.period }}">{% endif %}
+                <button class="btn btn-sm {% if f.chosen == o %}btn-chosen{% endif %}" type="submit" aria-pressed="{{ 'true' if f.chosen == o else 'false' }}" {% if not can('data.edit') %}disabled{% endif %}>{% if f.chosen == o %}{{ icon('check', 13) }}{% endif %}{{ label }}</button></form>
+            {% endfor %}
+            {% if f.chosen and can('data.edit') %}
+              <form method="post" action="{{ url_for('data.fix', id=ds.id) }}">{{ csrf() }}<input type="hidden" name="column" value="{{ r.column }}"><input type="hidden" name="code" value="{{ f.code }}"><input type="hidden" name="option" value="reset">{% if f.code == 'jump' %}<input type="hidden" name="period" value="{{ f.period }}">{% endif %}
+                <button class="btn btn-sm btn-quiet" type="submit">{{ t('data.quality.undo') }}</button></form>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </li>
+    {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+</section>

@@ -1,0 +1,10 @@
+{% extends "layouts/site.html" %}
+{% block title %}{{ t('errors.403.title') }}{% endblock %}
+{% block header_class %}site-header--solid{% endblock %}
+{% block main %}
+<section class="auth-wrap"><div class="auth-card" style="text-align:center">
+  <div style="font-family:var(--font-heading);font-size:4rem;font-weight:700;color:var(--c-primary);line-height:1">403</div>
+  <h1 style="margin-block:var(--sp-3)">{{ t('errors.403.title') }}</h1><p>{{ t('errors.403.text') }}</p>
+  <a class="btn btn-primary btn-pill" href="{{ url_for('site.landing') }}">{{ t('errors.home') }}</a>
+</div></section>
+{% endblock %}

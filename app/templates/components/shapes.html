@@ -1,0 +1,43 @@
+{# Decorative geometry taken from the SaaSpal template (hero wave, blobs, footer wave, subscribe wave),
+   re-expressed with CSS variables so every shape follows --brand-primary / --brand-tint. #}
+
+{% macro hero_bg() -%}
+<svg class="shape hero__bg" viewBox="0 0 1781.408 796.067" preserveAspectRatio="xMidYMin slice" aria-hidden="true" focusable="false">
+  <defs><linearGradient id="hg" x1=".5" x2=".5" y2="1"><stop offset="0" style="stop-color:var(--brand-primary)"/><stop offset="1" style="stop-color:color-mix(in srgb,var(--brand-primary) 88%,#fff)"/></linearGradient></defs>
+  <path d="m1650.595 755.5c56.3 272.618-131.189 364.024-310.13 505.374-347.561 273.959-503.57 14.469-1065.8 253.673s-359.832-759.047-359.832-759.047z" style="fill:var(--brand-primary)" transform="translate(120.633 -755.5)"/>
+  <path d="m-113.148 755.5c-41.4 185.71 96.459 247.977 228.027 344.266 255.548 186.624 370.256 9.856 783.643 172.8s264.57-517.07 264.57-517.07z" fill="url(#hg)" transform="translate(286.464 -753.856)"/>
+</svg>
+{%- endmacro %}
+
+{# a large organic blob (about-left-shape) with the lighter inner shape; variant 'a' or 'b' = mirrored #}
+{% macro blob(uid, variant='a') -%}
+<svg class="shape blob blob-{{ variant }}" viewBox="0 0 494.836 638.601" aria-hidden="true" focusable="false">
+  <defs>
+    <clipPath id="bc-{{ uid }}"><path d="{% if variant == 'a' %}m319.3 0c176.345 0-67.066 208.923 88.593 319.3s87.752 319.3-88.593 319.3-319.3-142.955-319.3-319.3 142.956-319.3 319.3-319.3z{% else %}m175.536 0c-176.345 0 67.064 208.923-88.593 319.3s-87.752 319.3 88.593 319.3 319.3-142.956 319.3-319.3-142.955-319.3-319.3-319.3z{% endif %}"/></clipPath>
+    <linearGradient id="bg-{{ uid }}" x1=".5" x2=".5" y2="1"><stop offset="0" style="stop-color:var(--brand-tint)"/><stop offset="1" style="stop-color:var(--brand-primary)"/></linearGradient>
+  </defs>
+  <path d="{% if variant == 'a' %}m319.3 0c176.345 0-67.066 208.923 88.593 319.3s87.752 319.3-88.593 319.3-319.3-142.955-319.3-319.3 142.956-319.3 319.3-319.3z{% else %}m175.536 0c-176.345 0 67.064 208.923-88.593 319.3s-87.752 319.3 88.593 319.3 319.3-142.956 319.3-319.3-142.955-319.3-319.3-319.3z{% endif %}" style="fill:var(--brand-primary)"/>
+  <g clip-path="url(#bc-{{ uid }})"><path d="{% if variant == 'a' %}m319.3 638.6c176.345 0-67.066-208.922 88.593-319.3s87.752-319.3-88.593-319.3-319.3 142.956-319.3 319.3 142.956 319.3 319.3 319.3z{% else %}m175.536 638.6c-176.345 0 67.064-208.922-88.593-319.3s-87.752-319.3 88.593-319.3 319.3 142.956 319.3 319.3-142.955 319.3-319.3 319.3z{% endif %}" fill="url(#bg-{{ uid }})" opacity=".3"/></g>
+</svg>
+{%- endmacro %}
+
+{% macro footer_bg() -%}
+<svg class="shape footer__bg" viewBox="0 0 1692 517" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+  <defs><linearGradient id="fg" x1=".404" x2=".411" y1="-.343" y2=".819"><stop offset="0" style="stop-color:color-mix(in srgb,var(--brand-primary) 86%,#fff)"/><stop offset="1" style="stop-color:var(--brand-primary)"/></linearGradient></defs>
+  <g transform="translate(-159 -5841)">
+    <path d="m-52.41 1302c62.21-79.011 157.84-232.31 251.61-305.49 347.561-270.678 504.052 31.946 1066.283-204.393 356.452-149.838 405.56 239.187 393.783 508.735z" style="fill:var(--brand-primary)" transform="translate(190 5091)"/>
+    <path d="m-113.148 1297.79c-41.4-185.711 96.459-247.977 228.027-344.267 255.548-186.624 370.256-9.856 783.643-172.8s264.57 517.071 264.57 517.071z" fill="#fff" opacity=".05" transform="translate(515.633 5267.644)"/>
+    <path d="m1181.684 1297.789c41.4-185.71-96.459-247.977-228.027-344.266-255.548-186.623-370.257-9.856-783.643-172.804s-264.57 517.07-264.57 517.07z" fill="url(#fg)" transform="translate(633.633 5267.644)"/>
+  </g>
+</svg>
+{%- endmacro %}
+
+{% macro subscribe_wave() -%}
+<svg class="shape subscribe__bg" viewBox="0 0 1170 256" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+  <defs><linearGradient id="sg" x1=".506" x2=".5" y1="1.061"><stop offset="0" style="stop-color:color-mix(in srgb,var(--brand-primary) 86%,#fff)"/><stop offset="1" style="stop-color:var(--brand-primary)"/></linearGradient></defs>
+  <path d="m0 181.607 9.75 14.277c9.75 14.277 29.25 42.831 48.75 23.825 19.5-19.363 39-85.394 58.5-99.939 19.5-14.009 39 23.468 58.5 38.013 19.5 14.009 39 5.086 58.5 0 19.5-4.729 39-4.729 58.5-14.277 19.5-9.191 39-28.822 58.5-4.729s39 90.123 58.5 123.763c19.5 33.283 39 33.283 58.5 4.729s39-85.662 58.5-114.216 39-28.554 58.5-38.1c19.5-9.191 39-28.822 58.5-4.729s39 90.124 58.5 123.764c19.5 33.283 39 33.283 58.5 4.729s39-85.662 58.5-104.668c19.5-19.363 39 .268 58.5 28.554 19.5 28.822 39 66.3 58.5 95.121 19.5 28.286 39 47.917 58.5 14.277 19.5-33.283 39-118.945 58.5-128.493 19.5-9.191 39 56.84 58.5 57.108 19.5-.268 39-66.3 48.75-99.939l9.75-33.286v-28.554h-1170z" fill="url(#sg)" transform="translate(0 -74.675)"/>
+</svg>
+{%- endmacro %}
+
+{# dot grid, as in the template. cols x rows of circles, color follows --brand-primary #}
+{% macro dots(cls='') -%}<span class="dotgrid {{ cls }}" aria-hidden="true"></span>{%- endmacro %}

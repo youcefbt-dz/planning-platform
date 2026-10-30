@@ -1,0 +1,39 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import badge, avatar, empty, sec %}
+{% block title %}{{ t('goals.tabs.indicators') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/goals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/goalsflow.css') }}">{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ t('goals.tabs.indicators') }}</h1><p class="sub">{{ t('goals.indicators_sub') }}</p></div>
+  <div class="actions">{% if can('indicators.edit') %}<a class="btn btn-primary" href="{{ url_for('goals.indicator_new') }}">{{ icon('plus', 16) }}{{ t('goals.create.indicator') }}</a>{% endif %}</div>
+  {% if total %}<dl class="hstats">
+    <div><dt>{{ t('goals.tabs.indicators') }}</dt><dd class="num">{{ n(total) }}</dd></div>
+    <div data-s="on_track"><dt>{{ t('status.on_track') }}</dt><dd class="num">{{ n(counts.get('on_track', 0) + counts.get('completed', 0)) }}</dd></div>
+    <div data-s="at_risk"><dt>{{ t('status.at_risk') }}</dt><dd class="num">{{ n(counts.get('at_risk', 0)) }}</dd></div>
+    <div data-s="off_track"><dt>{{ t('status.off_track') }}</dt><dd class="num">{{ n(counts.get('off_track', 0)) }}</dd></div>
+  </dl>{% endif %}
+</div>
+{% if total %}
+{% call sec('ind', 'chart-line', t('goals.s_ind'), t('goals.s_ind_sub')) %}
+<nav class="sgrid-s" aria-label="{{ t('common.status') }}">
+  <a class="sc" href="{{ url_for('goals.indicators') }}" {% if not status %}aria-current="true"{% endif %}><b class="num">{{ n(total) }}</b><span>{{ t('common.all') }}</span></a>
+  {% for st in ('on_track','at_risk','off_track') %}<a class="sc" data-s="{{ st }}" href="{{ url_for('goals.indicators', status=st) }}" {% if status == st %}aria-current="true"{% endif %}><b class="num">{{ n(counts.get(st, 0)) }}</b><span><i></i>{{ t('status.' ~ st) }}</span></a>{% endfor %}
+</nav>
+<ul class="icards">
+  {% for v in items %}
+  <li><a class="icard" data-status="{{ v.status }}" href="{{ url_for('goals.indicator_detail', id=v.ind.id) }}">
+    <span class="icard__name">{{ v.ind.name }}</span>
+    <span class="icard__sub">{{ t('goals.freq.' ~ v.ind.frequency) }}{% if v.ind.direction == 'lower_better' %} · {{ t('goals.lower_better') }}{% endif %}</span>
+    <b class="icard__val num"><bdi dir="ltr">{{ val(v.latest, v.ind.unit_label, v.ind.metric_type) }}</bdi></b>
+    <span class="icard__line">{% if v.delta is not none and v.delta != 0 %}<span class="delta" data-good="{{ 'true' if v.delta_good else 'false' }}">{{ icon('trending-up' if v.delta > 0 else 'trending-down', 13) }}{{ n(v.delta|abs) }}</span>{% endif %}<span class="icard__tg">{{ t('goals.target_value') }} <bdi dir="ltr" class="num">{{ val(v.ind.target_value, v.ind.unit_label, v.ind.metric_type) }}</bdi></span></span>
+    {% set sp = spark(v.series) %}{% if sp %}<svg class="icard__spark" viewBox="0 0 96 28" preserveAspectRatio="none" aria-hidden="true"><path d="{{ sp }}"/></svg>{% endif %}
+    <span class="icard__foot">{% if v.ind.owner %}{{ avatar(v.ind.owner, 'avatar-sm') }}<span>{{ v.ind.owner.name }}</span>{% endif %}{{ badge(v.status) }}</span>
+  </a></li>
+  {% endfor %}
+</ul>
+{% endcall %}
+{% else %}
+<div class="box">{% call empty('chart-line', t('goals.no_indicators_title'), t('goals.no_indicators_text')) %}
+  {% if can('indicators.edit') %}<a class="btn btn-primary" href="{{ url_for('goals.indicator_new') }}">{{ icon('plus', 16) }}{{ t('goals.create.indicator') }}</a>{% endif %}{% endcall %}</div>
+{% endif %}
+{% endblock %}

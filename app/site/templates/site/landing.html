@@ -1,0 +1,98 @@
+{% extends "layouts/site.html" %}
+{% from "components/shapes.html" import hero_bg, blob, subscribe_wave, dots %}
+{% from "components/ui.html" import csrf, flashes %}
+{% block title %}{{ t('site.meta.title') }}{% endblock %}
+{% block title_full %}{{ brand_name }} · {{ t('site.meta.title') }}{% endblock %}
+
+{% macro well(ic, title, text) %}
+<article class="promise"><span class="promise__well">{{ icon(ic, 44, cls='') }}</span><h3>{{ title }}</h3><p>{{ text }}</p></article>
+{% endmacro %}
+
+{% macro feat(ic, title, text) %}
+<article class="feat"><span class="feat__icon">{{ icon(ic, 46) }}</span><h3>{{ title }}</h3><p>{{ text }}</p></article>
+{% endmacro %}
+
+{% macro shot(name, alt) %}
+<img class="shot" src="{{ url_for('static', filename='img/shots/' ~ name ~ '-' ~ lang ~ '.png') }}" alt="{{ alt }}" loading="lazy" width="1280" height="800">
+{% endmacro %}
+
+{% block main %}
+<section class="hero" aria-labelledby="hero-title">
+  {{ hero_bg() }}
+  <div class="site-wrap hero__grid">
+    <div class="hero__text">
+      <h1 id="hero-title">{{ t('site.hero.title') }}</h1>
+      <p>{{ t('site.hero.text') }}</p>
+      <div class="hero__cta">
+        {% if config.ENABLE_DEMO %}<a class="btn-pill btn-pill--white" href="{{ url_for('site.demo') }}">{{ t('site.hero.cta_demo') }}</a>{% endif %}
+        <a class="btn-pill btn-pill--outline" href="#waitlist">{{ t('site.hero.cta_waitlist') }}</a>
+      </div>
+    </div>
+    <div class="hero__media">{{ shot('overview', t('site.hero.shot_alt')) }}</div>
+  </div>
+  <a class="hero__down" href="#promises" aria-label="{{ t('site.hero.scroll') }}">{{ icon('chevron-down', 22) }}</a>
+</section>
+
+<section class="promises" id="promises">
+  <div class="site-wrap promises__grid">
+    {{ well('target-arrow', t('site.promises.align.title'), t('site.promises.align.text')) }}
+    {{ well('progress-check', t('site.promises.follow.title'), t('site.promises.follow.text')) }}
+    {{ well('report-analytics', t('site.promises.decide.title'), t('site.promises.decide.text')) }}
+  </div>
+</section>
+
+<section class="showcase" id="features">
+  <div class="site-wrap showcase__row">
+    <div class="showcase__media showcase__media--blob">
+      {{ blob('a1', 'a') }}{{ dots('dotgrid--a') }}
+      <div class="showcase__card">{{ shot('goal', t('site.showcase.first.alt')) }}</div>
+    </div>
+    <div class="showcase__text">
+      <h2>{{ t('site.showcase.first.title') }}</h2>
+      <p>{{ t('site.showcase.first.text') }}</p>
+      <ul class="bullets">{% for k in ('a','b','c') %}<li>{{ t('site.showcase.first.' ~ k) }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+  <div class="site-wrap showcase__row showcase__row--rev">
+    <div class="showcase__media showcase__media--blob">
+      {{ blob('b1', 'b') }}{{ dots('dotgrid--b') }}
+      <div class="showcase__card">{{ shot('roadmap', t('site.showcase.second.alt')) }}</div>
+    </div>
+    <div class="showcase__text">
+      <h2>{{ t('site.showcase.second.title') }}</h2>
+      <p>{{ t('site.showcase.second.text') }}</p>
+      <ul class="bullets">{% for k in ('a','b','c') %}<li>{{ t('site.showcase.second.' ~ k) }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</section>
+
+<section class="features" id="modular">
+  <div class="site-wrap">
+    <header class="section-head"><h2>{{ t('site.features.title') }}</h2><p>{{ t('site.features.text') }}</p></header>
+    <div class="features__grid">
+      {{ feat('target-arrow', t('site.features.okr.title'), t('site.features.okr.text')) }}
+      {{ feat('chart-line', t('site.features.kpi.title'), t('site.features.kpi.text')) }}
+      {{ feat('rocket', t('site.features.initiatives.title'), t('site.features.initiatives.text')) }}
+      {{ feat('route', t('site.features.map.title'), t('site.features.map.text')) }}
+      {{ feat('puzzle', t('site.features.modular.title'), t('site.features.modular.text')) }}
+      {{ feat('language', t('site.features.lang.title'), t('site.features.lang.text')) }}
+    </div>
+  </div>
+</section>
+
+<section class="waitlist" id="waitlist">
+  <div class="site-wrap">
+    <div class="subscribe">
+      {{ subscribe_wave() }}
+      <div class="subscribe__text"><h2>{{ t('site.waitlist.title') }}</h2><p>{{ t('site.waitlist.text') }}</p></div>
+      <form class="subscribe__form" method="post" action="{{ url_for('site.waitlist') }}">
+        {{ csrf() }}
+        <label class="sr-only" for="wl-email">{{ t('auth.email') }}</label>
+        <input id="wl-email" name="email" type="email" required placeholder="{{ t('site.waitlist.placeholder') }}" autocomplete="email">
+        <button type="submit">{{ t('site.waitlist.button') }}</button>
+      </form>
+    </div>
+    {{ flashes() }}
+  </div>
+</section>
+{% endblock %}

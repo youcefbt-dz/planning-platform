@@ -1,0 +1,36 @@
+{# The stage: the product's own chain (organization -> vision -> goals -> key results) draws itself, and reacts to what is typed in the card.
+   No numbers, no invented clients: only the product's vocabulary. Geometry is a fixed 520x460 box (see gate.css). #}
+{% macro scene() -%}
+<div class="scene" data-scene>
+  <div class="scene__box">
+    <svg class="tree__lines" viewBox="0 0 520 460" fill="none" aria-hidden="true">
+      <path class="ln" style="--i:0" pathLength="1" d="M260 84V130"/>
+      <path class="ln" style="--i:1" pathLength="1" d="M260 170C260 200 150 190 150 222"/>
+      <path class="ln" style="--i:1" pathLength="1" d="M260 170C260 200 370 190 370 222"/>
+      <path class="ln" style="--i:2" pathLength="1" d="M150 278C150 315 74 310 74 349"/>
+      <path class="ln" style="--i:2" pathLength="1" d="M150 278C150 315 202 310 202 349"/>
+      <path class="ln" style="--i:3" pathLength="1" d="M370 278C370 315 318 310 318 349"/>
+      <path class="ln" style="--i:3" pathLength="1" d="M370 278C370 315 446 310 446 349"/>
+    </svg>
+    <i class="flow flow--a"></i><i class="flow flow--b"></i>
+
+    <div class="n n--org" style="left:260px;top:52px">
+      <span class="n__tile" data-tile>{{ logo('mark', 'on_light') }}</span>
+      <span class="n__txt"><b data-org-name data-empty="{{ t('gate.scene.workspace') }}">{{ t('gate.scene.workspace') }}</b><small>{{ t('gate.scene.org') }}</small></span>
+      <span class="n__lock" data-lock>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path class="shackle" d="M8 11V8a4 4 0 0 1 8 0v3"/><rect x="5" y="11" width="14" height="10" rx="3"/></svg>
+      </span>
+      <span class="n__user" data-user><i data-user-ini></i><span data-user-name></span></span>
+    </div>
+
+    <div class="n n--vision" style="left:260px;top:150px">{{ icon('star', 16) }}<b>{{ t('gate.scene.vision') }}</b></div>
+
+    <div class="n n--goal" style="left:150px;top:250px;--i:1">{{ icon('target-arrow', 17) }}<span><b>{{ t('gate.scene.goal') }}</b><u style="width:68%"></u></span></div>
+    <div class="n n--goal" style="left:370px;top:250px;--i:1">{{ icon('target-arrow', 17) }}<span><b>{{ t('gate.scene.goal') }}</b><u style="width:52%"></u></span></div>
+
+    {% for x, p in ((74, 78), (202, 46), (318, 62), (446, 90)) %}
+    <div class="n n--kr" style="left:{{ x }}px;top:372px;--i:{{ loop.index0 }};--p:{{ p }}%"><b>{{ t('gate.scene.kr') }}</b><span class="bar"><i></i></span></div>
+    {% endfor %}
+  </div>
+</div>
+{%- endmacro %}

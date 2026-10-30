@@ -1,0 +1,82 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, avatar, field, select, sec %}
+{% set no_subnav = true %}
+{% block title %}{{ t('settings.members.title') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/units.css') }}">{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ t('settings.members.title') }}</h1><p class="sub">{{ t('settings.members.sub') }}</p></div>
+  <dl class="hstats">
+    <div><dt>{{ t('settings.members.title') }}</dt><dd class="num">{{ n(all_count) }}</dd></div>
+    <div><dt>{{ t('settings.units.title') }}</dt><dd class="num">{{ n(units|length) }}</dd></div>
+    <div><dt>{{ t('settings.units.with_head') }}</dt><dd class="num">{{ n(heads|length) }}</dd></div>
+  </dl>
+</div>
+
+{% call sec('people', 'users', t('settings.members.s_people'), t('settings.members.s_people_sub')) %}
+<nav class="ufilt" aria-label="{{ t('settings.members.th_unit') }}">
+  <a href="{{ url_for('shell.settings_members') }}" {% if not unit_f %}aria-current="true"{% endif %}>{{ t('common.all') }}<b class="num">{{ n(all_count) }}</b></a>
+  {% for u in units if counts.get(u.id) %}<a href="{{ url_for('shell.settings_members', unit=u.id) }}" {% if unit_f == u.id %}aria-current="true"{% endif %}>{{ u.name }}<b class="num">{{ n(counts[u.id]) }}</b></a>{% endfor %}
+</nav>
+<div class="box">
+  <div style="overflow-x:auto"><table class="table">
+    <thead><tr><th>{{ t('settings.members.th_name') }}</th><th>{{ t('settings.members.th_unit') }}</th><th>{{ t('settings.members.th_title') }}</th><th>{{ t('settings.members.th_role') }}</th><th></th></tr></thead>
+    <tbody>{% for m in rows %}
+    <tr>
+      <td><div class="row">{{ avatar(m.user, 'avatar-sm') }}<div><b class="ink">{{ m.user.name }}</b>{% if heads.get(m.user_id) %}<span class="headtag">{{ icon('star', 12) }}{{ t('settings.members.head_of', unit=heads[m.user_id].name) }}</span>{% endif %}<div class="muted" style="font-size:var(--fs-xs)">{{ m.user.email }}</div></div></div></td>
+      {% if m.role == 'owner' or not can('members.manage') %}
+      <td>{{ m.unit.name if m.unit else t('settings.members.unit_none') }}</td><td>{{ m.title or '—' }}</td><td><span class="chip chip-primary">{{ t('role.' ~ m.role) }}</span></td><td></td>
+      {% else %}
+      <form method="post" action="{{ url_for('shell.member_update', mid=m.id) }}" id="mf-{{ m.id }}">{{ csrf() }}</form>
+      <td><select class="select select-sm" name="unit_id" form="mf-{{ m.id }}" onchange="document.getElementById('mf-{{ m.id }}').submit()" aria-label="{{ t('settings.members.th_unit') }}">{% for u in units %}<option value="{{ u.id }}" {% if m.unit_id == u.id %}selected{% endif %}>{{ u.name }}</option>{% endfor %}</select></td>
+      <td><input class="input input-sm" name="title" form="mf-{{ m.id }}" value="{{ m.title or '' }}" maxlength="120" aria-label="{{ t('settings.members.th_title') }}"></td>
+      <td><select class="select select-sm" name="role" form="mf-{{ m.id }}" onchange="document.getElementById('mf-{{ m.id }}').submit()" aria-label="{{ t('settings.members.th_role') }}">{% for r in ('viewer','member','admin') %}<option value="{{ r }}" {% if m.role == r %}selected{% endif %}>{{ t('role.' ~ r) }}</option>{% endfor %}</select></td>
+      <td style="white-space:nowrap"><button class="btn btn-sm" type="submit" form="mf-{{ m.id }}">{{ t('common.save') }}</button>
+        <button class="btn btn-sm btn-danger" type="submit" form="mf-{{ m.id }}" name="action" value="remove" data-confirm="{{ t('settings.members.confirm_remove') }}">{{ icon('trash', 14) }}</button></td>
+      {% endif %}
+    </tr>{% endfor %}</tbody></table></div>
+</div>
+{% endcall %}
+
+{% if can('members.manage') %}
+<div class="box" style="margin-block-start:var(--sp-5)">
+  <div class="box-head"><h2>{{ icon('link', 18) }}{{ t('settings.members.invite_h') }}</h2></div>
+  <div class="box-body stack-sm">
+    <p class="muted" style="margin:0">{{ t('settings.members.invite_sub') }}</p>
+    <form method="post" action="{{ url_for('shell.invite_create') }}" class="row-wrap">{{ csrf() }}
+      <select class="select" name="role" style="width:auto" aria-label="{{ t('settings.members.role') }}">{% for r in ('viewer','member','admin') %}<option value="{{ r }}" {% if r == 'member' %}selected{% endif %}>{{ t('role.' ~ r) }}</option>{% endfor %}</select>
+      <button class="btn btn-primary" type="submit">{{ icon('link', 16) }}{{ t('settings.members.invite_make') }}</button></form>
+    {% for inv in invites %}{% set link = url_for('auth.join', token=inv.token, _external=True) %}
+    <div class="row-wrap" style="gap:var(--sp-2)"><span class="chip">{{ t('role.' ~ inv.role) }}</span>
+      <input class="input input-sm" readonly value="{{ link }}" dir="ltr" style="flex:1;min-width:220px" aria-label="{{ t('settings.members.invite_copy') }}" onclick="this.select()">
+      <span class="muted" style="font-size:var(--fs-xs)">{{ t('settings.members.invite_until', date=d(inv.expires_at.date(), 'day')) }}</span>
+      <form method="post" action="{{ url_for('shell.invite_revoke', iid=inv.id) }}">{{ csrf() }}<button class="btn btn-sm btn-ghost" type="submit">{{ t('settings.members.invite_revoke') }}</button></form>
+      <details class="qr"><summary class="btn btn-sm">{{ icon('qrcode', 14) }}{{ t('settings.members.qr') }}</summary>
+        <div class="qr__box"><img src="{{ url_for('shell.invite_qr', iid=inv.id) }}" width="200" height="200" alt="{{ t('settings.members.qr_title') }}"><p class="muted">{{ t('settings.members.qr_hint') }}</p>
+          <a class="btn btn-sm" href="{{ url_for('shell.invite_qr', iid=inv.id, dl=1) }}">{{ icon('download', 14) }}{{ t('settings.members.qr_download') }}</a></div></details></div>
+    {% endfor %}
+  </div>
+</div>
+<div class="box" style="margin-block-start:var(--sp-5)">
+  <div class="box-head"><h2>{{ icon('user-plus', 18) }}{{ t('settings.members.add') }}</h2></div>
+  <form method="post" class="box-body">
+    {{ csrf() }}
+    <div class="form-grid">
+      {{ field(t('auth.name'), 'name', required=true) }}
+      {{ field(t('auth.email'), 'email', type='email', required=true) }}
+      {{ select(t('settings.members.role'), 'role', [('viewer', t('role.viewer')), ('member', t('role.member')), ('admin', t('role.admin'))], 'member') }}
+      {{ select(t('settings.members.th_unit'), 'unit_id', opts(units, 'id', 'name'), unit_f or (units[0].id if units else none)) }}
+    </div>
+    <p class="hint">{{ t('settings.members.add_hint') }}</p>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">{{ t('settings.members.add') }}</button></div>
+  </form>
+</div>
+{% endif %}
+
+<div class="box" style="margin-block-start:var(--sp-5)">
+  <div class="box-head"><h2>{{ t('settings.members.roles_title') }}</h2></div>
+  <table class="table"><tbody>
+    {% for r in ('owner','admin','head','member','viewer') %}<tr><td style="width:140px"><b class="ink">{{ t('role.' ~ r) }}</b></td><td>{{ t('role.' ~ r ~ '_desc') }}</td></tr>{% endfor %}
+  </tbody></table>
+</div>
+{% endblock %}

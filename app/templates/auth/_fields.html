@@ -1,0 +1,13 @@
+{# A sign-in field: label above, icon inside, optional show/hide for passwords. `live` ties it to the scene (org | user | email | password). #}
+{% macro gfield(label, name, icon_name, type='text', value='', required=true, auto='', hint='', live='') -%}
+<div class="gf">
+  <label class="gf__l" for="g-{{ name }}">{{ label }}</label>
+  <div class="gf__box">
+    <span class="gf__i">{{ icon(icon_name, 18) }}</span>
+    <input class="gf__in" id="g-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ value if value is not none else '' }}" {% if required %}required{% endif %} {% if auto %}autocomplete="{{ auto }}"{% endif %} {% if live %}data-live="{{ live }}"{% endif %} {% if type in ('email', 'password') %}dir="ltr"{% endif %}>
+    {% if type == 'password' %}<button class="gf__peek" type="button" data-peek aria-pressed="false" aria-label="{{ t('gate.show_pw') }}">{{ icon('eye', 18) }}</button>{% endif %}
+  </div>
+  {% if hint %}<p class="gf__h">{{ hint }}</p>{% endif %}
+  {% if type == 'password' %}<p class="gf__caps" data-caps hidden>{{ icon('alert-triangle', 14) }}{{ t('gate.caps') }}</p>{% endif %}
+</div>
+{%- endmacro %}

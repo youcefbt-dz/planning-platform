@@ -1,0 +1,18 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import org_tile %}
+{% block title %}{{ t('reports.briefing.title') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/orgmap.css') }}">{% endblock %}
+{% block content %}
+{% include "reports/_head.html" %}
+{% set m = data.m %}
+<section class="cover">
+  {{ org_tile(g.org, 'lg') }}
+  <h2>{{ g.org.name }}</h2>
+  <p class="cover__sub">{{ t('reports.briefing.cover', date=d(generated, 'long')) }}</p>
+  {% if m.profile.vision %}<p class="cover__vision" dir="auto"><b>{{ t('profile.vision') }}:</b> {{ m.profile.vision }}</p>{% endif %}
+  {% if m.profile.mission %}<p class="cover__vision" dir="auto"><b>{{ t('profile.mission') }}:</b> {{ m.profile.mission }}</p>{% endif %}
+</section>
+<p class="insight" style="margin:var(--sp-5) 0"><span class="icon-wrap">{{ icon('bulb', 16) }}</span><span><b>{{ t('orgmap.read.title') }}:</b> {{ data.reading }}</span></p>
+<h2 class="rep-h">{{ t('orgmap.title') }}</h2>
+{% include "orgmap/_map.html" %}
+{% endblock %}

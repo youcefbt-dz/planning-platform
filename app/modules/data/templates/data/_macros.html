@@ -1,0 +1,18 @@
+{# change of an indicator against its previous period: a pill that is green when it moved the way this indicator wants to move #}
+{% macro delta(s, pts=none) -%}
+{%- set p = pts if pts is not none else s.pairs() -%}
+{%- if p|length > 1 -%}
+  {%- set last = p[-1][1] -%}{%- set prev = p[-2][1] -%}{%- set diff = last - prev -%}
+  {%- set is_pct = (s.unit or '').strip() == '%' -%}
+  {%- set good = (diff > 0) == (s.direction == 'higher_better') -%}
+  <span class="delta" data-tone="{{ 'none' if diff == 0 else ('good' if good else 'bad') }}">{{ icon('trending-up' if diff > 0 else ('trending-down' if diff < 0 else 'minus'), 13) }}<bdi dir="ltr">{% if is_pct %}{{ '+' if diff > 0 }}{{ n(diff|round(1)) }} {{ t('common.points') }}{% elif prev %}{{ '+' if diff > 0 }}{{ pct(diff / prev|abs, 1) }}{% else %}{{ '+' if diff > 0 }}{{ n(diff|round(1)) }}{% endif %}</bdi></span>
+{%- endif -%}
+{%- endmacro %}
+
+{# A titled section of a page: a circular icon well, a title, one line saying what it is for; the content follows as the caller block. #}
+{% macro sec(id, ic, title, sub='') %}
+<section class="dsec" id="{{ id }}" aria-labelledby="{{ id }}-h">
+  <header class="dsec__head"><span class="dsec__ic">{{ icon(ic, 20) }}</span><div><h2 id="{{ id }}-h">{{ title }}</h2>{% if sub %}<p>{{ sub }}</p>{% endif %}</div></header>
+  {{ caller() }}
+</section>
+{% endmacro %}

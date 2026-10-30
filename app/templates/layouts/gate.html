@@ -1,0 +1,23 @@
+{# Sign-in / sign-up / invitation: the card on one side, a live scene of the product on the other (hidden on small screens).
+   Blocks: title, mode (login|register|join), topnav, card, scene_org (fixed organization name, join only). #}
+{% extends "layouts/base.html" %}
+{% from "auth/_scene.html" import scene %}
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/gate.css') }}">{% endblock %}
+{% block body_class %}gate-body{% endblock %}
+{% block body %}
+{% set _flash = get_flashed_messages(with_categories=true) %}
+<div class="gate" data-gate data-mode="{% block mode %}login{% endblock %}" {% if _flash and _flash|selectattr(0, 'equalto', 'error')|list %}data-error="1"{% endif %}
+     data-fixed-org="{% block fixed_org %}{% endblock %}" data-caps="{{ t('gate.caps') }}" data-show="{{ t('gate.show_pw') }}" data-hide="{{ t('gate.hide_pw') }}"
+     data-strength='["", "{{ t('gate.strength.1') }}", "{{ t('gate.strength.2') }}", "{{ t('gate.strength.3') }}", "{{ t('gate.strength.4') }}"]'>
+  <main class="gate__side">
+    <header class="gate__top">
+      <a class="gate__brand" href="{{ url_for('site.landing') }}" aria-label="{{ brand_name }}">{{ logo('full', 'on_light') }}</a>
+      {% block topnav %}{% endblock %}
+    </header>
+    <div class="gate__card">{% block card %}{% endblock %}</div>
+    <p class="gate__legal">© {{ today.year }} <bdi>{{ brand_name }}</bdi></p>
+  </main>
+  <aside class="gate__stage" aria-hidden="true">{{ scene() }}</aside>
+</div>
+{% endblock %}
+{% block js %}<script src="{{ url_for('static', filename='js/gate.js') }}" defer></script>{% endblock %}

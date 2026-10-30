@@ -1,0 +1,283 @@
+# Term decisions for the three languages. This file is the authority on vocabulary:
+# - `ar` is the form to use in the Arabic interface. `avoid_ar` lists forms that must never appear
+#   (transliterated English or loose synonyms). tests/test_glossary.py enforces the avoid-lists
+#   against every Arabic catalog.
+# - `confidence`: settled | review  (review = ask a native management-control practitioner).
+# - `note` explains the choice, in plain words.
+terms:
+  - id: objective
+    en: Objective
+    fr: Objectif
+    ar: الهدف
+    avoid_ar: [أوكيار]
+    confidence: settled
+  - id: key_result
+    en: Key result
+    fr: Résultat clé
+    ar: النتيجة الرئيسية
+    confidence: settled
+    note: Not "الناتج" (reads as "output"). "رئيسية" matches the Arabic "مؤشرات الأداء الرئيسية".
+  - id: indicator
+    en: Indicator / KPI
+    fr: Indicateur / KPI
+    ar: المؤشر / مؤشر الأداء الرئيسي
+    avoid_ar: [كي بي آي]
+    confidence: settled
+  - id: initiative
+    en: Initiative
+    fr: Initiative
+    ar: المبادرة
+    confidence: settled
+  - id: milestone
+    en: Milestone
+    fr: Jalon
+    ar: المَعلَم / المعالم
+    avoid_ar: [ميلستون, ميل ستون]
+    confidence: settled
+  - id: alignment
+    en: Alignment
+    fr: Alignement
+    ar: المواءمة
+    avoid_ar: [محاذاة]
+    confidence: settled
+    note: '"المواءمة" is the management term for fit between levels; "محاذاة" is geometric.'
+  - id: baseline
+    en: Baseline / start value
+    fr: Valeur de référence
+    ar: خط الأساس
+    confidence: settled
+  - id: target
+    en: Target
+    fr: Cible
+    ar: المستهدف
+    confidence: settled
+  - id: owner
+    en: Owner
+    fr: Responsable
+    ar: المسؤول
+    confidence: review
+    note: "Used everywhere in the UI. Rejected: المالك (property sense). Confirm with a native reviewer."
+  - id: cycle
+    en: Cycle
+    fr: Cycle
+    ar: الدورة
+    confidence: settled
+  - id: org_unit
+    en: Unit (department / team)
+    fr: Unité
+    ar: الوحدة التنظيمية
+    confidence: settled
+  - id: measure_unit
+    en: Unit of measure
+    fr: Unité de mesure
+    ar: وحدة القياس
+    confidence: settled
+    note: Kept distinct from the organizational unit.
+  - id: organization
+    en: Organization
+    fr: Organisation
+    ar: المؤسسة
+    confidence: settled
+  - id: workspace
+    en: Workspace
+    fr: Espace de travail
+    ar: مساحة العمل
+    avoid_ar: [ورك سبيس]
+    confidence: settled
+  - id: dashboard
+    en: Overview / dashboard
+    fr: Vue d'ensemble / tableau de bord
+    ar: النظرة العامة / لوحة المؤشرات
+    avoid_ar: [داشبورد, داش بورد]
+    confidence: review
+    note: "'لوحة القيادة' is the calque of the French 'tableau de bord' used in Algerian management control; both are understood."
+  - id: scorecard
+    en: Balanced scorecard
+    fr: Tableau de bord prospectif
+    ar: بطاقة الأداء المتوازن
+    avoid_ar: [سكور كارد]
+    confidence: settled
+  - id: strategy_map
+    en: Strategy map
+    fr: Carte stratégique
+    ar: خريطة الاستراتيجية
+    confidence: settled
+  - id: persp_financial
+    en: Financial
+    fr: Financier
+    ar: المنظور المالي
+    confidence: settled
+  - id: persp_customer
+    en: Customer
+    fr: Client
+    ar: منظور العملاء
+    confidence: settled
+  - id: persp_process
+    en: Internal processes
+    fr: Processus internes
+    ar: منظور العمليات الداخلية
+    confidence: settled
+  - id: persp_learning
+    en: Learning and growth
+    fr: Apprentissage et croissance
+    ar: منظور التعلّم والنمو
+    confidence: settled
+  - id: checkin
+    en: Update (check-in)
+    fr: Mise à jour
+    ar: تحديث التقدّم
+    avoid_ar: [تشيك إن, تشيك-إن]
+    confidence: settled
+    note: Button text is "نشر التحديث".
+  - id: stakeholder
+    en: Stakeholder
+    fr: Partie prenante
+    ar: الأطراف المعنية
+    avoid_ar: [ستيك هولدر]
+    confidence: settled
+  - id: status_on_track
+    en: On track
+    fr: Dans les temps
+    ar: على المسار
+    confidence: settled
+  - id: status_at_risk
+    en: At risk
+    fr: À risque
+    ar: معرَّض للخطر
+    confidence: settled
+  - id: status_off_track
+    en: Off track
+    fr: En retard
+    ar: خارج المسار
+    confidence: settled
+  - id: status_not_started
+    en: Not started
+    fr: Pas commencé
+    ar: لم يبدأ
+    confidence: settled
+  - id: status_on_hold
+    en: On hold
+    fr: En pause
+    ar: معلَّق
+    confidence: settled
+  - id: status_completed
+    en: Completed
+    fr: Terminé
+    ar: مكتمل
+    confidence: settled
+  - id: status_cancelled
+    en: Cancelled
+    fr: Annulé
+    ar: ملغى
+    confidence: settled
+  - id: role_viewer
+    en: Viewer
+    fr: Lecteur
+    ar: مطَّلع
+    confidence: review
+  - id: okr
+    en: OKR
+    fr: OKR
+    ar: الأهداف والنتائج الرئيسية
+    avoid_ar: [أوكيار, أو كي آر]
+    confidence: settled
+  - id: dataset
+    en: Data file
+    fr: Fichier de données
+    ar: ملف بيانات
+    avoid_ar: [داتاسيت, داتا ست, مجموعة داتا]
+    confidence: review
+    note: The uploaded spreadsheet as the user sees it. "مجموعة بيانات" is the statistical term but reads heavy for a business user.
+  - id: series
+    en: Time series
+    fr: Série chronologique
+    ar: سلسلة زمنية
+    avoid_ar: [سيريز, سلسلة بيانات زمنية]
+    confidence: settled
+    note: Standard statistics/econometrics term; one measured value across consecutive periods.
+  - id: reality_check
+    en: Reality check
+    fr: Test de réalisme
+    ar: فحص الواقعية
+    avoid_ar: [اختبار الواقع, ريالتي تشيك]
+    confidence: review
+    note: Compares a target with what the organisation's own history has achieved. "اختبار" is avoided because it suggests pass/fail grading of people.
+  - id: column_role_measure
+    en: Number
+    fr: Valeur numérique
+    ar: قيمة رقمية
+    avoid_ar: [ميجر, مقياس رقمي]
+    confidence: settled
+  - id: column_role_dimension
+    en: Category
+    fr: Catégorie
+    ar: تصنيف
+    avoid_ar: [ديمنشن, بُعد]
+    confidence: review
+    note: 'بُعد is the BI-jargon translation of "dimension"; a manager reads تصنيف (branch, product family) immediately.'
+  - id: level_realistic
+    en: Realistic
+    fr: Réaliste
+    ar: واقعي
+    confidence: settled
+  - id: level_ambitious
+    en: Ambitious
+    fr: Ambitieux
+    ar: طموح
+    confidence: settled
+  - id: level_stretch
+    en: Stretch
+    fr: Très ambitieux
+    ar: طموح جدًا
+    avoid_ar: [ستريتش, هدف تمديدي]
+    confidence: review
+  - id: level_unrealistic
+    en: Unrealistic
+    fr: Irréaliste
+    ar: غير واقعي
+    confidence: settled
+  - id: committed_goal
+    en: Committed
+    fr: Engagé
+    ar: ملتزَم به
+    avoid_ar: [كوميتد, مُلزِم]
+    confidence: review
+    note: "OKR 'committed' objective = expected to be fully delivered. 'ملتزَم به' (passive) says the organization committed; 'مُلزِم' would read as 'binding on others'."
+  - id: aspirational_goal
+    en: Aspirational
+    fr: Ambitieux (aspirationnel)
+    ar: تطلّعي
+    avoid_ar: [أسبيريشنال, حالم]
+    confidence: review
+    note: "Kept distinct from 'طموح' which already names the 'ambitious' realism level; 'تطلّعي' is the standard word in Arabic planning texts for an aspiration target."
+  - id: outside_factor
+    en: Outside factor
+    fr: Facteur externe
+    ar: العامل الخارجي
+    avoid_ar: [عامل برّاني, فاكتور]
+    confidence: settled
+  - id: gap_to_target
+    en: Gap
+    fr: Écart
+    ar: الفجوة
+    avoid_ar: [الغاب]
+    confidence: settled
+    note: "Planning/control texts use 'الفجوة' for the distance between what history supports and the target; 'الانحراف' is reserved for variance against a budget."
+  - id: goal_health
+    en: Goal health
+    fr: Santé des objectifs
+    ar: صحة الأهداف
+    avoid_ar: [سلامة الأهداف]
+    confidence: review
+  - id: target_justification
+    en: Justification of the target
+    fr: Justification de la cible
+    ar: مبرِّرات المستهدف
+    avoid_ar: [تبرير الهدف]
+    confidence: review
+    note: "'مبرِّرات' (reasons given) rather than 'تبرير' which can read as making excuses."
+  - id: confidence_score
+    en: Confidence
+    fr: Confiance
+    ar: درجة الثقة
+    confidence: settled

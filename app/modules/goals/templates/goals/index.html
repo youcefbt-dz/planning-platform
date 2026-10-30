@@ -1,0 +1,85 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import badge, avatar, empty, sec, ring %}
+{% block title %}{{ t('goals.module') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/goals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/goalsflow.css') }}">{% endblock %}
+{% block content %}
+{% set cnt = stats.counts %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ t('goals.module') }}</h1><p class="sub">{{ t('goals.list_sub') }}</p></div>
+  <div class="actions">{% if can_add_goal() %}<a class="btn btn-primary" href="{{ url_for('goals.new') }}">{{ icon('plus', 16) }}{{ t('goals.create.objective') }}</a>{% endif %}</div>
+  {% if stats.total %}
+  <dl class="hstats">
+    <div><dt>{{ t('goals.widget.objectives') }}</dt><dd class="num">{{ n(stats.total) }}</dd></div>
+    <div><dt>{{ t('common.avg_progress') }}</dt><dd class="num">{{ pct(stats.avg) }}</dd></div>
+  </dl>
+  {% endif %}
+</div>
+
+{% set qs = dict(cycle=request.args.get('cycle'), unit=request.args.get('unit'), owner=request.args.get('owner'), q=request.args.get('q') or None, sort=(sort if sort != 'gap' else None)) %}
+
+{% if stats.total or status or q or unit_id or owner_id %}
+{% call sec('where', 'compass', t('goals.s_where'), t('goals.s_where_sub')) %}
+<nav class="sgrid-s" aria-label="{{ t('common.status') }}">
+  <a class="sc" href="{{ url_for('goals.index', **qs) }}" {% if not status %}aria-current="true"{% endif %}><b class="num">{{ n(stats.total) }}</b><span>{{ t('common.all') }}</span></a>
+  {% for st in ('on_track','at_risk','off_track','completed') %}
+  <a class="sc" data-s="{{ st }}" href="{{ url_for('goals.index', status=st, **qs) }}" {% if status == st %}aria-current="true"{% endif %}><b class="num">{{ n(cnt.get(st, 0)) }}</b><span><i></i>{{ t('status.' ~ st) }}</span></a>
+  {% endfor %}
+</nav>
+{% endcall %}
+{% endif %}
+
+{% call sec('list', 'list-details', t('goals.s_list'), t('goals.s_list_sub')) %}
+<form class="fbar" method="get" data-autosubmit>
+  <select class="select" name="cycle" aria-label="{{ t('common.cycle') }}">
+    <option value="all" {% if not cycle_id %}selected{% endif %}>{{ t('common.all_cycles') }}</option>
+    {% for c in cycles %}<option value="{{ c.id }}" {% if cycle_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+  </select>
+  <select class="select" name="unit" aria-label="{{ t('common.unit') }}">
+    <option value="">{{ t('common.all_units') }}</option>
+    {% for u in units %}<option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
+  </select>
+  <select class="select" name="owner" aria-label="{{ t('common.owner') }}">
+    <option value="">{{ t('common.all_owners') }}</option>
+    {% for m in members %}<option value="{{ m.user_id }}" {% if owner_id == m.user_id %}selected{% endif %}>{{ m.user.name }}</option>{% endfor %}
+  </select>
+  <select class="select" name="sort" aria-label="{{ t('goals.sort.label') }}">
+    {% for k in ('gap','progress','title') %}<option value="{{ k }}" {% if sort == k %}selected{% endif %}>{{ t('goals.sort.' ~ k) }}</option>{% endfor %}
+  </select>
+  <label class="fbar__search">{{ icon('search', 16) }}<input class="input" type="search" name="q" value="{{ q }}" placeholder="{{ t('goals.filter_placeholder') }}"></label>
+  {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+</form>
+
+{% if rows %}
+<ul class="gcards">
+{% for v in rows %}
+  {% set gp = ((v.progress - v.expected) * 100)|round|int %}
+  <li class="gcard" data-status="{{ v.status }}">
+    <header class="gcard__top">
+      {{ ring(v.progress, v.status, 62) }}
+      <div class="gcard__title">
+        <a href="{{ url_for('goals.detail', id=v.obj.id) }}">{{ v.obj.title }}</a>
+        <p>{% if v.obj.parent_id and views.get(v.obj.parent_id) %}{{ icon('sitemap', 13) }}{{ t('goals.serves') }} {{ views[v.obj.parent_id].obj.title }}{% elif v.obj.unit %}{{ icon('building', 13) }}{{ v.obj.unit.name }}{% endif %}</p>
+      </div>
+    </header>
+    {% if v.krs %}
+    <ul class="gcard__krs">
+      {% for k in v.krs[:3] %}<li><span class="gcard__kt">{{ k.kr.title }}</span><span class="gcard__bar" data-status="{{ k.status }}"><i style="width:{{ (k.progress * 100)|round|int if k.progress < 1 else 100 }}%"></i></span><b class="num">{{ pct(k.progress) }}</b></li>{% endfor %}
+      {% if v.krs|length > 3 %}<li class="gcard__more">+ {{ n(v.krs|length - 3) }} {{ t('goals.more_krs') }}</li>{% endif %}
+    </ul>
+    {% else %}<p class="gcard__none">{{ t('goals.no_krs_yet') }}</p>{% endif %}
+    <footer class="gcard__foot">
+      <span class="gcard__who">{% if v.obj.owner %}{{ avatar(v.obj.owner, 'avatar-sm') }}<span>{{ v.obj.owner.name }}</span>{% else %}<span class="muted">{{ t('goals.no_owner') }}</span>{% endif %}</span>
+      <span class="gcard__pace" data-tone="{{ 'good' if gp >= 0 else 'bad' }}" title="{{ t('goals.gap_hint') }}"><bdi dir="ltr">{{ '+' if gp > 0 else ('−' if gp < 0 else '') }}{{ n(gp|abs) }}</bdi> {{ t('goals.pace_pts') }}</span>
+      {{ badge(v.status) }}
+    </footer>
+    {% if v.stale %}<p class="gcard__stale">{{ icon('clock', 13) }}{{ t('goals.stale') }}</p>{% endif %}
+  </li>
+{% endfor %}
+</ul>
+{% else %}
+<div class="box">{% call empty('target-arrow', t('goals.empty_title'), t('goals.empty_text')) %}
+  {% if can_add_goal() %}<a class="btn btn-primary" href="{{ url_for('goals.new') }}">{{ icon('plus', 16) }}{{ t('goals.create.objective') }}</a>{% endif %}
+{% endcall %}</div>
+{% endif %}
+{% endcall %}
+{% endblock %}

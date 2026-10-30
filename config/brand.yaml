@@ -1,0 +1,69 @@
+# ============================================================================
+# BRAND — the single source of truth for name, logos, colors and fonts.
+#
+# Everything in the product (landing, app, emails, page titles, <meta>, print
+# reports, favicon) reads from here. To rebrand: edit this file (and drop your
+# SVG files into app/static/brand/). No template or Python change is needed.
+#
+# PlanWise: a PNG mark (blue: logo.png, white for dark backgrounds: logo-white.png) plus the name as real Latin text.
+# While placeholder is true a small notice is shown in the dev footer.
+# ============================================================================
+
+placeholder: false
+
+# Product name. Per-language so the Arabic wordmark can differ from the Latin one.
+name:
+  ar: PlanWise      # the product name is always written in Latin letters, in every language
+  en: PlanWise
+# Short form used in tight UI (browser tab suffix, app header fallback).
+name_short:
+  ar: PlanWise
+  en: PlanWise
+
+domain: planwise.local      # local/default host; replace when a real domain is chosen
+tagline_key: site.tagline   # i18n key (the text itself lives in i18n catalogs)
+
+# ---------------------------------------------------------------------------
+# LOGOS — two families, each with a dark-ink and a light-ink variant.
+#   full : symbol + name          (landing header, footer, auth pages, reports)
+#   mark : symbol only            (app header on mobile, favicon, avatars)
+# Paths are relative to app/static/brand/. Files can be .svg or .png.
+# "on_light" = the logo is drawn in dark colors, for LIGHT backgrounds.
+# "on_dark"  = the logo is drawn in light colors, for DARK backgrounds.
+# If a file is missing the UI falls back to the text name — nothing breaks.
+#
+# ---------------------------------------------------------------------------
+logos:
+  full:
+    on_light: logo.png
+    on_dark: logo-white.png
+  mark:
+    on_light: logo.png
+    on_dark: logo-white.png
+  favicon: favicon.png
+  height:
+    full: 56
+    mark: 56
+
+colors:
+  primary: "#5864FF"        # buttons, accents, active states (template primary)
+  primary_text: "#4652EA"   # primary used as TEXT/links on white (AA contrast)
+  ink: "#162447"            # headings, dark surfaces (template navy)
+  body: "#5B657E"           # body text (template body)
+  accent: "#FDD446"         # the yellow underline/highlight of the template
+  tint: "#F3F5FF"           # lavender wash used for soft backgrounds
+
+# ---------------------------------------------------------------------------
+# FONTS — self-hosted (app/static/fonts). Names here are CSS family names.
+# The Arabic family is appended automatically as the fallback of each stack.
+# ---------------------------------------------------------------------------
+fonts:
+  heading: Arimo
+  body: Open Sans
+  arabic: IBM Plex Sans Arabic
+
+social:
+  github: ""
+  linkedin: ""
+  x: ""
+  email: ""

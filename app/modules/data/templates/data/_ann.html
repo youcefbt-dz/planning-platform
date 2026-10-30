@@ -1,0 +1,12 @@
+{# Annotation card above a column (or a block of month columns). Hooks: data-col, [data-f=…] are updated live by data.js #}
+{% set c = grp.col %}
+<div class="ann" id="ann-{{ grp.logical }}" data-col="{{ grp.logical if grp.logical is not none else '' }}" data-role="{{ c.role if c else 'ignore' }}" data-unsure="{{ 'true' if grp.unsure else 'false' }}" tabindex="0">
+  {% if c %}
+  <div class="ann__top">
+    <span class="role-chip" data-role="{{ c.role }}"><span class="js-roleicon">{{ icon({'date':'calendar','measure':'chart-bar','dimension':'category','ignore':'circle-dashed'}[c.role], 13) }}</span><span data-f="role">{{ t('data.role.' ~ c.role) }}</span></span>
+    <span class="conf" data-f="conf" title="{{ t('data.confidence') }}">{% if grp.unsure %}<b>?</b>{% elif c.state == 'user' %}{{ icon('check', 12) }}{% else %}{{ (c.confidence * 100)|round|int }}%{% endif %}</span>
+  </div>
+  <div class="ann__name" data-f="label" dir="auto">{{ c.label }}</div>
+  <div class="ann__meta"><span data-f="meta">{% if c.role == 'measure' %}{% if c.unit %}{{ c.unit }} · {% endif %}{{ t('data.agg_short.' ~ c.aggregation) }}{% endif %}</span></div>
+  {% else %}<div class="ann__name muted">—</div>{% endif %}
+</div>

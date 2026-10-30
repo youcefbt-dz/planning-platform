@@ -1,0 +1,30 @@
+/* PlanWise lockup: the mark + the name written in Latin letters (never translated, never mirrored).
+   Loaded last on every page; the doubled .logo-lockup raises specificity over older per-page rules. */
+:root{--pw-blue:#033D91;--lk-h:40px}
+.logo-lockup.logo-lockup{display:inline-flex;align-items:center;gap:calc(var(--lk-h)*.28);height:auto;direction:ltr;line-height:1;white-space:nowrap;text-decoration:none;color:var(--c-ink)}
+.logo-lockup.logo-lockup .logo-lockup__mark{display:block;width:auto;height:var(--lk-h);flex:none;object-fit:contain}
+.logo-lockup.logo-lockup .logo-lockup__text{display:inline-flex;align-items:baseline;font-family:"Arimo","Open Sans",system-ui,sans-serif;font-size:calc(var(--lk-h)*.66);line-height:1;letter-spacing:-.025em;color:inherit;font-weight:400;padding-block-end:calc(var(--lk-h)*.02)}
+.logo-lockup .lk-a{font-weight:500}
+.logo-lockup .lk-b{font-weight:800}
+.logo-lockup.is-light .lk-b{color:var(--pw-blue)}
+.logo-lockup.is-dark{color:#fff}
+.logo-lockup.is-dark .lk-b{color:#fff}
+.logo-mark{width:auto}
+
+/* where it lives */
+.topbar .logo-lockup{--lk-h:38px}
+.topbar .brand-link .logo-mark{display:none}
+.site-brand .logo-lockup{--lk-h:46px}
+.gate__brand .logo-lockup{--lk-h:44px}
+.wel__brand .logo-lockup{--lk-h:38px}
+.auth-stage__brand .logo-lockup{--lk-h:48px}
+.print-only .logo-lockup{--lk-h:40px}
+.site-footer .logo-lockup{--lk-h:46px}
+.n__tile .logo-lockup__text{display:none}
+.n__tile .logo-mark{height:26px;width:auto}
+@media (max-width:720px){
+  .topbar .logo-lockup{--lk-h:32px}
+  .site-brand .logo-lockup{--lk-h:38px}
+  .auth-stage__brand .logo-lockup{--lk-h:40px}
+}
+@media (max-width:420px){.topbar .logo-lockup__text{display:none}}

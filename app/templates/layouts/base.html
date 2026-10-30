@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ dir }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title_full %}{% set _t %}{% block title %}{% endblock %}{% endset %}{% if _t|trim %}{{ _t|trim }} · {% endif %}{{ brand_name }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ t('site.meta.description') }}{% endblock %}">
+  <meta name="theme-color" content="{{ brand.colors.primary }}">
+  {% set fav = brand.favicon() %}{% if fav %}<link rel="icon" href="{{ url_for('static', filename='brand/' ~ fav) }}">{% endif %}
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <style>{{ brand_css|safe }}</style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  {% block css %}{% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/brand.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% block body %}{% endblock %}
+{% block js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,9 @@
+{# Fragment: vision / mission / values proposals. d = {vision, mission, values}, res = AIResult. Clicking fills the fields; nothing is saved. #}
+{% if d.vision %}<p class="assist-h">{{ icon('eye', 15) }}{{ t('profile.draft.vision') }}</p>
+<div class="pick-list">{% for x in d.vision %}<button class="pick" type="button" data-fill="{{ x }}" data-target="#f-vision" dir="auto">{{ x }}</button>{% endfor %}</div>{% endif %}
+{% if d.mission %}<p class="assist-h">{{ icon('flag', 15) }}{{ t('profile.draft.mission') }}</p>
+<div class="pick-list">{% for x in d.mission %}<button class="pick" type="button" data-fill="{{ x }}" data-target="#f-mission" dir="auto">{{ x }}</button>{% endfor %}</div>{% endif %}
+{% if d['values'] %}<p class="assist-h">{{ icon('heart', 15) }}{{ t('profile.draft.values') }}</p>
+<div class="chips">{% for x in d['values'] %}<button class="chip-btn" type="button" data-fill="{{ x }}" data-target="#f-values" data-mode="list">{{ x }}</button>{% endfor %}</div>{% endif %}
+<p class="hint" style="margin-block-start:var(--sp-3)"><span class="ai-tag" data-kind="{{ 'model' if res.is_model else 'rules' }}">{{ icon('bulb', 14) }}
+  {% if res.is_model %}{{ t('ai.badge.model', provider=t('ai.provider.' ~ res.provider)) }}{% elif res.errors and 'consent' in (res.errors|join(' ')) %}{{ t('ai.badge.rules_consent') }}{% elif res.fell_back %}{{ t('ai.badge.fell_back') }}{% else %}{{ t('ai.badge.rules') }}{% endif %}</span></p>

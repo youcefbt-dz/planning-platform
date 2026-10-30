@@ -1,0 +1,55 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, badge, avatar, delete_button, meter, empty %}
+{% block title %}{{ i.name }}{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{{ url_for('goals.indicators') }}">{{ t('goals.tabs.indicators') }}</a>{{ icon('chevron-right', 13, flip=true) }}<span>{{ t('goals.entity.indicator') }}</span></div>
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ i.name }}</h1><p class="sub">{{ badge(v.status) }}</p></div>
+  <div class="actions">
+    {% if can('indicators.edit') %}<a class="btn" href="{{ url_for('goals.indicator_edit', id=i.id) }}">{{ icon('pencil', 15) }}{{ t('common.edit') }}</a>{% endif %}
+    {% if can('indicators.delete') %}{{ delete_button(url_for('goals.indicator_delete', id=i.id)) }}{% endif %}
+  </div>
+</div>
+<div class="layout-side">
+  <div class="stack">
+    <div class="tiles">
+      <div class="tile"><div class="k">{{ t('goals.latest') }}</div><div class="v num">{{ val(v.latest, i.unit_label, i.metric_type) }}</div>
+        <div class="s">{% if v.latest_date %}{{ d(v.latest_date, 'month') }}{% endif %}{% if v.delta is not none and v.delta != 0 %} · <span class="delta" data-good="{{ 'true' if v.delta_good else 'false' }}">{{ icon('trending-up' if v.delta > 0 else 'trending-down', 13) }}{{ n(v.delta|abs) }}</span>{% endif %}</div></div>
+      <div class="tile"><div class="k">{{ t('goals.target_value') }}</div><div class="v num">{{ val(i.target_value, i.unit_label, i.metric_type) }}</div><div class="s">{{ t('goals.' ~ i.direction) }}</div></div>
+      <div class="tile"><div class="k">{{ t('goals.attainment') }}</div><div class="v num">{{ pct(v.attainment) }}</div><div class="s">{{ t('goals.attainment_hint') }}</div></div>
+    </div>
+
+    <div class="box">
+      <div class="box-head"><h2>{{ icon('chart-line', 18) }}{{ t('goals.trend') }}</h2>
+        <span class="muted" style="font-size:var(--fs-xs);margin-inline-start:auto">{{ icon('minus', 14) }} {{ t('goals.target_line') }}</span></div>
+      <div class="box-body">
+        {% if not chart.empty %}{% set chart_unit = (' ' ~ i.unit_label) if i.unit_label else ('%' if i.metric_type == 'percent' else '') %}{% include "components/line_chart.html" %}
+        {% else %}{% call empty('chart-line', t('goals.no_values')) %}{% endcall %}{% endif %}
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="box-head"><h2>{{ icon('table', 18) }}{{ t('goals.values') }}</h2></div>
+      {% if can('indicators.edit') %}
+      <form method="post" action="{{ url_for('goals.indicator_value', id=i.id) }}" class="box-body" style="border-block-end:1px solid var(--c-line)">{{ csrf() }}
+        <div class="row-wrap">
+          <input class="input input-sm" type="date" name="period_date" style="width:auto" aria-label="{{ t('goals.period') }}" value="{{ today.replace(day=1).isoformat() }}">
+          <input class="input input-sm" name="value" inputmode="decimal" placeholder="{{ t('goals.new_value') }}" required style="width:130px" aria-label="{{ t('goals.new_value') }}">
+          <input class="input input-sm grow" name="note" placeholder="{{ t('goals.comment_optional') }}" aria-label="{{ t('goals.comment') }}">
+          <button class="btn btn-sm btn-primary" type="submit">{{ t('goals.record_value') }}</button>
+        </div>
+        <p class="hint" style="margin-block-start:6px">{{ t('goals.record_hint') }}</p>
+      </form>{% endif %}
+      <table class="table"><thead><tr><th>{{ t('goals.period') }}</th><th class="num-col">{{ t('goals.value') }}</th><th>{{ t('goals.comment') }}</th></tr></thead>
+        <tbody>{% for dt, value in rows %}<tr><td>{{ d(dt, 'month') }}</td><td class="num-col"><b class="ink num">{{ val(value, i.unit_label, i.metric_type) }}</b></td><td class="muted">{{ notes.get(dt, '') }}</td></tr>{% endfor %}</tbody></table>
+    </div>
+  </div>
+  <aside><div class="box"><div class="box-body"><dl class="kv">
+    <div><dt>{{ t('common.owner') }}</dt><dd>{% if i.owner %}{{ avatar(i.owner, 'avatar-sm') }}{{ i.owner.name }}{% else %}—{% endif %}</dd></div>
+    <div><dt>{{ t('common.unit') }}</dt><dd>{{ i.unit.name if i.unit else '—' }}</dd></div>
+    <div><dt>{{ t('goals.frequency') }}</dt><dd>{{ t('goals.freq.' ~ i.frequency) }}</dd></div>
+    {% if i.baseline_value is not none %}<div><dt>{{ t('goals.baseline') }}</dt><dd class="num">{{ val(i.baseline_value, i.unit_label, i.metric_type) }}</dd></div>{% endif %}
+    {% if i.perspective %}<div><dt>{{ t('goals.perspective') }}</dt><dd>{{ t('goals.perspectives.' ~ i.perspective) }}</dd></div>{% endif %}
+  </dl>{% if i.description %}<p style="margin-block-start:var(--sp-4);font-size:var(--fs-sm)">{{ i.description }}</p>{% endif %}</div></div></aside>
+</div>
+{% endblock %}

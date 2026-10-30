@@ -1,0 +1,96 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, delete_button, empty %}
+{% from "data/_macros.html" import delta %}
+{% block title %}{{ ds.name }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css') }}">{% endblock %}
+{% block content %}
+{% set mains = series|selectattr('dimension', 'none')|list %}
+{% set all_pts = mains[0].pairs() if mains else [] %}
+<div class="crumbs"><a href="{{ url_for('data.index') }}">{{ t('data.module') }}</a>{{ icon('chevron-right', 13, flip=true) }}<span>{{ t('data.entity.dataset') }}</span></div>
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ icon('table', 22) }}{{ ds.name }}</h1><p class="sub"><bdi dir="ltr">{{ ds.filename }}</bdi></p></div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{{ url_for('data.dashboard') }}">{{ icon('layout-dashboard', 15) }}{{ t('data.dash.open') }}</a>
+    <a class="btn" href="{{ url_for('data.map', id=ds.id) }}">{{ icon('table', 15) }}{{ t('data.review_columns') }}</a>
+    {% if can('data.delete') %}{{ delete_button(url_for('data.delete', id=ds.id), confirm=t('data.confirm_delete')) }}{% endif %}
+  </div>
+  <dl class="hstats">
+    <div><dt>{{ t('data.rv.file.stat_series') }}</dt><dd class="num">{{ n(mains|length) }}</dd></div>
+    <div><dt>{{ t('data.rv.file.stat_periods') }}</dt><dd class="num">{{ n(all_pts|length) }}</dd></div>
+    <div><dt>{{ t('data.rv.file.stat_last') }}</dt><dd class="num" style="font-size:var(--fs-lg)">{{ d(all_pts[-1][0], 'month') if all_pts else '—' }}</dd></div>
+    <div><dt>{{ t('data.rv.file.stat_versions') }}</dt><dd class="num">{{ n(versions|length) }}</dd></div>
+  </dl>
+</div>
+
+<div class="sgrid">
+  <div class="sgrid__main">
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('chart-line', 20) }}</span>{{ t('data.rv.file.indicators') }}<span class="count">{{ n(mains|length) }}</span></h2>
+        <p dir="auto">{{ (ds.meta or {}).get('file_note') or ds.summary }}</p></header>
+      <div class="rc__body">
+        <div class="xgrid">
+          {% for s in mains %}{% set pts = s.pairs() %}{% set lp = pts[-1] if pts else none %}
+          {% set br = series|selectattr('dimension')|selectattr('name', 'ne', s.name)|list %}
+          {% set brs = [] %}{% for b in br if b.name.startswith(s.name ~ ' — ') %}{% set _ = brs.append(b) %}{% endfor %}
+          <a class="xc" href="{{ url_for('data.series', id=s.id) }}">
+            <h3 class="xc__name" dir="auto">{{ s.name }}</h3>
+            <div class="xc__val num"><bdi dir="ltr">{{ val(lp[1], s.unit) if lp else '—' }}</bdi>{% if lp %}<small>{{ d(lp[0], 'month') }}</small>{% endif %}</div>
+            <div class="xc__row">{{ delta(s, pts) }}{% set sp = spark(pts) %}{% if sp %}<svg class="spark" viewBox="0 0 96 28" aria-hidden="true"><path d="{{ sp }}"/></svg>{% endif %}</div>
+            <div class="xc__foot"><span>{{ t('data.dir.' ~ s.direction) }}</span>{% if brs %}<span class="chip">{{ icon('category', 12) }}{{ t('data.rv.file.branches_n', n=n(brs|length)) }}</span>{% endif %}</div>
+          </a>
+          {% else %}{% call empty('chart-line', t('data.no_values')) %}{% endcall %}{% endfor %}
+        </div>
+      </div>
+    </section>
+
+    {% if last and not last.diff.first %}{% set df = last.diff %}
+    <section class="rc" id="changes">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('history', 20) }}</span>{{ t('data.diff.title', n=last.number) }}</h2><p>{{ d(last.created_at, 'medium') }}</p></header>
+      <div class="rc__body">
+        <div class="dtiles">
+          <div class="dtile"><b class="num">{{ n(df.new_periods) }}</b><span>{{ t('data.diff.new_periods') }}{% if df.first_new %} · {{ data_date(df.first_new) }} → {{ data_date(df.last_new) }}{% endif %}</span></div>
+          <div class="dtile {% if df.revised_count %}is-warn{% endif %}"><b class="num">{{ n(df.revised_count) }}</b><span>{{ t('data.diff.revised') }}</span></div>
+          <div class="dtile"><b class="num">{{ n(df.changed_series) }}</b><span>{{ t('data.diff.series') }}{% if df.new_series %} · +{{ n(df.new_series|length) }}{% endif %}{% if df.removed_series %} · −{{ n(df.removed_series|length) }}{% endif %}</span></div>
+        </div>
+        {% if not df.new_periods and not df.revised_count and not df.new_series and not df.removed_series %}<p class="muted">{{ icon('info-circle', 15) }} {{ t('data.diff.same') }}</p>{% endif %}
+        {% if df.revised %}
+        <table class="table diff__table"><thead><tr><th>{{ t('data.entity.series') }}</th><th>{{ t('data.diff.period') }}</th><th class="num-col">{{ t('data.diff.before') }}</th><th class="num-col">{{ t('data.diff.after') }}</th><th class="num-col">{{ t('data.diff.change') }}</th></tr></thead>
+          <tbody>{% for r in df.revised[:12] %}<tr><td dir="auto">{{ r.series }}</td><td>{{ data_date(r.period) }}</td>
+            <td class="num-col num"><bdi dir="ltr">{{ n(r.old) }}</bdi></td><td class="num-col num"><b><bdi dir="ltr">{{ n(r.new) }}</bdi></b></td>
+            <td class="num-col num"><bdi dir="ltr">{{ ('+' if r.new > r.old else '−') ~ pct((r.new - r.old)|abs / (r.old|abs), 1) if r.pct is not none else '—' }}</bdi></td></tr>{% endfor %}</tbody></table>
+        {% if df.revised_count > 12 %}<p class="hint">{{ t('data.diff.more', n=n(df.revised_count - 12)) }}</p>{% endif %}
+        {% endif %}
+        {% if affected %}
+        <h3 class="diff__h">{{ t('data.diff.goals_title') }}</h3>
+        <ul class="plain-list">{% for a in affected %}<li>{{ icon('target-arrow', 14) }}<a href="{{ a.url }}" dir="auto">{{ a.title }}</a> <span class="muted">· {{ a.series }}</span></li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="sgrid__side">
+    {% if can('data.edit') %}
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('refresh', 20) }}</span>{{ t('data.rv.file.update_title') }}</h2></header>
+      <form class="rc__body" method="post" action="{{ url_for('data.update', id=ds.id) }}" enctype="multipart/form-data" data-upload>{{ csrf() }}
+        <p class="hint" style="margin:0">{{ t('data.rv.file.update_sub') }}</p>
+        <label class="upd__drop upload__drop">{{ icon('upload', 24) }}<span data-filename>{{ t('data.update.pick') }}</span><small>{{ t('data.intake.or_pick') }}</small>
+          <input type="file" name="file" accept=".xlsx,.xlsm,.csv,.tsv,.txt" required aria-label="{{ t('data.update.file') }}"></label>
+        <button class="btn btn-primary" type="submit">{{ icon('upload', 15) }}{{ t('data.update.button') }}</button>
+      </form>
+    </section>
+    {% endif %}
+    {% if versions|length > 1 %}
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('versions', 20) }}</span>{{ t('data.versions.title') }}</h2></header>
+      <div class="rc__body"><ol class="timeline-v">
+        {% for v in versions %}<li><b>#{{ n(v.number) }} · {{ d(v.created_at, 'medium') }}</b>
+          <span>{% if not v.confirmed %}{{ t('data.versions.pending') }}{% elif v.diff and v.diff.first %}{{ t('data.versions.first') }}{% elif v.diff %}{{ tn('data.versions.summary', v.diff.new_periods, rev=n(v.diff.revised_count)) }}{% endif %}</span></li>{% endfor %}
+      </ol></div>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/data.js') }}" defer></script>{% endblock %}

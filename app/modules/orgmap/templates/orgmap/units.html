@@ -1,0 +1,43 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import avatar, empty, sec, ring %}
+{% block title %}{{ t('orgmap.units.title') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/units.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/goalsflow.css') }}">{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ t('orgmap.units.title') }}</h1><p class="sub">{{ t('orgmap.units.sub') }}</p></div>
+  <div class="actions">
+    {% if goals_on %}<form method="get"><select class="select" name="cycle" onchange="this.form.submit()" aria-label="{{ t('common.cycle') }}">
+      <option value="all" {% if not cycle_id %}selected{% endif %}>{{ t('common.all_cycles') }}</option>
+      {% for c in cycles %}<option value="{{ c.id }}" {% if cycle_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    </select></form>{% endif %}
+    {% if can('settings.manage') %}<a class="btn" href="{{ url_for('shell.settings_units') }}">{{ icon('settings', 16) }}{{ t('orgmap.units.manage') }}</a>{% endif %}
+  </div>
+  <dl class="hstats">
+    <div><dt>{{ t('orgmap.units.title') }}</dt><dd class="num">{{ n(cards|length) }}</dd></div>
+    <div><dt>{{ t('settings.members.title') }}</dt><dd class="num">{{ n(people) }}</dd></div>
+    <div data-s="{{ 'at_risk' if headless else 'on_track' }}"><dt>{{ t('orgmap.units.headless') }}</dt><dd class="num">{{ n(headless) }}</dd></div>
+  </dl>
+</div>
+
+{% call sec('grid', 'users-group', t('orgmap.units.s_grid'), t('orgmap.units.s_grid_sub')) %}
+{% if cards %}
+<ul class="dgrid">
+  {% for c in cards %}{% set u = c.unit %}
+  <li><a class="dcard" data-status="{{ c.status }}" href="{{ url_for('orgmap.unit', id=u.id) }}">
+    <header class="dcard__top">
+      {% if goals_on %}{{ ring(c.avg, c.status, 58) }}{% else %}<span class="dcard__ic">{{ icon('sitemap', 22) }}</span>{% endif %}
+      <div><b class="dcard__name">{{ u.name }}</b><small>{{ t('settings.units.kind.' ~ u.kind) }}{% if u.parent and u.parent.kind != 'company' %} · {{ u.parent.name }}{% endif %}</small></div>
+    </header>
+    {% if goals_on %}<p class="dcard__goals">{% if c.goals %}<b class="num">{{ n(c.goals) }}</b> {{ t('orgmap.units.goals') }}
+      {% for st in ('off_track','at_risk','on_track','completed') if c.counts.get(st) %}<span class="dcard__pill" data-status="{{ st }}">{{ n(c.counts[st]) }} {{ t('status.' ~ st) }}</span>{% endfor %}
+      {% else %}<span class="muted">{{ t('orgmap.units.no_goals') }}</span>{% endif %}</p>{% endif %}
+    <footer class="dcard__foot">
+      {% if c.head %}{{ avatar(c.head, 'avatar-sm') }}<span><small>{{ t('settings.units.head') }}</small>{{ c.head.name }}</span>{% else %}<span class="muted">{{ icon('user-off', 14) }}{{ t('orgmap.units.no_head') }}</span>{% endif %}
+      <span class="dcard__n">{{ icon('users', 14) }}{{ n(c.people) }}</span>
+    </footer>
+  </a></li>
+  {% endfor %}
+</ul>
+{% else %}<div class="box">{% call empty('users-group', t('orgmap.units.empty_t'), t('orgmap.units.empty')) %}{% if can('settings.manage') %}<a class="btn btn-primary" href="{{ url_for('shell.settings_units') }}">{{ t('settings.units.add') }}</a>{% endif %}{% endcall %}</div>{% endif %}
+{% endcall %}
+{% endblock %}

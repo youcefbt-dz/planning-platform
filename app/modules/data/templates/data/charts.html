@@ -1,0 +1,55 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import empty %}
+{% from "data/_macros.html" import sec %}
+{% block title %}{{ t('data.charts.title') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dash.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css') }}">{% endblock %}
+{% block content %}
+{% if no_data %}
+<div class="page-head page-head--plain"><div class="page-head__title"><h1>{{ icon('chart-dots', 22) }}{{ t('data.charts.title') }}</h1><p class="sub">{{ t('data.charts.sub') }}</p></div></div>
+<div class="box dash-empty">{% call empty('chart-dots', t('data.dash.empty_title'), t('data.dash.empty_text')) %}<a class="btn btn-primary" href="{{ url_for('data.index') }}">{{ t('data.upload_go') }}</a>{% endcall %}</div>
+{% else %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ t('data.charts.title') }}</h1><p class="sub">{{ t('data.charts.sub') }}</p></div>
+  <dl class="hstats">
+    <div><dt>{{ t('data.charts.h_measures') }}</dt><dd class="num">{{ n(ms|length) }}</dd></div>
+    <div><dt>{{ t('data.charts.h_kinds') }}</dt><dd class="num">{{ n(kinds|length) }}</dd></div>
+  </dl>
+</div>
+
+<form class="cb" method="get" action="{{ url_for('data.charts') }}" id="cb-form">
+  <input type="hidden" name="kind" value="{{ kind }}" id="cb-kind">
+  <aside class="cb__side">
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic"><b class="cb__n">1</b></span>{{ t('data.charts.step_measure') }}</h2></header>
+      <div class="rc__body"><select class="select" name="m" onchange="this.form.submit()" aria-label="{{ t('data.charts.step_measure') }}">
+        {% for m in ms %}<option value="{{ m.id }}" {{ 'selected' if m.id == sel.id }}>{{ m.short }}</option>{% endfor %}</select></div>
+    </section>
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic"><b class="cb__n">2</b></span>{{ t('data.charts.step_kind') }}</h2></header>
+      <div class="rc__body"><div class="kinds">
+        {% for k, ic, nb, n2, o in kinds %}
+        <button type="submit" class="kind" name="kind" value="{{ k }}" {% if k == kind %}aria-current="true"{% endif %} {% if not usable[k] %}disabled title="{{ t('data.charts.needs_branches') if nb else t('data.charts.needs_measure') }}"{% endif %}>
+          <span class="kind__ic">{{ icon(ic, 18) }}</span><span class="kind__t"><b>{{ t('data.charts.kind.' ~ k ~ '.name') }}</b><small>{{ t('data.charts.kind.' ~ k ~ '.desc') }}</small></span>
+        </button>{% endfor %}
+      </div></div>
+    </section>
+    {% if opts or kind in ('compare','scatter') %}
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic"><b class="cb__n">3</b></span>{{ t('data.charts.step_options') }}</h2></header>
+      <div class="rc__body cb__opts">
+        {% if kind in ('compare','scatter') %}<label>{{ t('data.charts.o_m2') }}<select class="select" name="m2" onchange="this.form.submit()">{% for m in others %}<option value="{{ m.id }}" {{ 'selected' if m.id == args.measure2 }}>{{ m.short }}</option>{% endfor %}</select></label>{% endif %}
+        {% if 'branch' in opts and sel.branches %}<label>{{ t('data.charts.o_branch') }}<select class="select" name="branch" onchange="this.form.submit()"><option value="">{{ t('data.charts.o_all') }}</option>{% for b in sel.branches %}<option value="{{ b.dimension }}" {{ 'selected' if b.dimension == args.branch }}>{{ b.dimension }}</option>{% endfor %}</select></label>{% endif %}
+        {% if 'months' in opts %}<label>{{ t('data.charts.o_months') }}<select class="select" name="months" onchange="this.form.submit()">{% for v, l in [('', t('data.charts.o_auto')), (12, t('data.dash.win_12')), (24, t('data.dash.win_24')), (36, t('data.charts.o_36'))] %}<option value="{{ v }}" {{ 'selected' if (args.months|string if args.months else '') == v|string }}>{{ l }}</option>{% endfor %}</select></label>{% endif %}
+        {% if 'by' in opts %}<label>{{ t('data.charts.o_by') }}<select class="select" name="by" onchange="this.form.submit()">{% for v in ['month','quarter','year'] %}<option value="{{ v }}" {{ 'selected' if args.by == v }}>{{ t('data.charts.by.' ~ v) }}</option>{% endfor %}</select></label>{% endif %}
+      </div>
+    </section>
+    {% endif %}
+  </aside>
+  <div class="cb__main">
+    {% if chart %}{% set c = chart %}{% include "data/_chart.html" %}
+    {% else %}<div class="box">{% call empty('chart-dots', t('data.dash.ask_unavailable')) %}{% endcall %}</div>{% endif %}
+  </div>
+</form>
+{% endif %}
+{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/dash.js') }}" defer></script>{% endblock %}

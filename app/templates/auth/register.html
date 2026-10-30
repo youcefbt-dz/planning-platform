@@ -1,0 +1,23 @@
+{% extends "layouts/gate.html" %}
+{% from "components/ui.html" import csrf, flashes %}
+{% from "auth/_fields.html" import gfield %}
+{% block title %}{{ t('auth.register') }}{% endblock %}
+{% block mode %}register{% endblock %}
+{% block topnav %}<a class="gate__alt" href="{{ url_for('auth.login') }}">{{ t('auth.have_account') }} <b>{{ t('auth.login') }}</b></a>{% endblock %}
+{% block card %}
+  <h1>{{ t('auth.register_title') }}</h1>
+  <p class="gate__sub">{{ t('auth.register_sub') }}</p>
+  {{ flashes() }}
+  <form method="post" class="gform" data-gform>{{ csrf() }}
+    <fieldset class="gg"><legend><span class="gg__ic">{{ icon('building', 16) }}</span>{{ t('gate.group_org') }}</legend>
+      {{ gfield(t('auth.org_name'), 'org_name', 'building', value=form.get('org_name', ''), required=true, auto='organization', hint=t('auth.org_name_hint'), live='org') }}
+    </fieldset>
+    <fieldset class="gg"><legend><span class="gg__ic">{{ icon('user', 16) }}</span>{{ t('gate.group_you') }}</legend>
+      {{ gfield(t('auth.name'), 'name', 'user', value=form.get('name', ''), required=true, auto='name', live='user') }}
+      {{ gfield(t('auth.email'), 'email', 'mail', 'email', value=form.get('email', ''), required=true, auto='username') }}
+      {{ gfield(t('auth.password'), 'password', 'key', 'password', required=true, auto='new-password', live='password') }}
+      <div class="meter" data-meter aria-live="polite"><span class="meter__bars"><i></i><i></i><i></i><i></i></span><span class="meter__t" data-meter-t>{{ t('auth.password_hint') }}</span></div>
+    </fieldset>
+    <button class="gbtn" type="submit"><span>{{ t('auth.register') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
+  </form>
+{% endblock %}

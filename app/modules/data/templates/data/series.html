@@ -1,0 +1,69 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import empty, csrf %}
+{% from "data/_macros.html" import delta %}
+{% block title %}{{ s.name }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css') }}">{% endblock %}
+{% block content %}
+{% set pts = s.pairs() %}
+{% set branches = [] %}{% if s.dimension is none %}{% for b in s.dataset.series if b.dimension is not none and b.name.startswith(s.name ~ ' — ') %}{% set _ = branches.append(b) %}{% endfor %}{% endif %}
+<div class="crumbs"><a href="{{ url_for('data.index') }}">{{ t('data.module') }}</a>{{ icon('chevron-right', 13, flip=true) }}<a href="{{ url_for('data.detail', id=s.dataset_id) }}">{{ s.dataset.name }}</a>{{ icon('chevron-right', 13, flip=true) }}<span>{{ t('data.entity.series') }}</span></div>
+<div class="page-head">
+  <div class="page-head__title"><h1 dir="auto">{{ s.name }}</h1>
+    <p class="sub">{{ t('data.dir.' ~ s.direction) }}{% if s.unit %} · {{ s.unit }}{% endif %} · {{ t('data.rv.series.how', agg=t('data.agg_short.' ~ s.aggregation)) }}</p></div>
+  <div class="actions">{% if s.dimension is none and modules.is_enabled('goals') and can('goals.edit') %}<a class="btn btn-primary" href="{{ url_for('goals.new', series=s.id) }}">{{ icon('target-arrow', 16) }}{{ t('data.rv.series.set_goal') }}</a>{% endif %}</div>
+  <dl class="hstats">
+    <div><dt>{{ t('data.rv.series.stat_latest') }}</dt><dd class="num" style="font-size:var(--fs-lg)"><bdi dir="ltr">{{ val(stats.latest, s.unit) }}</bdi></dd></div>
+    <div><dt>{{ t('data.rv.series.stat_change') }}</dt><dd style="font-size:var(--fs-base)">{{ delta(s, pts) or '—' }}</dd></div>
+    <div><dt>{{ t('data.rv.series.stat_avg') }}</dt><dd class="num" style="font-size:var(--fs-lg)"><bdi dir="ltr">{{ val(stats.mean, s.unit) }}</bdi></dd></div>
+    <div><dt>{{ t('data.rv.series.stat_best') }} / {{ t('data.rv.series.stat_low') }}</dt><dd class="num" style="font-size:var(--fs-base)"><bdi dir="ltr">{{ val(stats.max if s.direction == 'higher_better' else stats.min, s.unit) }} / {{ val(stats.min if s.direction == 'higher_better' else stats.max, s.unit) }}</bdi></dd></div>
+    <div><dt>{{ t('data.rv.series.stat_periods') }}</dt><dd class="num">{{ n(stats.n) }}</dd></div>
+  </dl>
+</div>
+
+<div class="sgrid">
+  <div class="sgrid__main">
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('chart-line', 20) }}</span>{{ t('data.trend') }}</h2>{% if stats.first %}<p>{{ d(stats.first, 'month') }} → {{ d(stats.last, 'month') }}</p>{% endif %}</header>
+      <div class="rc__body">{% if chart %}{% set chart_unit = (' ' ~ s.unit) if s.unit else '' %}{% include "components/line_chart.html" %}{% else %}{% call empty('chart-line', t('data.no_values')) %}{% endcall %}{% endif %}</div>
+    </section>
+
+    {% if branches %}
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('category', 20) }}</span>{{ t('data.rv.series.branches') }}<span class="count">{{ n(branches|length) }}</span></h2><p>{{ t('data.rv.series.branches_sub') }}</p></header>
+      <div class="rc__body">
+        {% set mx = [] %}{% for b in branches %}{% if b.latest %}{% set _ = mx.append(b.latest[1]|abs) %}{% endif %}{% endfor %}
+        {% set top = (mx|max) if mx else 1 %}
+        <ul class="bar-list">
+          {% for b in branches %}{% set lp = b.latest %}
+          <li><a href="{{ url_for('data.series', id=b.id) }}" dir="auto"><b class="ink">{{ b.name.split(' — ')[-1] }}</b></a>
+            <span class="t"><i style="width:{{ ((lp[1]|abs / top) * 100)|round|int if lp and top else 0 }}%"></i></span>
+            <span class="num ink"><bdi dir="ltr">{{ val(lp[1], b.unit) if lp else '—' }}</bdi> {{ delta(b) }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('table', 20) }}</span>{{ t('data.rv.series.values') }}<span class="count">{{ n(rows|length) }}</span></h2></header>
+      <div class="vtable"><table class="table"><thead><tr><th>{{ t('data.period') }}</th><th class="num-col">{{ t('data.value') }}</th></tr></thead>
+        <tbody>{% for dt, v in rows %}<tr><td>{{ d(dt, 'month') }}</td><td class="num-col"><b class="ink num"><bdi dir="ltr">{{ val(v, s.unit) }}</bdi></b></td></tr>{% endfor %}</tbody></table></div>
+    </section>
+  </div>
+
+  <aside class="sgrid__side">
+    <section class="rc">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('flag', 20) }}</span>{{ t('data.rv.series.goals') }}</h2></header>
+      <div class="rc__body">
+        {% for kr in linked %}<a class="golink" href="{{ url_for('goals.detail', id=kr.objective_id) }}#kr-{{ kr.id }}">{{ icon('target-arrow', 16) }}<span>{{ kr.title }}<small>{{ kr.objective.title }}</small></span></a>
+        {% else %}<p class="muted" style="margin:0">{{ t('data.rv.series.goals_none') }}</p>{% endfor %}
+      </div>
+    </section>
+    {% if s.dimension is none and can('data.edit') %}
+    <form class="rc" method="post" action="{{ url_for('data.rename_series', id=s.id) }}">{{ csrf() }}
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('pencil', 20) }}</span>{{ t('data.rv.series.rename') }}</h2></header>
+      <div class="rc__body"><input class="input" name="name" value="{{ s.name }}" maxlength="120" required aria-label="{{ t('data.rename.label') }}"><button class="btn btn-sm btn-primary" type="submit" style="justify-self:start">{{ t('data.rename.save') }}</button></div>
+    </form>{% endif %}
+  </aside>
+</div>
+{% endblock %}

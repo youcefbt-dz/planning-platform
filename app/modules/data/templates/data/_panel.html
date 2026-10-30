@@ -1,0 +1,40 @@
+{% macro amt(q, rel, unit) %}{% if rel %}{{ pct(q, 0 if (q|abs) >= 0.095 else 1) }}{% else %}{{ val(q, unit) }}{% endif %}{% endmacro %}
+{# Live verdict panel. `result` comes from reality.check (optionally with the AI explanation). Rendered both as a page part and as a fragment. #}
+{% if not result %}
+  <div class="box"><div class="empty empty-sm"><div class="well">{{ icon('target-arrow', 26) }}</div>
+    <h3>{{ t('data.reality.err.' ~ (err or 'idle') ~ '_t') }}</h3><p>{{ t('data.reality.err.' ~ (err or 'idle')) }}</p></div></div>
+{% else %}
+{% set x = result.explain %}{% set v = result.verdict %}{% set h = v.hist %}{% set rel = v.measure == 'relative' %}
+<div class="box verdict" data-tone="{{ result.tone }}" data-level="{{ result.level }}">
+  <div class="verdict__head">
+    <span class="verdict__badge" data-tone="{{ result.tone }}">{{ icon(result.icon, 20) }}<b>{{ t('data.level.' ~ result.level) }}</b></span>
+    <span class="verdict__series" dir="auto">{{ result.series.name }}</span>
+  </div>
+  <div class="box-body stack-sm">
+    <p class="verdict__summary" dir="auto">{{ x.summary }}</p>
+    {% if h.windows %}
+    <dl class="facts">
+      <div><dt>{{ t('data.reality.f_required') }}</dt><dd class="num">{{ amt(v.required, rel, result.unit) }}</dd></div>
+      <div><dt>{{ t('data.reality.f_typical') }}</dt><dd class="num">{{ amt(h.median, rel, result.unit) }}</dd></div>
+      <div><dt>{{ t('data.reality.f_best') }}</dt><dd class="num">{{ amt(h.best, rel, result.unit) }}</dd></div>
+      <div><dt>{{ t('data.reality.f_windows') }}</dt><dd class="num">{{ n(h.windows) }}</dd></div>
+    </dl>{% endif %}
+    {% set ch = result.chart %}{% set unit = result.unit %}{% include "data/_reality_chart.html" %}
+    {% if x.reasons %}<ul class="reasons">{% for r in x.reasons %}<li dir="auto">{{ r }}</li>{% endfor %}</ul>{% endif %}
+    {% if x.suggestion %}<p class="suggest">{{ icon('bulb', 16) }}<span dir="auto">{{ x.suggestion }}</span></p>{% endif %}
+    {% if x.questions %}<div class="ask"><b>{{ t('data.reality.ask') }}</b><ul>{% for q in x.questions %}<li dir="auto">{{ q }}</li>{% endfor %}</ul></div>{% endif %}
+  </div>
+  <div class="verdict__foot">
+    {% if result.ai %}
+      {% set a = result.ai %}
+      <span class="ai-tag" data-kind="{{ 'model' if a.is_model else 'rules' }}">{{ icon('bulb', 14) }}
+        {% if a.is_model %}{{ t('ai.badge.model', provider=t('ai.provider.' ~ a.provider)) }}{% elif a.errors and 'consent' in (a.errors|join(' ')) %}{{ t('ai.badge.rules_consent') }}{% elif a.errors and 'demo' in (a.errors|join(' ')) %}{{ t('ai.badge.rules_demo') }}{% elif a.fell_back %}{{ t('ai.badge.fell_back') }}{% else %}{{ t('ai.badge.rules') }}{% endif %}</span>
+    {% else %}
+      <span class="ai-tag" data-kind="rules">{{ icon('bulb', 14) }}{{ t('data.reality.by_rules') }}</span>
+      {% set qs = args.to_dict() %}{% set _ = qs.pop('ai', none) %}
+      <a class="btn btn-sm" href="{{ url_for('data.reality_page', ai=1, **qs) }}" data-explain>{{ icon('bulb', 14) }}{{ t('data.reality.explain_ai') }}</a>
+    {% endif %}
+    <span class="muted foot-note">{{ t('data.reality.method') }}</span>
+  </div>
+</div>
+{% endif %}

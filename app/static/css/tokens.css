@@ -1,0 +1,68 @@
+/* ==========================================================================
+   DESIGN TOKENS
+   Source of the look: the SaaSpal template (primary #5864ff, navy #162447,
+   body #5b657e, lavender tint, yellow nav underline, pill buttons, 18px+ radii).
+   Brand colors arrive as --brand-* from config/brand.yaml (injected in <head>);
+   everything below derives from them, so a rebrand needs no CSS edit.
+   ========================================================================== */
+
+@font-face{font-family:"IBM Plex Sans Arabic";font-weight:400;font-display:swap;src:url("../fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2") format("woff2");unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0898-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:"IBM Plex Sans Arabic";font-weight:500;font-display:swap;src:url("../fonts/ibm-plex-sans-arabic-arabic-500-normal.woff2") format("woff2");unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0898-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:"IBM Plex Sans Arabic";font-weight:600;font-display:swap;src:url("../fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2") format("woff2");unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0898-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:"IBM Plex Sans Arabic";font-weight:700;font-display:swap;src:url("../fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2") format("woff2");unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0898-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+
+@font-face{font-family:"Arimo";font-weight:400;font-display:swap;src:url("../fonts/arimo-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Arimo";font-weight:500;font-display:swap;src:url("../fonts/arimo-latin-500-normal.woff2") format("woff2")}
+@font-face{font-family:"Arimo";font-weight:600;font-display:swap;src:url("../fonts/arimo-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Arimo";font-weight:700;font-display:swap;src:url("../fonts/arimo-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"Open Sans";font-weight:400;font-display:swap;src:url("../fonts/open-sans-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Open Sans";font-weight:600;font-display:swap;src:url("../fonts/open-sans-latin-600-normal.woff2") format("woff2")}
+
+:root{
+  /* --- brand (fallbacks; overwritten by the injected --brand-* block) --- */
+  --brand-primary:#5864ff;
+  --brand-primary-text:#4652ea;
+  --brand-ink:#162447;
+  --brand-body:#5b657e;
+  --brand-accent:#fdd446;
+  --brand-tint:#f3f5ff;
+  --font-heading:"Arimo","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --font-body:"Open Sans","IBM Plex Sans Arabic",system-ui,sans-serif;
+
+  /* --- semantic colors --- */
+  --c-primary:var(--brand-primary);
+  --c-primary-text:var(--brand-primary-text);
+  --c-primary-hover:color-mix(in srgb,var(--brand-primary) 88%,#000);
+  --c-primary-soft:color-mix(in srgb,var(--brand-primary) 10%,#fff);
+  --c-primary-softer:var(--brand-tint);
+  --c-ink:var(--brand-ink);
+  --c-body:var(--brand-body);
+  --c-muted:color-mix(in srgb,var(--brand-body) 78%,#fff);
+  --c-line:color-mix(in srgb,var(--brand-ink) 11%,#fff);
+  --c-line-strong:color-mix(in srgb,var(--brand-ink) 20%,#fff);
+  --c-canvas:#fff;
+  --c-subtle:color-mix(in srgb,var(--brand-ink) 3.5%,#fff);
+  --c-accent:var(--brand-accent);
+
+  /* --- status (always shown with an icon + label, never color alone) --- */
+  --st-on_track-fg:#11713f;   --st-on_track-bg:#e2f5ea;   --st-on_track-bar:#1f9d5b;
+  --st-at_risk-fg:#8a5400;    --st-at_risk-bg:#fff0cc;    --st-at_risk-bar:#e0a100;
+  --st-off_track-fg:#b4231f;  --st-off_track-bg:#fde7e6;  --st-off_track-bar:#e04a43;
+  --st-not_started-fg:#5b657e;--st-not_started-bg:#eceff6;--st-not_started-bar:#b9c0d4;
+  --st-on_hold-fg:#5a4ab4;    --st-on_hold-bg:#ebe8fb;    --st-on_hold-bar:#8b7fe0;
+  --st-completed-fg:var(--brand-primary-text); --st-completed-bg:var(--c-primary-soft); --st-completed-bar:var(--brand-primary);
+  --st-cancelled-fg:#6b7280;  --st-cancelled-bg:#f0f1f4;  --st-cancelled-bar:#c9ccd6;
+
+  /* --- type --- */
+  --fs-xs:.75rem; --fs-sm:.8125rem; --fs-base:.9375rem; --fs-md:1.0625rem;
+  --fs-lg:1.25rem; --fs-xl:1.5rem; --fs-2xl:2rem; --fs-3xl:2.75rem; --fs-hero:clamp(2.25rem,4.6vw,3.75rem);
+  --lh-tight:1.2; --lh-base:1.65;
+
+  /* --- shape & space --- */
+  --r-xs:4px; --r-sm:6px; --r-md:10px; --r-lg:18px; --r-xl:28px; --r-pill:999px;
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:72px; --sp-9:112px;
+  --shadow-sm:0 1px 2px color-mix(in srgb,var(--brand-ink) 8%,transparent);
+  --shadow-md:0 8px 24px color-mix(in srgb,var(--brand-ink) 10%,transparent);
+  --shadow-lg:0 24px 60px color-mix(in srgb,var(--brand-ink) 16%,transparent);
+  --container:1280px; --container-narrow:960px;
+}

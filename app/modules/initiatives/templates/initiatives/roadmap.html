@@ -1,0 +1,27 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import empty %}
+{% block title %}{{ t('initiatives.tabs.roadmap') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('timeline', 22) }}{{ t('initiatives.tabs.roadmap') }}</h1><p class="sub">{{ t('initiatives.roadmap_sub') }}</p></div></div>
+{% if bars %}
+<div class="roadmap">
+  <div class="rm-grid">
+    <div class="rm-months">{% for m in months %}<div style="inset-inline-start:{{ m.left }}%;width:{{ m.width }}%">{{ d(m.date, 'month') }}</div>{% endfor %}</div>
+    <div class="rm-rows">
+      {% for m in months %}<div class="rm-vline" style="inset-inline-start:{{ m.left }}%"></div>{% endfor %}
+      {% if today_left is not none %}<div class="rm-today" style="inset-inline-start:{{ today_left }}%" title="{{ t('time.today') }}"></div>{% endif %}
+      {% for b in bars %}
+      <div class="rm-row">
+        <div class="rm-bar" data-status="{{ b.v.status }}" style="inset-inline-start:{{ b.left }}%;width:{{ b.width }}%" title="{{ b.v.obj.title }} · {{ pct(b.v.progress) }}">
+          <span class="done" style="width:{{ (b.v.progress * 100)|round|int }}%"></span>
+          <a href="{{ url_for('initiatives.detail', id=b.v.obj.id) }}" class="truncate" style="position:relative">{{ b.v.obj.title }}</a>
+        </div>
+        {% for ms in b.milestones %}<span class="rm-ms" style="inset-inline-start:{{ ms.left }}%" title="{{ ms.m.title }} · {{ d(ms.m.due_date) }}"></span>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<div class="legend" style="margin-block-start:var(--sp-4)"><span class="item"><i data-status="on_track"></i>{{ t('status.on_track') }}</span><span class="item"><i data-status="at_risk"></i>{{ t('status.at_risk') }}</span><span class="item"><i data-status="off_track"></i>{{ t('status.off_track') }}</span><span class="item"><i data-status="not_started"></i>{{ t('status.not_started') }}</span><span class="item"><i data-status="completed"></i>{{ t('status.completed') }}</span><span class="item">◆ {{ t('initiatives.milestone') }}</span></div>
+{% else %}<div class="box">{% call empty('timeline', t('initiatives.roadmap_empty')) %}{% endcall %}</div>{% endif %}
+{% endblock %}

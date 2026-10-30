@@ -1,0 +1,6 @@
+{# Fragment: what deserves attention, written by the model or by rules. brief, res #}
+<div class="brief__body">
+  <p dir="auto">{{ brief.summary }}</p>
+  {% if brief.watch %}<ul>{% for w in brief.watch %}<li dir="auto">{{ w }}</li>{% endfor %}</ul>{% endif %}
+  <p class="advice__foot">{% set a = res %}{% include "goals/_ai_tag.html" %}</p>
+</div>

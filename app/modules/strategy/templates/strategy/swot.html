@@ -1,0 +1,22 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf %}
+{% block title %}{{ t('strategy.tabs.swot') }}{% endblock %}
+{% set icons = {'strength': 'thumb-up', 'weakness': 'thumb-down', 'opportunity': 'bulb', 'threat': 'alert-triangle'} %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('layout-grid', 22) }}{{ t('strategy.swot.title') }}</h1><p class="sub">{{ t('strategy.swot.sub') }}</p></div></div>
+<div class="swot">
+  {% for k in kinds %}
+  <section class="swot-q" data-kind="{{ k }}" id="{{ k }}">
+    <header>{{ icon(icons[k], 18) }}{{ t('strategy.swot.' ~ k) }}<span class="count" style="margin-inline-start:auto">{{ n(groups[k]|length) }}</span></header>
+    <ul class="items">
+      {% for it in groups[k] %}<li><span>{{ it.text }}</span>
+        {% if can('strategy.edit') %}<form method="post" action="{{ url_for('strategy.swot_delete', id=it.id) }}">{{ csrf() }}<button class="btn btn-sm btn-ghost btn-icon" type="submit" aria-label="{{ t('common.delete') }}">{{ icon('x', 14) }}</button></form>{% endif %}</li>
+      {% else %}<li class="muted"><span>{{ t('strategy.swot.empty') }}</span></li>{% endfor %}
+    </ul>
+    {% if can('strategy.edit') %}<form class="add" method="post" action="{{ url_for('strategy.swot_add') }}">{{ csrf() }}<input type="hidden" name="kind" value="{{ k }}">
+      <input class="input input-sm" name="text" placeholder="{{ t('strategy.swot.add_' ~ k) }}" required aria-label="{{ t('strategy.swot.add_' ~ k) }}"><button class="btn btn-sm" type="submit">{{ icon('plus', 14) }}</button></form>{% endif %}
+  </section>
+  {% endfor %}
+</div>
+<p class="muted" style="margin-block-start:var(--sp-4);font-size:var(--fs-sm)">{{ t('strategy.swot.note') }}</p>
+{% endblock %}

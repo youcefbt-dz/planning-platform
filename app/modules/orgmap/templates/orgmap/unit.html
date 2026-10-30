@@ -1,0 +1,112 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import avatar, badge, empty, sec, ring, csrf %}
+{% block title %}{{ u.name }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/units.css') }}"> <link rel="stylesheet" href="{{ url_for('static', filename='css/goalsflow.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css') }}">{% endblock %}
+{% macro rel_list(items, mine_side) %}
+{% for r in items %}
+<li class="rel">
+  <a class="rel__u" href="{{ url_for('orgmap.unit', id=r.unit.id) }}"><span class="rel__ic" data-status="{{ r.status }}">{{ icon('sitemap', 16) }}</span><b>{{ r.unit.name }}</b>{% if r.unit.head %}<small>{{ r.unit.head.name }}</small>{% endif %}</a>
+  <ul class="rel__pairs">
+    {% for l, a, b in r.pairs %}
+    <li><span>{% if mine_side %}<a href="{{ url_for('goals.detail', id=a.obj.id) }}">{{ a.obj.title }}</a> {{ icon('arrow-left', 13) }} <a href="{{ url_for('goals.detail', id=b.obj.id) }}">{{ b.obj.title }}</a>{% else %}<a href="{{ url_for('goals.detail', id=a.obj.id) }}">{{ a.obj.title }}</a> {{ icon('arrow-left', 13) }} <a href="{{ url_for('goals.detail', id=b.obj.id) }}">{{ b.obj.title }}</a>{% endif %}</span>
+      {{ badge(b.status if mine_side else a.status) }}
+      {% if can_edit_unit(u.id) %}<form method="post" action="{{ url_for('orgmap.unit_depends_del', id=u.id, lid=l.id) }}">{{ csrf() }}<button class="btn btn-ghost btn-sm btn-icon" aria-label="{{ t('common.delete') }}">{{ icon('x', 14) }}</button></form>{% endif %}</li>
+    {% endfor %}
+  </ul>
+</li>
+{% endfor %}
+{% endmacro %}
+
+{% block content %}
+{% set head = u.head %}
+<div class="crumbs"><a href="{{ url_for('orgmap.units_index') }}">{{ t('orgmap.units.title') }}</a>{{ icon('chevron-right', 13, flip=true) }}{% if parent and parent.kind != 'company' %}<a href="{{ url_for('orgmap.unit', id=parent.id) }}">{{ parent.name }}</a>{{ icon('chevron-right', 13, flip=true) }}{% endif %}<span>{{ u.name }}</span></div>
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ u.name }}</h1><p class="sub">{{ t('settings.units.kind.' ~ u.kind) }}{% if head %} · {{ t('settings.units.head') }}: {{ head.name }}{% endif %}</p></div>
+  <div class="actions">
+    {% if goals_on %}<form method="get"><select class="select" name="cycle" onchange="this.form.submit()" aria-label="{{ t('common.cycle') }}">
+      <option value="all" {% if not cycle_id %}selected{% endif %}>{{ t('common.all_cycles') }}</option>
+      {% for c in cycles %}<option value="{{ c.id }}" {% if cycle_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    </select></form>{% endif %}
+    {% if can('settings.manage') %}<a class="btn" href="{{ url_for('shell.settings_units') }}#u{{ u.id }}">{{ icon('settings', 16) }}{{ t('orgmap.unit.edit') }}</a>{% endif %}
+  </div>
+  <dl class="hstats">
+    {% if stats %}<div><dt>{{ t('orgmap.units.goals') }}</dt><dd class="num">{{ n(stats.total) }}</dd></div>
+    <div><dt>{{ t('common.avg_progress') }}</dt><dd class="num">{{ pct(stats.avg) }}</dd></div>
+    <div data-s="off_track"><dt>{{ t('status.off_track') }}</dt><dd class="num">{{ n(stats.counts.off_track) }}</dd></div>{% endif %}
+    <div><dt>{{ t('settings.members.title') }}</dt><dd class="num">{{ n(people) }}</dd></div>
+  </dl>
+</div>
+
+{% call sec('team', 'users', t('orgmap.unit.s_team'), t('orgmap.unit.s_team_sub')) %}
+<div class="uteam">
+  <div class="uhead">
+    {% if head %}{{ avatar(head, '') }}<div><small>{{ t('settings.units.head') }}</small><b>{{ head.name }}</b>{% set hm = direct|selectattr('user_id', 'equalto', head.id)|first %}{% if hm and hm.title %}<span>{{ hm.title }}</span>{% endif %}</div>
+    {% else %}<span class="uhead__none">{{ icon('user-off', 22) }}</span><div><small>{{ t('settings.units.head') }}</small><b class="muted">{{ t('orgmap.units.no_head') }}</b>{% if can('settings.manage') %}<a href="{{ url_for('shell.settings_units') }}#u{{ u.id }}">{{ t('orgmap.unit.pick_head') }}</a>{% endif %}</div>{% endif %}
+  </div>
+  <ul class="upeople">
+    {% for m in direct if m.user_id != u.head_id %}<li>{{ avatar(m.user, 'avatar-sm') }}<span><b>{{ m.user.name }}</b>{% if m.title %}<small>{{ m.title }}</small>{% endif %}</span></li>{% endfor %}
+    {% if not direct or (direct|length == 1 and head) %}<li class="muted">{{ t('orgmap.unit.no_people') }}</li>{% endif %}
+  </ul>
+  {% if subs %}<div class="usubs"><small>{{ t('orgmap.unit.subs') }}</small>{% for s in subs %}<a class="chip chip-primary" href="{{ url_for('orgmap.unit', id=s.id) }}">{{ icon('users-group', 13) }}{{ s.name }}</a>{% endfor %}</div>{% endif %}
+</div>
+{% endcall %}
+
+{% if goals_on %}
+{% call sec('state', 'compass', t('orgmap.unit.s_state'), t('orgmap.unit.s_state_sub')) %}
+{% if stats and stats.total %}
+<p class="ustate">{{ t('orgmap.unit.state', total=stats.total, ok=stats.counts.on_track + stats.counts.completed, risk=stats.counts.at_risk, off=stats.counts.off_track) }}</p>
+{% else %}<div class="box">{% call empty('target-arrow', t('orgmap.units.no_goals'), t('orgmap.unit.no_goals_text')) %}{% if can_edit_unit(u.id) %}<a class="btn btn-primary" href="{{ url_for('goals.new', unit=u.id) }}">{{ t('goals.create.objective') }}</a>{% endif %}{% endcall %}</div>{% endif %}
+{% endcall %}
+
+{% if decisions %}
+{% call sec('decide', 'alert-triangle', t('orgmap.unit.s_decide'), t('orgmap.unit.s_decide_sub')) %}
+<ul class="krl" data-status="off_track">
+  {% for v, k in decisions %}
+  <li class="krr" style="grid-template-columns:minmax(0,1fr) auto"><div class="krr__main"><a class="krr__t" href="{{ url_for('goals.detail', id=v.obj.id) }}#kr-{{ k.kr.id }}">{{ k.kr.title }}</a><p><a href="{{ url_for('goals.detail', id=v.obj.id) }}">{{ icon('target-arrow', 13) }}{{ v.obj.title }}</a></p></div><div class="krr__st">{{ badge(k.status) }}</div></li>
+  {% endfor %}
+</ul>
+{% endcall %}
+{% endif %}
+
+{% if mine %}
+{% call sec('goals', 'target-arrow', t('orgmap.unit.s_goals'), t('orgmap.unit.s_goals_sub')) %}
+<ul class="gcards">
+  {% for v in mine %}{% set gp = ((v.progress - v.expected) * 100)|round|int %}
+  <li class="gcard" data-status="{{ v.status }}">
+    <header class="gcard__top">{{ ring(v.progress, v.status, 62) }}<div class="gcard__title"><a href="{{ url_for('goals.detail', id=v.obj.id) }}">{{ v.obj.title }}</a>{% if v.obj.unit_id != u.id and v.obj.unit %}<p>{{ icon('sitemap', 13) }}{{ v.obj.unit.name }}</p>{% endif %}</div></header>
+    <footer class="gcard__foot"><span class="gcard__who">{% if v.obj.owner %}{{ avatar(v.obj.owner, 'avatar-sm') }}<span>{{ v.obj.owner.name }}</span>{% endif %}</span>
+      <span class="gcard__pace" data-tone="{{ 'good' if gp >= 0 else 'bad' }}"><bdi dir="ltr">{{ '+' if gp > 0 else ('−' if gp < 0 else '') }}{{ n(gp|abs) }}</bdi> {{ t('goals.pace_pts') }}</span>{{ badge(v.status) }}</footer>
+  </li>{% endfor %}
+</ul>
+{% endcall %}
+{% endif %}
+
+{% call sec('relations', 'arrows-diff', t('orgmap.unit.s_rel'), t('orgmap.unit.s_rel_sub')) %}
+<div class="relgrid">
+  <div class="rc"><header class="rc__head"><h2><span class="rc__ic">{{ icon('arrow-narrow-left', 20) }}</span>{{ t('orgmap.unit.depends') }}</h2><p>{{ t('orgmap.unit.depends_sub') }}</p></header>
+    <div class="rc__body">{% if depends %}<ul class="rels">{{ rel_list(depends, true) }}</ul>{% else %}<p class="muted">{{ t('orgmap.unit.no_depends') }}</p>{% endif %}</div></div>
+  <div class="rc"><header class="rc__head"><h2><span class="rc__ic">{{ icon('arrows-diff', 20) }}</span>{{ t('orgmap.unit.serves') }}</h2><p>{{ t('orgmap.unit.serves_sub') }}</p></header>
+    <div class="rc__body">{% if serves %}<ul class="rels">{{ rel_list(serves, false) }}</ul>{% else %}<p class="muted">{{ t('orgmap.unit.no_serves') }}</p>{% endif %}</div></div>
+</div>
+{% if can_edit_unit(u.id) and my_goals and other_goals %}
+<form class="reladd" method="post" action="{{ url_for('orgmap.unit_depends_add', id=u.id) }}">{{ csrf() }}
+  <b>{{ t('orgmap.unit.add_h') }}</b>
+  <label>{{ t('orgmap.unit.add_mine') }}<select class="select" name="goal_id">{% for v in my_goals %}<option value="{{ v.obj.id }}">{{ v.obj.title }}</option>{% endfor %}</select></label>
+  <label>{{ t('orgmap.unit.add_on') }}<select class="select" name="on_id">{% for v in other_goals %}<option value="{{ v.obj.id }}">{{ (v.obj.unit.name ~ ' — ') if v.obj.unit else '' }}{{ v.obj.title }}</option>{% endfor %}</select></label>
+  <button class="btn btn-primary" type="submit">{{ icon('plus', 16) }}{{ t('common.add') }}</button>
+</form>
+{% endif %}
+{% endcall %}
+
+{% if inds %}
+{% call sec('numbers', 'chart-line', t('orgmap.unit.s_numbers'), t('orgmap.unit.s_numbers_sub')) %}
+<ul class="icards">
+  {% for v in inds %}<li><a class="icard" data-status="{{ v.status }}" href="{{ url_for('goals.indicator_detail', id=v.ind.id) }}">
+    <span class="icard__name">{{ v.ind.name }}</span><b class="icard__val num"><bdi dir="ltr">{{ val(v.latest, v.ind.unit_label, v.ind.metric_type) }}</bdi></b>
+    <span class="icard__line"><span class="icard__tg">{{ t('goals.target_value') }} <bdi dir="ltr" class="num">{{ val(v.ind.target_value, v.ind.unit_label, v.ind.metric_type) }}</bdi></span></span>
+    <span class="icard__foot"><span></span>{{ badge(v.status) }}</span></a></li>{% endfor %}
+</ul>
+{% endcall %}
+{% endif %}
+{% endif %}
+{% endblock %}

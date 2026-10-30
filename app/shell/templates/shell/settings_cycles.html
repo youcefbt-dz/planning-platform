@@ -1,0 +1,36 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, field, select %}
+{% set no_subnav = true %}
+{% block title %}{{ t('settings.cycles.title') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('calendar', 22) }}{{ t('settings.cycles.title') }}</h1><p class="sub">{{ t('settings.cycles.sub') }}</p></div></div>
+<div class="layout-side">
+  <div class="box">
+    {% for c in rows %}
+    <div class="box-row {% if c.parent_id %}indent-1{% endif %}">
+      <span class="status-dot" style="background:var(--c-primary-soft);color:var(--c-primary-text)">{{ icon('calendar-event', 13) }}</span>
+      <div class="main"><span class="title">{{ c.name }}</span><div class="meta"><span>{{ d(c.start_date) }} – {{ d(c.end_date) }}</span><span>{{ t('settings.cycles.kind.' ~ c.kind) }}</span></div></div>
+      <div class="side">
+        {% if can('settings.manage') %}
+        <form method="post" action="{{ url_for('shell.cycle_status', cid=c.id) }}" class="row">{{ csrf() }}
+          <select class="select select-sm" name="status" style="width:auto" onchange="this.form.submit()" aria-label="{{ t('common.status') }}">{% for s in ('planned','active','closed') %}<option value="{{ s }}" {% if c.status == s %}selected{% endif %}>{{ t('settings.cycles.status.' ~ s) }}</option>{% endfor %}</select>
+        </form>
+        {% else %}<span class="chip">{{ t('settings.cycles.status.' ~ c.status) }}</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% if can('settings.manage') %}
+  <div class="box"><div class="box-head"><h2>{{ t('settings.cycles.add') }}</h2></div>
+    <form method="post" class="box-body">
+      {{ csrf() }}
+      {{ field(t('settings.cycles.name'), 'name', required=true, placeholder='Q1 2027') }}
+      {{ select(t('settings.cycles.kind_label'), 'kind', topts(('year','quarter','custom'), 'settings.cycles.kind.'), 'quarter') }}
+      {{ select(t('settings.cycles.parent'), 'parent_id', opts(rows|rejectattr('parent_id')|list, 'id', 'name'), blank=t('common.none')) }}
+      {{ field(t('common.start_date'), 'start_date', type='date', required=true) }}
+      {{ field(t('common.end_date'), 'end_date', type='date', required=true) }}
+      <button class="btn btn-primary" type="submit">{{ t('common.add') }}</button>
+    </form></div>
+  {% endif %}
+</div>
+{% endblock %}

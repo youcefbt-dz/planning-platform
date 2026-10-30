@@ -1,0 +1,216 @@
+/* ==========================================================================
+   AUTH — Orbit's sign-in and sign-up experience.
+   The landing's blue field, white wave, yellow rule and dot grid, re-composed
+   as a two-part page: a living orbit that describes the product, and one
+   quiet card for the form. Motion answers focus, typing and submission; the
+   static state (and reduced motion) is complete on its own.
+   ========================================================================== */
+
+body.auth-page{background:var(--c-primary);overflow-x:hidden}
+.auth-experience{min-height:100svh;display:flex;align-items:stretch;background:var(--c-primary)}
+
+/* ---- the blue stage ------------------------------------------------------ */
+.auth-stage{position:relative;flex:1 1 auto;min-width:0;display:flex;flex-direction:column;padding:clamp(28px,4vw,56px) clamp(28px,4.4vw,64px) 0;color:#fff;overflow:hidden;isolation:isolate}
+.auth-stage>*{position:relative;z-index:2}
+.auth-stage::before{content:"";position:absolute;z-index:0;inset-block-start:clamp(22px,4vw,50px);inset-inline-end:clamp(22px,4.4vw,64px);width:186px;height:116px;background-image:radial-gradient(circle,rgba(255,255,255,.42) 2px,transparent 2.4px);background-size:18px 18px;opacity:.55;pointer-events:none}
+
+.auth-stage__brand{display:inline-flex;align-items:center;gap:12px;align-self:flex-start;color:#fff;text-decoration:none;border-radius:18px}
+.auth-stage__brand:hover{text-decoration:none;opacity:.92}
+.auth-stage__plate{display:grid;place-items:center;width:52px;height:52px;border-radius:15px;background:#fff;box-shadow:0 12px 28px rgba(7,17,44,.22);flex:none}
+.auth-stage__plate img{width:42px;height:42px;object-fit:contain}
+.auth-stage__name{font-family:var(--font-heading);font-size:1.75rem;font-weight:700;line-height:1;letter-spacing:-.01em;color:#fff}
+
+.auth-stage__brand,.auth-stage__copy{position:relative;z-index:3}
+.auth-stage__copy{margin-block-start:clamp(22px,4.2vh,54px);max-width:34rem}
+.auth-kicker{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:.875rem;font-weight:600;color:rgba(255,255,255,.8)}
+.auth-kicker i{display:block;width:28px;height:4px;border-radius:4px;background:var(--c-accent);box-shadow:0 0 14px rgba(253,212,70,.5);flex:none}
+.auth-stage h2{color:#fff;font-size:clamp(2rem,3.2vw,3rem);line-height:1.14;letter-spacing:-.015em;margin:0 0 14px;text-wrap:balance}
+.auth-stage__text{margin:0;max-width:31em;font-size:1.0625rem;line-height:1.75;color:rgba(255,255,255,.82)}
+
+/* ---- the journey: a golden road climbing a living landscape -------------- */
+.auth-stage>.journey{position:absolute;z-index:1;inset-inline:-4%;inset-block-end:0;width:auto;aspect-ratio:1000/640;pointer-events:none;overflow:hidden}
+.journey__art{position:absolute;inset:0;display:block;width:100%;height:100%}
+
+.stars circle{fill:#fff;opacity:.18;animation:twinkle 4.8s var(--d,0s) ease-in-out infinite}
+
+.dune{animation:dune-rise 1.2s cubic-bezier(.2,.7,.2,1) both}
+.dune--back{animation-delay:.05s}
+.dune--mid{animation-delay:.16s}
+.dune--near{animation-delay:.28s}
+.dune--fore{animation-delay:.4s}
+.dune__drift{animation:dune-drift 34s ease-in-out infinite alternate}
+.dune--mid .dune__drift{animation-duration:28s;animation-direction:alternate-reverse}
+.dune--near .dune__drift{animation-duration:31s;animation-direction:alternate-reverse}
+.dune--fore .dune__drift{animation-duration:24s}
+.dune__fill{stroke:none}
+.dune__rim{fill:none;stroke:rgba(255,255,255,.22);stroke-width:1.2;vector-effect:non-scaling-stroke}
+.dune--back .dune__rim{stroke:rgba(253,212,70,.32)}
+.dune--mid .dune__rim{stroke:rgba(255,255,255,.14)}
+.dune--fore .dune__rim{stroke:rgba(255,255,255,.12)}
+.dune__line{fill:none;stroke:rgba(255,255,255,.13);stroke-width:1;vector-effect:non-scaling-stroke}
+
+.journey__case{fill:none;stroke:rgba(7,12,38,.4);stroke-width:9;stroke-linecap:round}
+.journey__ghost{fill:none;stroke:rgba(253,212,70,.62);stroke-width:2.6;stroke-linecap:round;stroke-dasharray:.9 1.5}
+.journey__gold{fill:none;stroke:var(--c-accent);stroke-width:5;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;filter:drop-shadow(0 0 7px rgba(253,212,70,.65));transition:stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1)}
+.journey__trail{fill:none;stroke:rgba(253,212,70,.55);stroke-width:2.4;stroke-linecap:round;opacity:0;transition:opacity .5s}
+
+.station{position:absolute;left:calc(var(--x) * 1%);top:calc(var(--y) * 1%);z-index:4;width:0;height:0;opacity:0;animation:station-in .55s cubic-bezier(.2,.8,.2,1) both}
+.station:nth-of-type(1){animation-delay:.95s}
+.station:nth-of-type(2){animation-delay:1.05s}
+.station:nth-of-type(3){animation-delay:1.15s}
+.station:nth-of-type(4){animation-delay:1.25s}
+.station__mark{position:absolute;left:0;top:0;width:12px;height:12px;background:rgba(8,14,40,.55);border:2px solid var(--c-accent);transform:translate(-50%,-50%) rotate(45deg);box-shadow:0 0 0 4px rgba(253,212,70,.09),0 0 16px rgba(253,212,70,.4);transition:transform .3s,box-shadow .3s,background .3s}
+.station__meta{position:absolute;left:0;bottom:18px;display:flex;flex-direction:column;align-items:center;gap:1px;width:max-content;transform:translateX(-50%);text-align:center;white-space:nowrap;text-shadow:0 2px 14px rgba(6,14,40,.45)}
+.station--last .station__meta{transform:translateX(-84%)}
+.station__idx{font-size:.66rem;font-weight:700;letter-spacing:.18em;line-height:1.2;color:var(--c-accent)}
+.station__name{font-size:1rem;font-weight:700;line-height:1.4;color:rgba(255,255,255,.94)}
+.station__pulse{position:absolute;left:0;top:0;width:30px;height:30px;border:1px solid rgba(253,212,70,.8);transform:translate(-50%,-50%) rotate(45deg) scale(.4);opacity:0}
+.station.is-live .station__mark{transform:translate(-50%,-50%) rotate(45deg) scale(1.22);box-shadow:0 0 0 6px rgba(253,212,70,.14),0 0 24px rgba(253,212,70,.75)}
+.station.is-live .station__name{color:#fff}
+.station.is-live .station__pulse{animation:station-pulse 1.2s cubic-bezier(.2,.7,.2,1)}
+.station.is-done .station__mark{background:var(--c-accent);box-shadow:0 0 0 4px rgba(253,212,70,.18),0 0 22px rgba(253,212,70,.7)}
+.station.is-done .station__name{color:#fff}
+
+.comet{position:absolute;left:0;top:0;z-index:3;opacity:0;transition:opacity .5s}
+.comet i{position:absolute;left:0;top:0;width:12px;height:12px;border-radius:50%;background:var(--c-accent);box-shadow:0 0 0 4px rgba(253,212,70,.12),0 0 22px rgba(253,212,70,.75);transform:translate(-50%,-50%);will-change:transform,opacity}
+.auth-experience.is-ready .comet{opacity:1}
+.auth-experience.is-ready .journey__trail{opacity:1}
+
+.motes{position:absolute;inset:0;pointer-events:none}
+.motes i{position:absolute;left:var(--x);bottom:5%;width:var(--s);height:var(--s);border-radius:50%;background:rgba(255,255,255,.75);opacity:0;animation:mote-rise var(--t) var(--d) linear infinite;will-change:transform,opacity}
+
+/* ---- the lavender form panel -------------------------------------------- */
+.auth-panel{position:relative;z-index:3;flex:0 0 clamp(420px,42vw,580px);display:flex;flex-direction:column;padding:clamp(20px,3vw,40px) clamp(20px,3vw,44px);background:var(--c-primary-softer);overflow:hidden}
+.auth-panel::before{content:"";position:absolute;z-index:0;inset-block-end:22px;inset-inline-start:20px;width:220px;height:150px;background-image:radial-gradient(circle,color-mix(in srgb,var(--c-primary) 22%,transparent) 2px,transparent 2.5px);background-size:16px 16px;opacity:.48;pointer-events:none}
+.auth-panel>*{position:relative;z-index:1}
+.auth-panel__top{display:flex;justify-content:flex-end;min-height:32px}
+.auth-back{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:var(--r-pill);color:var(--c-muted);font-size:.84rem;font-weight:600;transition:background .18s,color .18s}
+.auth-back:hover{color:var(--c-ink);background:#fff;text-decoration:none}
+.auth-panel__body{flex:1;display:grid;place-items:center;padding-block:18px 10px}
+.auth-panel__foot{padding-block-start:10px;text-align:center;font-size:.75rem;color:var(--c-muted)}
+
+/* ---- the card ------------------------------------------------------------ */
+.auth-card{width:100%;max-width:470px;background:#fff;border:1px solid color-mix(in srgb,var(--brand-ink) 7%,#fff);border-radius:26px;padding:clamp(24px,3vw,38px);box-shadow:0 30px 80px color-mix(in srgb,var(--brand-ink) 18%,transparent),0 2px 6px color-mix(in srgb,var(--brand-ink) 6%,transparent)}
+.auth-card__head h1{font-size:1.7rem;letter-spacing:-.01em;margin:0 0 7px}
+.auth-card__head p{margin:0 0 24px;color:var(--c-body);font-size:.95rem;line-height:1.65}
+.auth-card .flashes{margin-block-end:16px}
+.auth-card .flash{padding:8px 12px;font-size:.8rem}
+
+/* fields */
+.auth-form{margin:0}
+.auth-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px}
+.auth-field{margin-block-end:15px}
+.auth-field__label{display:flex;align-items:center;gap:3px;margin-block-end:7px;font-size:.875rem;font-weight:600;color:var(--c-ink)}
+.auth-req{color:var(--c-primary-text);font-weight:700}
+.auth-control{position:relative;display:flex;align-items:center;gap:8px;padding:5px;border:1px solid var(--c-line-strong);border-radius:14px;background:#fff;transition:border-color .18s,box-shadow .18s,background .18s}
+.auth-control:hover{border-color:color-mix(in srgb,var(--brand-ink) 30%,#fff)}
+.auth-control:focus-within{border-color:var(--c-primary);box-shadow:0 0 0 4px color-mix(in srgb,var(--c-primary) 18%,transparent)}
+.auth-control__icon{position:relative;display:grid;place-items:center;width:40px;height:40px;border-radius:11px;background:var(--c-primary-softer);color:var(--c-primary-text);flex:none;transition:background .28s,color .28s}
+.auth-control__ico{grid-area:1/1;display:grid;place-items:center;transition:opacity .22s,transform .3s cubic-bezier(.2,.9,.3,1.2)}
+.auth-control__ico--done{opacity:0;transform:scale(.45) rotate(-18deg)}
+.auth-control:focus-within .auth-control__icon{background:var(--c-primary);color:#fff}
+.auth-field.is-complete .auth-control__icon{background:var(--c-accent);color:var(--c-ink)}
+.auth-field.is-complete .auth-control__ico--base{opacity:0;transform:scale(.45) rotate(18deg)}
+.auth-field.is-complete .auth-control__ico--done{opacity:1;transform:none}
+
+.auth-card .auth-input{flex:1;min-width:0;min-height:40px;padding:6px;border:0!important;border-radius:8px;background:transparent!important;box-shadow:none!important;color:var(--c-ink);font-size:.95rem}
+.auth-card .auth-input:focus{outline:0;box-shadow:none!important}
+.auth-hint{margin:6px 5px 0;font-size:.75rem;line-height:1.5;color:var(--c-muted)}
+
+.auth-eye{position:relative;display:grid;place-items:center;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--c-muted);cursor:pointer;flex:none;transition:background .18s,color .18s}
+.auth-eye:hover{background:var(--c-primary-softer);color:var(--c-primary-text)}
+.auth-eye.is-on{color:var(--c-primary-text);background:var(--c-primary-softer)}
+.auth-eye.is-on .auth-eye__slash{transform:rotate(45deg) scaleX(1)}
+.auth-eye__ico{display:grid;place-items:center}
+.auth-eye__slash{position:absolute;width:20px;height:2px;border-radius:2px;background:currentColor;transform:rotate(45deg) scaleX(0);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+
+.auth-submit{min-height:52px;margin-block-start:8px;font-size:1rem;box-shadow:0 14px 30px color-mix(in srgb,var(--c-primary) 28%,transparent);transition:transform .18s,background-color .18s,border-color .18s,box-shadow .18s}
+.auth-submit:hover{transform:translateY(-1px);box-shadow:0 18px 34px color-mix(in srgb,var(--c-primary) 34%,transparent)}
+.auth-submit:active{transform:none}
+.auth-submit[aria-busy=true]{cursor:progress;transform:none}
+.auth-submit[aria-busy=true] .auth-submit__label{opacity:.82}
+.auth-submit__spin{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.42);border-block-start-color:#fff;border-radius:50%;animation:auth-spin .75s linear infinite;flex:none}
+.auth-submit[aria-busy=true] .auth-submit__spin{display:block}
+.auth-demo{display:flex;align-items:center;justify-content:center;gap:8px;margin-block-start:12px;padding:10px 12px;border-radius:12px;background:var(--c-primary-softer);color:var(--c-primary-text);font-size:.88rem;font-weight:600;transition:background .18s,color .18s}
+.auth-demo:hover{background:var(--c-primary-soft);text-decoration:none}
+.auth-switch{margin:20px 0 0;padding-block-start:18px;border-block-start:1px solid var(--c-line);text-align:center;font-size:.9rem;color:var(--c-body)}
+.auth-switch a{font-weight:700}
+.auth-note{margin:0 0 16px;padding:12px 14px;border-radius:12px;background:var(--c-primary-softer);color:var(--c-primary-text);font-size:.9rem;text-align:center}
+
+/* ---- motion -------------------------------------------------------------- */
+@keyframes dune-rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@keyframes dune-drift{from{transform:translateX(-14px)}to{transform:translateX(16px)}}
+@keyframes twinkle{0%,100%{opacity:.12}50%{opacity:.85}}
+@keyframes station-in{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@keyframes station-pulse{0%{opacity:.8;transform:translate(-50%,-50%) rotate(45deg) scale(.4)}100%{opacity:0;transform:translate(-50%,-50%) rotate(45deg) scale(1.7)}}
+@keyframes mote-rise{0%{opacity:0;transform:translate3d(0,0,0)}12%{opacity:.5}70%{opacity:.22}100%{opacity:0;transform:translate3d(16px,-240px,0)}}
+@keyframes auth-spin{to{transform:rotate(360deg)}}
+
+.auth-experience.is-engaged .journey__gold{filter:drop-shadow(0 0 11px rgba(253,212,70,.85))}
+.auth-experience.is-engaged .journey__ghost{stroke:rgba(253,212,70,.42)}
+.auth-experience.is-engaged .dune--back .dune__rim{stroke:rgba(253,212,70,.5)}
+.auth-experience.is-launching .journey__gold{stroke-width:6.5;filter:drop-shadow(0 0 16px rgba(253,212,70,.95))}
+.auth-experience.is-launching .journey__trail{stroke:rgba(253,212,70,.8);stroke-width:3.4}
+.auth-experience.is-launching .comet i{box-shadow:0 0 0 6px rgba(253,212,70,.16),0 0 30px rgba(253,212,70,.95)}
+.auth-experience.is-launching .station__name{color:#fff}
+.auth-experience.is-launching .auth-submit{box-shadow:0 0 0 5px color-mix(in srgb,var(--c-primary) 16%,transparent)}
+
+/* ---- responsive ---------------------------------------------------------- */
+@media (max-width:1180px){
+  .auth-panel{flex-basis:clamp(400px,43vw,520px)}
+  .auth-stage h2{font-size:clamp(1.9rem,3.1vw,2.6rem)}
+}
+@media (max-width:980px){
+  .auth-experience{display:flex;flex-direction:column;min-height:100svh}
+  .auth-stage{display:block;min-height:480px;padding:24px 24px 24px;overflow:hidden}
+  .auth-stage>.journey{inset-inline:0;height:340px;aspect-ratio:auto;mask-image:linear-gradient(to bottom,transparent 0,#000 16%)}
+  .journey__art{transform:scaleX(-1)}
+  .station{display:none}
+  .dune__line{display:none}
+  .motes{opacity:.55}
+  .auth-stage__copy{margin-block-start:26px;max-width:min(72%,440px)}
+  .auth-stage h2{font-size:clamp(1.8rem,4.4vw,2.4rem)}
+  .auth-stage__text{font-size:.95rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .auth-panel{flex:1 0 auto;margin-block-start:-38px;padding:18px 18px 28px;border-start-start-radius:34px;border-start-end-radius:34px;min-height:0}
+  .auth-panel__body{padding-block:14px 8px}
+  .auth-card{max-width:540px;box-shadow:0 24px 64px color-mix(in srgb,var(--brand-ink) 18%,transparent)}
+}
+@media (max-width:560px){
+  .auth-grid{grid-template-columns:minmax(0,1fr);gap:0}
+  .auth-stage{min-height:470px;padding:18px 18px 18px}
+  .auth-stage>.journey{height:280px;mask-image:linear-gradient(to bottom,transparent 0,#000 14%)}
+  .auth-stage__plate{width:44px;height:44px;border-radius:13px}
+  .auth-stage__plate img{width:36px;height:36px}
+  .auth-stage__name{font-size:1.5rem}
+  .auth-stage__copy{margin-block-start:20px;max-width:80%}
+  .auth-stage h2{font-size:clamp(1.6rem,7.4vw,2rem);margin-block-end:10px}
+  .auth-stage__text{font-size:.87rem;-webkit-line-clamp:2}
+  .auth-kicker{font-size:.8rem;margin-block-end:12px}
+  .auth-panel{margin-block-start:-32px;padding:14px 12px 24px;border-start-start-radius:28px;border-start-end-radius:28px}
+  .auth-panel__top{padding-inline:6px}
+  .auth-card{padding:24px 20px;border-radius:22px}
+  .auth-card__head h1{font-size:1.5rem}
+  .auth-card__head p{margin-block-end:20px}
+  .auth-submit{min-height:50px}
+  .auth-panel__foot{font-size:.7rem}
+}
+@media (min-width:981px) and (max-height:760px){
+  .auth-stage{padding-block-start:30px}
+  .auth-stage__copy{margin-block-start:18px}
+  .auth-stage h2{font-size:clamp(1.8rem,2.6vw,2.3rem)}
+  .auth-stage__text{font-size:.98rem}
+  .auth-stage>.journey{inset-inline:-2%}
+  .auth-card{padding:28px 32px}
+  .auth-field{margin-block-end:12px}
+  .auth-card__head p{margin-block-end:18px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .dune,.dune__drift,.station,.motes i,.stars circle{animation:none!important}
+  .station{opacity:1}
+  .stars circle{opacity:.5}
+  .journey__gold{transition:none}
+  .journey__trail{display:none}
+  .dune__fill{filter:none!important}
+  .auth-eye__slash,.auth-submit,.auth-control,.auth-control__ico{transition:none!important}
+}

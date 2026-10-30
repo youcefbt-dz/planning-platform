@@ -1,0 +1,48 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, empty %}
+{% block title %}{{ t('data.module') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css') }}">{% endblock %}
+{% block content %}
+{% set ready = datasets|selectattr('status', 'equalto', 'ready')|list %}
+{% set drafts = datasets|selectattr('status', 'equalto', 'draft')|list %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ icon('table', 22) }}{{ t('data.module') }}</h1></div>
+  {% if datasets %}
+  <dl class="hstats">
+    <div><dt>{{ t('data.files') }}</dt><dd class="num">{{ n(datasets|length) }}</dd></div>
+    <div><dt>{{ t('data.rv.file.stat_series') }}</dt><dd class="num">{{ n(series|selectattr('dimension', 'none')|list|length) }}</dd></div>
+    {% if drafts %}<div data-s="at_risk"><dt>{{ t('data.status.draft') }}</dt><dd class="num">{{ n(drafts|length) }}</dd></div>{% endif %}
+  </dl>
+  {% endif %}
+</div>
+
+{% if drafts %}
+<section class="rc rc--ask" style="margin-block-end:var(--sp-5)">
+  <header class="rc__head"><h2><span class="rc__ic">{{ icon('help-circle', 20) }}</span>{{ t('data.status.draft') }}</h2></header>
+  <div class="rc__body">
+    {% for ds in drafts %}<a class="golink" href="{{ url_for('data.map', id=ds.id) }}">{{ icon('table', 18) }}<span>{{ ds.name }}<small><bdi dir="ltr">{{ ds.filename }}</bdi> · {{ d(ds.created_at.date()) }}</small></span></a>{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% include "data/_upload.html" %}
+
+{% if ready %}
+<section class="rc" style="margin-block-start:var(--sp-5)">
+  <header class="rc__head"><h2><span class="rc__ic">{{ icon('table', 20) }}</span>{{ t('data.files') }}<span class="count">{{ n(ready|length) }}</span></h2></header>
+  <div class="rc__body">
+    <div class="xgrid">
+      {% for ds in ready %}{% set mains = ds.series|selectattr('dimension', 'none')|list %}{% set p0 = mains[0].pairs() if mains else [] %}
+      <a class="xc" href="{{ url_for('data.detail', id=ds.id) }}">
+        <span class="rc__ic" style="width:48px;height:48px">{{ icon('table', 22) }}</span>
+        <h3 class="xc__name" dir="auto">{{ ds.name }}</h3>
+        <div class="xc__foot" style="border:0;padding:0"><span>{{ tn('data.series_n', mains|length) }}</span>{% if p0 %}<span>· {{ d(p0[0][0], 'month') }} → {{ d(p0[-1][0], 'month') }}</span>{% endif %}</div>
+        <div class="xc__foot"><bdi dir="ltr">{{ ds.filename }}</bdi><span class="chip" data-status="on_track">{{ icon('circle-check', 12) }}{{ t('data.status.ready') }}</span></div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/data.js') }}" defer></script>{% endblock %}

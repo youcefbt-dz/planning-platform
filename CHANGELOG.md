@@ -1,0 +1,137 @@
+## 2.14.0 — PlanWise
+- الاسم صار **PlanWise** بحروف لاتينية في كل مكان (لا يُترجم ولا يُعرَّب)، والشعار الجديد بنسختين: أزرق للخلفيات الفاتحة وأبيض للزرقاء (`app/static/brand/`).
+- تركيبة واحدة للشعار والاسم (`css/brand.css` + `logo_html`) بأحجام مدروسة لكل موضع: الشريط العلوي، الصفحة الرئيسية، الدخول والتسجيل، الإعداد الأول، التقارير المطبوعة، والتذييل.
+- خطوة النموذج في الإعداد الأول: بطاقة لكل نموذج بشعار صانعه (Ollama محلي، Claude، Groq، Grok) وحالته «جاهز / غير مُعدّ».
+- إصلاح انكماش صفحتي «هدف جديد» و«تفاصيل الهدف»: صنف `.stack` في data.css (رسمة رفع الملف) كان يصطدم بصنف التخطيط العام، فصار `.fstack`.
+- أُعيد التقاط صور المعاينة في الصفحة الرئيسية بالشعار الجديد.
+
+## Dashboard rebuild
+- لوحة البيانات: «ما يستحق الانتباه» (نتائج محسوبة ومرتبة)، رسم رئيسي تفاعلي (12/24 شهرًا، تلميح عند المرور، الهدف المرتبط)، جسر الأسباب بدل الأعمدة، فروع مصغّرة على مقياس واحد، موسمية بلا أرقام.
+- صندوق الأسئلة: حتى ثلاثة رسوم للطلب الواحد، وسؤال توضيحي عندما لا يتضح المؤشر؛ تعليمات النموذج مع أمثلة، وقواعد احتياطية أقوى.
+
+# Changelog
+
+## 2.13.1 — QR for invitations
+- رابط الدعوة له رمز QR (SVG) يُعرض بزر «رمز QR» ويمكن تنزيله؛ لا يجلبه إلا من يملك إدارة الأعضاء. مكتبة جديدة: `segno` (في requirements.txt).
+
+## 2.13.0 — who may touch which goal
+- صلاحيات القسم (`app/core/scope.py`): المالك والمدير يعدّلان كل شيء؛ رئيس القسم يضيف أهداف قسمه والأقسام تحته ويعدّلها فقط، ولا يعدّل أهداف الأقسام الأخرى ولا أهداف المؤسسة؛ العضو يحدّث ما أُسند إليه (هدف أو نتيجة رئيسية يملكها)؛ المطّلع للقراءة فقط.
+- القفل في الخادم لا في الأزرار فقط: التعديل والحذف والنتائج الرئيسية والعوامل والقرارات والتحديثات والإنشاء (النموذج والمُنشئ). والأزرار تختفي لمن لا يملكها.
+- نموذج الهدف يعرض للرئيس أقسامه فقط، ولا يستطيع نقل هدفه خارج نطاقه.
+- شرح الأدوار في إعدادات الفريق يشمل «رئيس قسم».
+
+## 2.12.0 — departments have heads and pages
+- لكل قسم رئيس (`org_unit.head_id`، ترحيل `a7c3d19e5b20`). تعيينه من الإعدادات ← الأقسام ينقل الرئيس إلى قسمه، وإزالة العضو أو نقله يُفرغ المقعد.
+- الإعدادات ← الأقسام: بطاقات بدل الشجرة النصية (الرئيس، عدد الأعضاء، فتح الصفحة).
+- الإعدادات ← الفريق: فلترة بالقسم، وحفظ فوري عند تغيير القسم أو الدور، ووسم «رئيس القسم»، واختيار القسم عند إضافة عضو.
+- المخطط ← الأقسام: شبكة بطاقات لكل قسم (حلقة التقدّم، حالة الأهداف، الرئيس، عدد الأفراد) وصفحة لكل قسم: الرئيس والفريق، حال القسم، ما يحتاج قرارًا، الأهداف، أرقام القسم.
+- العلاقات بين الأقسام تُستنتج من اعتماد هدف على هدف (`Link.kind = depends_on`) ويمكن إضافتها من صفحة القسم.
+- ملفات جديدة: `orgmap/units.py`، `orgmap/templates/orgmap/{units,unit}.html`، `css/units.css`، `tests/test_units.py`.
+
+## 2.11.0 — goals, rebuilt
+- لكل تبويب غرض واحد: الأهداف (ما نريد بلوغه) ← المتابعة (ما يحتاج قرارًا) ← المواءمة (من يخدم من) ← المؤشرات.
+- الأهداف: بطاقات حالة تُصفّي القائمة، وبطاقة لكل هدف فيها حلقة تقدّم، وأهم نتائجه الرئيسية، والمسؤول، والفرق عن الإيقاع المتوقع. الترتيب الافتراضي الأكثر تأخرًا أولًا.
+- المتابعة (كانت «صحة الأهداف»): النتائج الرئيسية مجمّعة حسب الحالة: خارج المسار ثم معرّض للخطر ثم على المسار، وكل نتيجة بصف واحد: الآن، المستهدف، المتوقع عند النهاية.
+- المواءمة: أُصلح خلل جعل الخريطة فارغة عند اختيار دورة فرعية؛ صارت مسارًا لكل هدف رئيسي تحته ما يخدمه.
+- المؤشرات: بطاقات (آخر قيمة، التغيّر، الهدف، خط الاتجاه، المسؤول).
+- مكوّنان مشتركان: `sec` و`ring` في components/ui.html.
+
+## 2.10.0 — the data section, in order
+- ترتيب تبويبات البيانات يتبع الرحلة: الملفات (الصفحة الرئيسية للقسم) ← اللوحة ← الأشكال البيانية ← اسأل بياناتك.
+- اللوحة بأقسام بعناوين واضحة (اختر المؤشر، ما يستحق انتباهك، الاتجاه، ما الذي حرّكه، الفروع، الموسمية، الخطوة التالية) مع شريط روابط للقفز بينها.
+- صفحة جديدة «الأشكال البيانية»: اختر مؤشرًا، ثم شكلًا من 14، ثم الخيارات (فرع، مدة، تجميع، مؤشر ثانٍ).
+- صفحة جديدة «اسأل بياناتك»: السؤال والأمثلة والجواب، وبطاقة مستقلة توضّح من يقرأ السؤال (نموذج أم قواعد مدمجة) وموافقة المؤسسة. روابط `dashboard?q=` القديمة تُحوَّل إليها.
+- أيقونات جديدة: chart-dots, sparkles, list-numbers, arrows-diff, arrow-narrow-left, message-question.
+
+## 2.9.0 — the data journey, rebuilt
+- بقيت بطاقات الرفع وحركتها كما هي (2.8.1). كل ما بعدها أُعيد تصميمه.
+- مراجعة الملف: خطوات (رفع ← مراجعة ← اعتماد) في الرأس، «ما فهمناه» بأرقام في دوائر، أسئلة بأزرار اختيار واضحة، وجدول أعمدة يُعدَّل مباشرة (المعنى، الوحدة، طريقة جمع الشهر، معنى التحسّن) ويُحفظ فورًا. الخلاصة وزر الاعتماد في عمود جانبي ثابت. المعاينة والجودة والقراءة في أماكن ثابتة.
+- صفحة الملف: بطاقات مؤشرات (آخر قيمة، التغيّر عن الفترة السابقة، خط صغير، عدد الفروع)، وتحديث الملف وسجل النسخ في العمود الجانبي.
+- صفحة المؤشر: أرقام الرأس (آخر قيمة، التغيّر، المتوسط، الأعلى/الأدنى، الفترات)، الاتجاه، مقارنة الفروع، الأهداف المرتبطة، وكل القيم.
+- قائمة الملفات: بطاقات ملفات بدل جدول السلاسل الطويل؛ الملفات المنتظرة الاعتماد تظهر أولًا.
+- ملفات جديدة: `css/dataflow.css`، `js/review.js`، `templates/data/_macros.html`.
+
+
+## 2.8.1 — the intake cards
+- صفحة رفع البيانات: بدل مربع الإسقاط الواحد، ثلاث بطاقات (إكسل، CSV، نموذج جاهز). الضغط على بطاقة يحوّل خلفيتها إلى الأزرق ويشغّل حركة تشرح نوع الملف: الخلايا تمتلئ ويمرّ تحديد أصفر على الأعمدة، أو الفواصل تتحوّل إلى خطوط أعمدة، أو أوراق النموذج تتفتح مروحةً.
+- تنفتح تحت البطاقة منطقة إسقاط بحدود متحرّكة؛ ملف من النوع الآخر يبدّل البطاقة تلقائيًا، ونوع غير مدعوم أو ملف أكبر من الحد يُعرض له خطأ واضح.
+- الإسقاط يعمل على البطاقة كلها؛ دعم الجوال و`prefers-reduced-motion`. لا تغيير في الخادم: النموذج نفسه ومسارات الرفع نفسها.
+
+## 2.8.0 — goals pages rebuilt for clarity
+- قائمة الأهداف: جدول بأعمدة (الهدف، المسؤول، التقدّم مع علامة الوتيرة، الفجوة بالنقاط، الحالة)، تبويبات حالة بالأعداد، عرض متدرّج أو «الأكثر تأخرًا»، وأرقام الملخّص داخل رأس الصفحة بدل بطاقة مكرّرة.
+- تفاصيل الهدف: أرقام التقدّم والمتوقع والفجوة والأيام المتبقية في الرأس، النتائج الرئيسية أولًا، مسار كل نتيجة قابل للطي، والعمود الجانبي ثابت (لا فراغ).
+- رؤوس الصفحات أصغر وأوضح.
+
+## 2.7.0 — the landing page's identity inside the app
+- حُذفت لغة «المدار» (حلقات وأقمار) التي ابتُكرت خارج هوية الموقع.
+- كل صفحة داخلية تبدأ ببطاقة رأس زرقاء بموجة وشكل عضوي وشبكة نقاط (من صفحة الهبوط)، وأزرارها كبسولات بيضاء.
+- المحتوى على خلفية لافندر ببطاقات بيضاء (24px) وأيقونات في دوائر لافندر؛ الأرقام في دوائر ملوّنة؛ لوحة العدّاد بالأزرق نفسه؛ حالات الفراغ بدائرة لافندر كبيرة.
+- `orbit.css` أصبح `cards.css`.
+
+## 2.6.0 — Orbit components
+- «نظرة عامة» أُعيد تصميمها من الداخل: عدّاد بمدارين (الوقت المنقضي والتقدّم) مع حكم محسوب («تتأخرون عن الوتيرة بـ17 نقطة»)، وأرقام الحالات بحافة لونية، ومسارات الأهداف بعلامة الوتيرة وفارق النقاط، وبطاقات «تحتاج انتباهًا» بحافة حالة، والمؤشرات كمقاييس «رصاصة» مع منحنى صغير، والبيانات كبطاقات بمنحنى مملوء، والنشاط بخط مدارات منقّط.
+- تخطيط الصفحة: عناصر كاملة العرض ثم عمودان مستقلان (بلا فراغات).
+- ملف `orbit.css` يجمع لغة المكوّنات؛ وأُعيد تنسيق الأجزاء المشتركة (شريط التقدّم، الجداول، الصفوف، حالات الفراغ بمدار وقمر) فتنعكس على البيانات والأهداف وبقية الصفحات.
+
+## 2.5.0 — the app's own identity
+- إطار التطبيق بهوية «أوربت»: شريط ثانٍ مسطّح بلا تموّج، عليه مدارات (توقيع الاسم) وأقمار صغيرة أحدها بالأصفر، والتبويبات الفرعية على شكل شريط أبيض عائم يتوسّط حافة الأزرق.
+- لغة بطاقات واحدة لكل المنتج: زوايا 20px، رأس أبيض، فتيل لافندر للأرقام، ظلّ مائل للأزرق؛ وتحت كل عنوان صفحة خطّ أصفر قصير (من تسطير القائمة).
+- مؤشر «التفكير» للذكاء الاصطناعي: شعار الأعمدة يبني نفسه وخطواته تُشطَب تباعًا (يقرأ ← يطابق ← يرسم) بدل دائرة دوّارة؛ ويظهر فورًا عند إرسال سؤال لوحة البيانات، ويحلّ محل التحميل في أزرار الذكاء الاصطناعي.
+- إصلاح: صفحتا 403/404 كانت قائمتهما بيضاء على خلفية فاتحة.
+
+## 2.4.0 — draw anything
+- صندوق الأسئلة صار يرسم ما يطلبه المستخدم بأي صياغة: دائرة نسبية، ترتيب الفروع، أعمدة (شهرية/فصلية/سنوية)، تركيبة مكدّسة، نمو عن العام السابق، تراكمي، علاقة بين مؤشرين (انتشار + ارتباط)، جدول، بطاقة رقم، إضافة إلى الخطوط والجسر والخريطة الحرارية والمقارنة.
+- عند طلب ما لا تدعمه البيانات (مثل تقسيم حسب الفرع بلا فروع) يُرسم أقرب شكل ويُقال السبب بصراحة؛ وإن كانت البيانات قصيرة تنخفض الدقة (سنوي ← فصلي ← شهري) بدل ألّا يُرسم شيء.
+- إصلاح: علامة «؟» الملتصقة بالكلمة كانت تُعدّ كلمة مفقودة.
+
+## 2.3.1 — fixes
+- النموذج السحابي: تُقبل إجاباته بأسماء المؤشرات وأنواع الرسوم المرادفة (كان «unknown chart kind or measure» يُسقط الإجابة)؛ وطلب الموافقة صار زرًّا في أعلى لوحة البيانات.
+
+## 2.2.0 — the journey map
+- مخطط المؤسسة صار «رحلة» ترسم نفسها: الشعار والاسم أولًا، ثم الرؤية، ثم خط مترو لكل هدف ومحطة لكل نتيجة رئيسية ومبادلات للبيانات المشتركة؛ مشغّل (تشغيل/إيقاف/السابق/التالي/إعادة/اعرض كل شيء) وشريط أرقام مميزة.
+- الذكاء الاصطناعي يؤلف «مواصفة» (العائلة، ترتيب القصة، التركيز) والكود يتحقق منها ويرسم؛ عائلتان: المترو والشجرة؛ تنزيل SVG مستقل.
+- مهمة جديدة `draw_map` (مع احتياطي بقواعد)؛ لوحة البيانات: انظر الإصدار السابق.
+
+## 2.1.0 — better AI wording, less typing
+
+**AI**
+- New `app/ai/voice.py`: shared Arabic style guide, glossary vocabulary and bans, company context, and a style check on every model answer.
+- All prompts rewritten with a worked Arabic example; one guided retry when a check rejects an answer.
+- Offline wording rewritten: names the series, from/to values, distinct reasons, concrete advice, correct Arabic plurals; reality-check pace figures are consistent with the verdict.
+- New tasks `draft_goal` and `draft_direction`, with an offline template library (`app/ai/library.py`).
+
+**Less writing**
+- Goal form: "start from an idea" box; secondary fields folded under "more options".
+- Composer: outside-factor chips. Profile: vision/mission/values options. Update boxes: quick replies.
+- Data: column notes folded with chips; the file note no longer asks to explain every column.
+
+**Data**
+- The "Columns" and "File preview" tabs are one section: the table (with its sheet tabs) on top, the column cards under it; opening a card outlines its column in the table.
+- Excel files with several sheets: every sheet that holds a table becomes its own dataset (own columns, quality check and series), tied by `meta.group`. A notes sheet is skipped and can be added with "+". Confirming a sheet moves on to the next one. A confirmed dataset can no longer be overwritten by switching sheet.
+
+**Tests** 153 passing (16 new). Live calls to a real model are still untested from the build sandbox.
+
+## 1.1.0
+
+**Modules**
+- Strategy and Initiatives are switched off (`config/modules.yaml`); the code stays and can be re-enabled.
+
+**Data**
+- Column understanding: per-column review, and a quality panel (gaps, running totals, jumps, partial last period) with decisions you confirm before the file is used.
+- Update a file with a newer version without restarting; see what changed (new / revised / removed periods); linked goals refresh.
+- Goal levels from history: conservative / ambitious / stretch.
+
+**Goals**
+- Goal quality coach (rules live, AI on request), "why it matters", committed vs aspirational.
+- Key result types: increase, decrease, stay above, stay below, done/not done, milestones.
+- Suggest key results from your own uploaded data, with one-click levels.
+- Goal health screen: where each key result is, where it is expected to end (range), whether on track; auto-updates from the latest upload.
+- Outside factors with numbers and certainty, gap coverage, and a justification of the target (AI-drafted on request).
+
+**AI**
+- New tasks: review_goal, suggest_krs, draft_justification, summarize_health (all with offline fallback and a number guard).
+- Providers: Groq, xAI, Anthropic, any OpenAI-compatible (local) endpoint. Keys only from environment variables.
+
+**Known gaps**
+- Factors/justification are not yet printed in the progress report.
+- Live AI calls were not tested from the build sandbox.

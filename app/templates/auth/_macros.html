@@ -1,0 +1,34 @@
+{# Auth-only form controls. The shared `field` macro stays untouched, so the app forms keep their compact look. #}
+{% macro auth_field(label, name, value='', type='text', ico='user', required=false, hint='', autocomplete='', minlength=none, cls='') -%}
+<div class="auth-field {{ cls }}" data-auth-field>
+  <label class="auth-field__label" for="f-{{ name }}">{{ label }}{% if required %}<span class="auth-req" aria-hidden="true">*</span>{% endif %}</label>
+  <div class="auth-control">
+    <span class="auth-control__icon" aria-hidden="true">
+      <span class="auth-control__ico auth-control__ico--base">{{ icon(ico, 18) }}</span>
+      <span class="auth-control__ico auth-control__ico--done">{{ icon('check', 16) }}</span>
+    </span>
+    <input class="input auth-input" id="f-{{ name }}" name="{{ name }}" type="{{ type }}"
+           value="{{ value if value is not none else '' }}"
+           {% if required %}required{% endif %}
+           {% if minlength %}minlength="{{ minlength }}"{% endif %}
+           {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+           {% if hint %}aria-describedby="h-{{ name }}"{% endif %}
+           {% if type in ('email', 'password') %}spellcheck="false"{% endif %}>
+    {% if type == 'password' %}
+    <button class="auth-eye" type="button" data-auth-eye aria-controls="f-{{ name }}" aria-pressed="false"
+            data-show-label="{{ t('auth.show_password') }}" data-hide-label="{{ t('auth.hide_password') }}"
+            aria-label="{{ t('auth.show_password') }}">
+      <span class="auth-eye__ico">{{ icon('eye', 18) }}</span><span class="auth-eye__slash" aria-hidden="true"></span>
+    </button>
+    {% endif %}
+  </div>
+  {% if hint %}<p class="auth-hint" id="h-{{ name }}">{{ hint }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro auth_submit(label, busy_label) -%}
+<button class="btn-pill btn-pill--solid btn-pill--block auth-submit" type="submit" data-busy-label="{{ busy_label }}">
+  <span class="auth-submit__label">{{ label }}</span>
+  <span class="auth-submit__spin" aria-hidden="true"></span>
+</button>
+{%- endmacro %}

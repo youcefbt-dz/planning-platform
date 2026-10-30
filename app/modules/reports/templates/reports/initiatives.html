@@ -1,0 +1,13 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import badge, meter, stackbar, legend, empty %}
+{% block title %}{{ t('reports.initiatives.title') }}{% endblock %}
+{% block content %}
+{% include "reports/_head.html" %}
+{% if data.count %}
+<div class="box" style="margin-block-end:var(--sp-5)"><div class="box-body">{{ stackbar(data.stats) }}{{ legend(data.stats) }}</div></div>
+<div class="box"><table class="table">
+  <thead><tr><th>{{ t('reports.cols.title') }}</th><th>{{ t('reports.cols.owner') }}</th><th>{{ t('reports.cols.unit') }}</th><th>{{ t('common.state') }}</th><th style="min-width:170px">{{ t('reports.cols.progress') }}</th><th>{{ t('reports.cols.end') }}</th><th class="num-col">{{ t('reports.cols.milestones') }}</th><th>{{ t('common.status') }}</th></tr></thead>
+  <tbody>{% for r in data.rows %}<tr><td><b class="ink">{{ r.title }}</b></td><td>{{ r.owner }}</td><td>{{ r.unit }}</td><td>{{ t('initiatives.state.' ~ r.state) }}</td><td>{{ meter(r.progress, r.status) }}</td><td>{{ d(r.end) }}</td><td class="num-col num">{{ r.milestones }}</td><td>{{ badge(r.status) }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}<div class="box">{% call empty('report', t('reports.empty')) %}{% endcall %}</div>{% endif %}
+{% endblock %}

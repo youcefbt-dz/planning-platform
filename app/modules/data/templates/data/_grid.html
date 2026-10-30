@@ -1,0 +1,38 @@
+{# The file, drawn like a spreadsheet. Expects `view` (service.grid_view) and `ds`. Always LTR: column A is on the left, as in Excel. #}
+<div class="sheet" dir="ltr" data-sheet>
+  <div class="sheet__bar">
+    <span class="sheet__ref" data-ref>A1</span><span class="sheet__fx" aria-hidden="true">fx</span><span class="sheet__val" data-refval dir="auto"></span>
+  </div>
+  <div class="sheet__scroll" tabindex="0" role="region" aria-label="{{ t('data.grid_label') }}">
+    <table class="grid">
+      <thead>
+        <tr class="grid__ann"><th class="corner" scope="col"></th>
+          {% for grp in view.groups %}<th scope="colgroup" colspan="{{ grp.span }}" class="grid__annh" data-role="{{ grp.col.role if grp.col else 'ignore' }}" data-colh="{{ grp.logical if grp.logical is not none else '' }}">{% include "data/_ann.html" %}</th>{% endfor %}
+        </tr>
+        <tr class="grid__letters"><th class="corner" scope="col"></th>
+          {% for a in view.annotations %}<th scope="col" data-role="{{ a.col.role if a.col else 'ignore' }}" data-colh="{{ a.logical if a.logical is not none else '' }}">{{ a.letter }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in view.rows %}
+        <tr class="r-{{ r.kind }}">
+          <th scope="row" class="rownum">{% if can('data.edit') %}<button type="submit" form="reading-form" name="header_pick" value="{{ r.n }}" title="{{ t('data.use_as_header') }}">{{ r.n }}</button>{% else %}{{ r.n }}{% endif %}
+            {% if r.kind == 'head' %}<span class="tag">{{ t('data.row.head') }}</span>{% elif r.kind == 'total' %}<span class="tag">{{ t('data.row.total') }}</span>{% endif %}</th>
+          {% for c in r.cells %}{% set a = view.annotations[loop.index0] %}
+          <td class="{{ c.cls }}" data-role="{{ a.col.role if a.col else 'ignore' }}" data-colh="{{ a.logical if a.logical is not none else '' }}" data-ref="{{ a.letter }}{{ r.n }}" dir="auto">{{ c.v }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if view.more_rows or view.more_cols %}
+    <p class="sheet__more">{% if view.more_rows %}{{ t('data.more_rows', n=n(view.more_rows)) }}{% endif %}{% if view.more_cols %} {{ t('data.more_cols', n=n(view.more_cols)) }}{% endif %}</p>{% endif %}
+  </div>
+  <div class="sheet__tabs" role="tablist" aria-label="{{ t('data.sheets') }}">
+    {% for st in sheet_tabs %}
+      {% if st.ds %}<a role="tab" href="{{ url_for('data.map', id=st.ds.id) }}#columns" {% if st.current %}aria-selected="true"{% endif %}>{{ icon('table', 14) }}{{ st.name }}{% if st.ds.status == 'ready' %}<span class="tabdone" title="{{ t('data.sheet_done') }}">{{ icon('circle-check', 13) }}</span>{% endif %}</a>
+      {% elif can('data.edit') %}<form method="post" action="{{ url_for('data.add_sheet', id=ds.id, idx=st.index) }}" class="inline-form">{{ csrf() }}<button type="submit" class="is-off" title="{{ t('data.sheet_add') }}">{{ icon('plus', 14) }}{{ st.name }}</button></form>
+      {% else %}<span class="is-off">{{ st.name }}</span>{% endif %}
+    {% endfor %}
+  </div>
+</div>

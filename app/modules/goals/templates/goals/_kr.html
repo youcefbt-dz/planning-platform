@@ -1,0 +1,126 @@
+{# One key result: numbers, where it is likely to end, where its number comes from, outside factors and the justification of the target.
+   Expects: k (KRView), infos, o, kr_end, plus the lists kr_types / measures / certainties / factor_kinds #}
+{% set kr = k.kr %}{% set info = infos[kr.id] %}{% set dd = info.data %}
+<div class="box-row kr" id="kr-{{ kr.id }}">
+  <div class="kr__top">
+    {{ dot(k.status) }}
+    <div class="main" style="min-width:220px">
+      <span class="title" dir="auto">{{ kr.title }}</span>
+      <div class="meta">
+        <span class="chip-type" title="{{ t('goals.kr_type_hint.' ~ kr.kr_type) }}">{{ icon({'increase':'trending-up','decrease':'trending-down','stay_above':'shield-check','stay_below':'shield-check','binary':'circle-check','milestone':'flag'}[kr.kr_type], 13) }}{{ t('goals.kr_type.' ~ kr.kr_type) }}</span>
+        <span class="nums"><b class="num">{{ val(kr.current_value, kr.unit_label, kr.metric_type) }}</b> <span class="muted">/ {{ val(kr.target_value, kr.unit_label, kr.metric_type) }}</span></span>
+        {% if kr.kr_type in ('increase','decrease') %}<span class="muted">{{ t('goals.from') }} {{ val(kr.start_value, kr.unit_label, kr.metric_type) }}</span>{% endif %}
+        {% if kr.owner %}<span>{{ avatar(kr.owner, 'avatar-sm') }}{{ kr.owner.name }}</span>{% endif %}
+        {% if k.last_update %}<span>{{ icon('clock', 13) }}{{ k.last_update|ago }}</span>{% endif %}
+        {% if dd and dd.level %}<a class="badge" data-status="{{ {'realistic':'on_track','ambitious':'completed','stretch':'at_risk','unrealistic':'off_track','insufficient':'not_started'}[dd.level] }}" href="{{ url_for('data.reality_page', series=dd.series.id, start=kr.current_value, target=kr.target_value, end=kr_end.isoformat() if kr_end else '', goal=kr.title) if kr_end else '#' }}" title="{{ t('data.goal.chip_title') }}">{{ icon({'realistic':'circle-check','ambitious':'trending-up','stretch':'alert-triangle','unrealistic':'circle-x','insufficient':'help-circle'}[dd.level], 13) }}{{ t('data.level.' ~ dd.level) }}</a>{% endif %}
+        {% if kr.basis and kr.basis.level in ('conservative','ambitious','stretch') %}<span class="chip-type" title="{{ t('goals.basis_hint') }}">{{ icon('bulb', 13) }}{{ t('goals.level.' ~ kr.basis.level) }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="side" style="width:220px">{{ meter(k.progress, k.status) }}</div>
+  </div>
+
+  {% if dd %}
+  <div class="kr__data">
+    <p class="kr__src">{{ icon('table', 14) }}{{ t('goals.measured_from', series=dd.series.name) }} · {{ t('goals.latest_data', period=d(dd.latest_period, 'month')) }}{% if dd.age_days > stale_days %} · <span class="warn-text">{{ icon('alert-triangle', 13) }}{{ tn('goals.data_old', dd.age_days) }}</span>{% endif %}</p>
+    {% if info.bar and dd.projected %}
+    {% set b = info.bar %}{% set pr = dd.projected %}
+    <div class="rbar" role="img" aria-label="{{ t('goals.expected_end') }}">
+      <span class="rbar__axis"></span>
+      <span class="rbar__band" style="inset-inline-start:{{ b.low }}%;width:{{ (b.high - b.low)|round(1) }}%"></span>
+      <span class="rbar__mid" style="inset-inline-start:{{ b.mid }}%"></span>
+      <span class="rbar__now" style="inset-inline-start:{{ b.current }}%"></span>
+      <span class="rbar__goal" style="inset-inline-start:{{ b.target }}%"></span>
+    </div>
+    <p class="rbar__legend"><span><i class="k-now"></i>{{ t('goals.now') }} <b class="num"><bdi dir="ltr">{{ val(kr.current_value, kr.unit_label) }}</bdi></b></span>
+      <span><i class="k-band"></i>{{ t('goals.likely_end') }} <b class="num"><bdi dir="ltr">{{ val(pr.low, kr.unit_label) }} – {{ val(pr.high, kr.unit_label) }}</bdi></b></span>
+      <span><i class="k-goal"></i>{{ t('goals.target') }} <b class="num"><bdi dir="ltr">{{ val(kr.target_value, kr.unit_label) }}</bdi></b></span></p>
+    {% elif dd and not dd.projected and kr_end %}<p class="muted kr__note">{{ icon('info-circle', 14) }}{{ t('goals.projection_insufficient') }}</p>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if info.needs_factors and can('goals.view') or info.needs_factors %}
+  {% set cov = info.coverage %}
+  <section class="factors" aria-labelledby="fx-{{ kr.id }}">
+    <div class="factors__head"><h4 id="fx-{{ kr.id }}">{{ icon('puzzle', 16) }}{{ t('goals.factors.title') }}</h4>
+      <span class="cov-status" data-status="{{ cov.status }}">{{ t('goals.factors.s.' ~ cov.status) }}</span></div>
+    {% if info.gap > 0 %}
+    <p class="factors__sub">{{ t('goals.factors.gap_text', gap=val(info.gap, kr.unit_label), supported=val(dd.supported, kr.unit_label)) }}</p>
+    <div class="covbar" role="img" aria-label="{{ t('goals.factors.s.' ~ cov.status) }}">
+      <span class="covbar__all" style="width:{{ (cov.share_all * 100)|round(0) }}%"></span><span class="covbar__likely" style="width:{{ (cov.share_likely * 100)|round(0) }}%"></span><span class="covbar__conf" style="width:{{ (cov.share_confirmed * 100)|round(0) }}%"></span>
+    </div>
+    <p class="rbar__legend"><span><i class="k-conf"></i>{{ t('goals.factors.certainty.confirmed') }} <b class="num"><bdi dir="ltr">{{ val(cov.confirmed, kr.unit_label) }}</bdi></b></span>
+      <span><i class="k-likely"></i>{{ t('goals.factors.certainty.probable') }} <b class="num"><bdi dir="ltr">+{{ val(cov.probable, kr.unit_label) }}</bdi></b></span>
+      <span><i class="k-all"></i>{{ t('goals.factors.certainty.hoped') }} <b class="num"><bdi dir="ltr">+{{ val(cov.hoped, kr.unit_label) }}</bdi></b></span>
+      <span class="muted">{{ t('goals.factors.of_gap', gap=val(info.gap, kr.unit_label)) }}</span></p>
+    <p class="factors__note muted">{{ icon('info-circle', 14) }}{{ t('goals.factors.never_changes') }}</p>
+    {% endif %}
+    {% if kr.factors %}
+    <table class="table factors__table"><thead><tr><th>{{ t('goals.factors.factor') }}</th><th class="num-col">{{ t('goals.factors.effect') }}</th><th>{{ t('goals.factors.certainty_h') }}</th><th>{{ t('goals.factors.track') }}</th><th></th></tr></thead>
+      <tbody>{% for f in kr.factors %}<tr>
+        <td><b dir="auto">{{ f.title }}</b><div class="muted" style="font-size:var(--fs-xs)">{{ t('goals.factors.kind.' ~ f.kind) }}{% if f.owner %} · {{ f.owner.name }}{% endif %}</div></td>
+        <td class="num-col num"><bdi dir="ltr">{{ '+' if f.effect > 0 }}{{ val(f.effect, kr.unit_label) }}</bdi></td>
+        <td><span class="cert" data-c="{{ f.certainty }}">{{ t('goals.factors.certainty.' ~ f.certainty) }}</span></td>
+        <td style="min-width:200px"><span class="lever-st" data-s="{{ f.status }}">{{ t('goals.factors.state.' ~ f.status) }}</span>
+          <div class="muted" style="font-size:var(--fs-xs)">{% if f.due %}{{ t('goals.factors.due') }}: {{ d(f.due) }}{% endif %}{% if f.actual is not none %} · {{ t('goals.factors.actual') }}: <bdi dir="ltr">{{ val(f.actual, kr.unit_label) }}</bdi>{% endif %}</div>
+          {% if f.evidence %}<div class="muted" style="font-size:var(--fs-xs)" dir="auto">{{ f.evidence }}</div>{% endif %}
+          {% if can_edit_goal(o) %}<details class="disclosure"><summary>{{ icon('pencil', 12) }}{{ t('goals.factors.update') }}</summary>
+            <form method="post" action="{{ url_for('goals.factor_update', id=f.id) }}" class="form-grid">{{ csrf() }}
+              <div class="field"><select class="select select-sm" name="status" aria-label="{{ t('goals.factors.track') }}">{% for st in lever_states %}<option value="{{ st }}" {% if st == f.status %}selected{% endif %}>{{ t('goals.factors.state.' ~ st) }}</option>{% endfor %}</select></div>
+              <div class="field"><input class="input input-sm" name="actual" inputmode="decimal" placeholder="{{ t('goals.factors.actual') }}" value="{{ f.actual if f.actual is not none else '' }}"></div>
+              <div class="field"><input class="input input-sm" type="date" name="due" aria-label="{{ t('goals.factors.due') }}" value="{{ f.due.isoformat() if f.due else '' }}"></div>
+              <div class="field"><button class="btn btn-sm" type="submit">{{ t('common.save') }}</button></div></form></details>{% endif %}</td>
+        <td class="num-col">{% if can_edit_goal(o) %}<form method="post" action="{{ url_for('goals.factor_delete', id=f.id) }}" data-confirm="{{ t('common.confirm_delete') }}">{{ csrf() }}<button class="btn btn-sm btn-ghost btn-icon" type="submit" title="{{ t('common.delete') }}">{{ icon('trash', 14) }}</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table>
+    {% endif %}
+    {% if can_edit_goal(o) %}
+    <details class="disclosure"><summary>{{ icon('plus', 14) }}{{ t('goals.factors.add') }}</summary>
+      <form method="post" action="{{ url_for('goals.factor_add', id=kr.id) }}" class="form-grid">{{ csrf() }}
+        <div class="field span-2"><label for="fx-t-{{ kr.id }}">{{ t('goals.factors.factor') }}</label><input class="input" id="fx-t-{{ kr.id }}" name="title" maxlength="200" required placeholder="{{ t('goals.factors.factor_ph') }}"></div>
+        <div class="field"><label for="fx-k-{{ kr.id }}">{{ t('goals.factors.kind_h') }}</label><select class="select" id="fx-k-{{ kr.id }}" name="kind">{% for fk in factor_kinds %}<option value="{{ fk }}">{{ t('goals.factors.kind.' ~ fk) }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="fx-e-{{ kr.id }}">{{ t('goals.factors.effect_in', unit=kr.unit_label or '') }}</label><input class="input" id="fx-e-{{ kr.id }}" name="effect" inputmode="decimal" required><p class="hint">{{ t('goals.factors.effect_hint') }}</p></div>
+        <div class="field"><label for="fx-c-{{ kr.id }}">{{ t('goals.factors.certainty_h') }}</label><select class="select" id="fx-c-{{ kr.id }}" name="certainty">{% for c in certainties %}<option value="{{ c }}" {% if c == 'probable' %}selected{% endif %}>{{ t('goals.factors.certainty.' ~ c) }}</option>{% endfor %}</select><p class="hint">{{ t('goals.factors.certainty_hint') }}</p></div>
+        <div class="field span-2"><label for="fx-v-{{ kr.id }}">{{ t('goals.factors.evidence') }}</label><input class="input" id="fx-v-{{ kr.id }}" name="evidence" maxlength="500" placeholder="{{ t('goals.factors.evidence_ph') }}"></div>
+        <div class="field"><button class="btn btn-primary" type="submit">{{ t('common.add') }}</button></div>
+      </form></details>
+    {% endif %}
+    <form method="post" action="{{ url_for('goals.justification_save', id=kr.id) }}" class="just" data-just="{{ url_for('goals.justification_draft', id=kr.id) }}" data-by-model="{{ t('goals.factors.draft_by', provider='{p}') }}" data-by-rules="{{ t('goals.factors.draft_rules') }}" data-failed="{{ t('goals.factors.draft_failed') }}">{{ csrf() }}
+      <label for="jt-{{ kr.id }}"><b>{{ t('goals.factors.justification') }}</b> <span class="muted">· {{ t('goals.factors.justification_hint') }}</span></label>
+      <textarea class="textarea" id="jt-{{ kr.id }}" name="justification" rows="4" maxlength="2000" dir="auto" {% if not can_edit_goal(o) %}readonly{% endif %}>{{ kr.justification }}</textarea>
+      {% if can_edit_goal(o) %}<div class="row-wrap"><button class="btn btn-primary btn-sm" type="submit">{{ t('common.save') }}</button>
+        <button class="btn btn-sm" type="button" data-just-draft>{{ icon('bulb', 14) }}{{ t('goals.factors.draft') }}</button><span class="hint" data-just-by></span></div>{% endif %}
+    </form>
+  </section>
+  {% endif %}
+
+  {% if can_update_goal(o) or can_edit_goal(o) %}
+  <details class="disclosure kr__edit">
+    <summary>{{ icon('refresh', 14) }}{{ t('goals.update_kr') }}</summary>
+    {% if can_update_goal(o) %}
+    <form class="kr-update" method="post" action="{{ url_for('goals.kr_checkin', id=kr.id) }}">{{ csrf() }}
+      <input class="input input-sm" name="value" inputmode="decimal" placeholder="{{ t('goals.new_value') }}" required aria-label="{{ t('goals.new_value') }}" value="{{ kr.current_value|round(2) }}">
+      <input class="input input-sm wide" name="comment" placeholder="{{ t('goals.comment_optional') }}" aria-label="{{ t('goals.comment') }}">
+      <button class="btn btn-sm btn-primary" type="submit">{{ t('goals.save_update') }}</button>
+    </form>
+    <form class="kr-update" method="post" action="{{ url_for('goals.confidence_save', id=kr.id) }}" style="margin-block-start:var(--sp-2)">{{ csrf() }}
+      <label for="cf-{{ kr.id }}" class="muted">{{ t('goals.confidence') }}</label>
+      <select class="select select-sm" id="cf-{{ kr.id }}" name="confidence" style="width:96px"><option value="">—</option>{% for i in range(1, 11) %}<option value="{{ i }}" {% if kr.confidence == i %}selected{% endif %}>{{ n(i) }}/{{ n(10) }}</option>{% endfor %}</select>
+      <button class="btn btn-sm" type="submit">{{ t('common.save') }}</button><span class="hint">{{ t('goals.confidence_hint') }}</span>
+    </form>{% endif %}
+    {% if can_edit_goal(o) %}
+    <form class="kr-edit" method="post" action="{{ url_for('goals.kr_edit', id=kr.id) }}" style="margin-block-start:var(--sp-3)">{{ csrf() }}
+      <div class="form-grid kr-edit__grid">
+        <div class="field span-2"><label>{{ t('common.title') }}</label><input class="input input-sm" name="title" value="{{ kr.title }}" dir="auto"></div>
+        <div class="field"><label>{{ t('goals.kr_type_h') }}</label><select class="select select-sm" name="kr_type">{% for kt in kr_types %}<option value="{{ kt }}" {% if kt == kr.kr_type %}selected{% endif %}>{{ t('goals.kr_type.' ~ kt) }}</option>{% endfor %}</select></div>
+        <div class="field"><label>{{ t('goals.start_value') }}</label><input class="input input-sm" name="start_value" value="{{ kr.start_value }}"></div>
+        <div class="field"><label>{{ t('goals.target_value') }}</label><input class="input input-sm" id="kt-{{ kr.id }}" name="target_value" value="{{ kr.target_value }}"></div>
+        <div class="field"><label>{{ t('goals.unit_label') }}</label><input class="input input-sm" name="unit_label" value="{{ kr.unit_label }}" maxlength="24"></div>
+        {% if has_series %}<div class="field"><label>{{ t('goals.measure_h') }}</label><select class="select select-sm" name="measure">{% for m in measures %}<option value="{{ m }}" {% if m == kr.measure %}selected{% endif %}>{{ t('goals.measure.' ~ m) }}</option>{% endfor %}</select></div>{% endif %}
+      </div>
+      <div class="field"><label>{{ t('goals.events.reason') }}</label><input class="input input-sm" name="reason" maxlength="500" placeholder="{{ t('goals.events.reason_ph') }}"></div>
+      {% with name='series_id', selected=(data_kr_series(kr) if data_kr_series is defined else none), uid='e' ~ kr.id, end=(kr_end.isoformat() if kr_end else ''), end_from='', target_from='#kt-' ~ kr.id, start_to='', unit_to='', goal=kr.title %}{% include "data/_kr_measure.html" %}{% endwith %}
+      <button class="btn btn-sm" type="submit" style="margin-block-start:var(--sp-2)">{{ t('common.save') }}</button>
+    </form>
+    <form method="post" action="{{ url_for('goals.kr_delete', id=kr.id) }}" data-confirm="{{ t('common.confirm_delete') }}" style="margin-block-start:var(--sp-2)">{{ csrf() }}<button class="btn btn-sm btn-danger" type="submit">{{ icon('trash', 14) }}{{ t('goals.delete_kr') }}</button></form>
+    {% endif %}
+  </details>
+  {% endif %}
+</div>

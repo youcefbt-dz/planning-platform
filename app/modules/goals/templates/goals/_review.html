@@ -1,0 +1,18 @@
+{# Fragment: quality checks of the goal as typed (+ the model's coaching when asked). res, advice, krs #}
+{% include "goals/_checks.html" %}
+{% if advice %}{% set a = advice %}{% set d = advice.data %}
+<div class="advice">
+  {% if d.summary %}<p class="advice__sum" dir="auto">{{ d.summary }}</p>{% endif %}
+  {% if d.objective_rewrite %}<div class="rewrite"><span class="rewrite__h">{{ t('goals.coach.rewrite_obj') }}</span>
+    <p dir="auto">{{ d.objective_rewrite }}</p>
+    <button class="btn btn-sm" type="button" data-use-title="{{ d.objective_rewrite }}">{{ icon('check', 14) }}{{ t('goals.coach.use') }}</button></div>{% endif %}
+  {% for r in d.kr_rewrites %}{% if r.index < krs|length %}
+  <div class="rewrite"><span class="rewrite__h">{{ t('goals.coach.rewrite_kr', n=krs[r.index].row + 1) }}</span>
+    <p dir="auto">{{ r.title }}</p>
+    <button class="btn btn-sm" type="button" data-use-kr="{{ krs[r.index].row }}" data-text="{{ r.title }}">{{ icon('check', 14) }}{{ t('goals.coach.use') }}</button></div>
+  {% endif %}{% endfor %}
+  {% if d.sufficiency %}<p class="advice__suf" dir="auto">{{ icon('target-arrow', 14) }}{{ d.sufficiency }}</p>{% endif %}
+  {% if d.missing %}<ul class="advice__missing">{% for m in d.missing %}<li dir="auto">{{ m }}</li>{% endfor %}</ul>{% endif %}
+  <p class="advice__foot">{% include "goals/_ai_tag.html" %}</p>
+</div>
+{% endif %}

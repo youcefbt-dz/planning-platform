@@ -1,0 +1,77 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, field, textarea, select, org_tile %}
+{% block title %}{{ t('profile.title') }}{% endblock %}
+{% block content %}
+<div class="page-head" style="max-width:860px;margin-inline:auto">
+  <div class="page-head__title">
+    <h1>{{ t('profile.title') }}</h1>
+    <p class="sub">{{ t('profile.sub') }}</p>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="profile-form" id="profile">
+  {{ csrf() }}
+  {% if welcome %}<input type="hidden" name="then" value="overview">{% endif %}
+
+  <section class="box">
+    <div class="box-head"><h2>{{ icon('building', 18) }}{{ t('profile.identity') }}</h2></div>
+    <div class="box-body">
+      <div class="logo-edit">
+        {{ org_tile(org, 'xl') }}
+        <div>
+          <p class="label">{{ t('profile.logo') }}</p>
+          <p class="hint">{{ t('profile.logo_hint') }}</p>
+          {% if can('settings.manage') %}
+          <div class="row-wrap" style="margin-block-start:var(--sp-2)">
+            <label class="btn btn-sm file-btn">{{ icon('upload', 14) }}{{ t('profile.logo_pick') }}<input type="file" name="logo" accept="image/png,image/jpeg,image/webp"></label>
+            {% if org_profile.logo %}<label class="check hint"><input type="checkbox" name="remove_logo">{{ t('profile.logo_remove') }}</label>{% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="form-grid">
+        {{ field(t('settings.general.org_name'), 'name', org.name, required=true, cls='span-2') }}
+        {{ select(t('profile.sector'), 'sector', topts(sectors, 'profile.sectors.'), prof.sector, blank=t('profile.choose')) }}
+        {{ select(t('profile.size'), 'size', topts(sizes, 'profile.sizes.'), prof.size, blank=t('profile.choose')) }}
+        {{ select(t('profile.currency'), 'currency', topts(currencies, 'profile.currencies.'), prof.currency) }}
+        {{ select(t('profile.fiscal_start'), 'fiscal_start', month_names(), prof.fiscal_start) }}
+      </div>
+    </div>
+  </section>
+
+  <section class="box">
+    <div class="box-head"><h2>{{ icon('compass', 18) }}{{ t('profile.direction') }}</h2></div>
+    <div class="box-body">
+      <p class="hint" style="margin-block-end:var(--sp-4)">{{ t('profile.direction_hint') }}</p>
+      {% if can('settings.manage') %}
+      <div class="stack-sm" data-assist="{{ url_for('shell.direction_draft') }}" data-assist-from="#f-sector,#f-size,#f-about" data-assist-failed="{{ t('profile.draft.failed') }}" style="margin-block-end:var(--sp-4)">
+        <label for="f-about"><b>{{ icon('bulb', 16) }}{{ t('profile.draft.title') }}</b></label>
+        <p class="hint">{{ t('profile.draft.sub') }}</p>
+        <div class="row-wrap"><input class="input" id="f-about" name="about" maxlength="300" dir="auto" autocomplete="off" placeholder="{{ t('profile.draft.about') }}" style="flex:1;min-width:220px">
+          <button class="btn" type="button" data-assist-run>{{ icon('bulb', 15) }}{{ t('profile.draft.btn') }}</button></div>
+        <div data-assist-out aria-live="polite"></div>
+      </div>
+      {% endif %}
+      {{ textarea(t('profile.vision'), 'vision', prof.vision, hint=t('profile.vision_hint'), rows=2) }}
+      {{ textarea(t('profile.mission'), 'mission', prof.mission, hint=t('profile.mission_hint'), rows=2) }}
+      {{ field(t('profile.values'), 'values', prof['values'], hint=t('profile.values_hint')) }}
+    </div>
+  </section>
+
+  {% if not welcome %}
+  <section class="box">
+    <div class="box-head"><h2>{{ icon('progress-check', 18) }}{{ t('settings.general.rules') }}</h2></div>
+    <div class="box-body">
+      <p class="muted" style="font-size:var(--fs-sm)">{{ t('settings.general.rules_help') }}</p>
+      <div class="form-grid">
+        {{ field(t('settings.general.on_track'), 'on_track', th.on_track|int, 'number', hint=t('settings.general.on_track_hint')) }}
+        {{ field(t('settings.general.at_risk'), 'at_risk', th.at_risk|int, 'number', hint=t('settings.general.at_risk_hint')) }}
+        {{ field(t('settings.general.cadence'), 'cadence', cadence, 'number', hint=t('settings.general.cadence_hint')) }}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if can('settings.manage') %}<div class="form-actions"><button class="btn btn-primary btn-lg" type="submit">{{ t('common.save') }}</button>{% if welcome %}<a class="btn btn-lg btn-ghost" href="{{ url_for('shell.overview') }}">{{ t('profile.skip') }}</a>{% endif %}</div>{% endif %}
+</form>
+{% endblock %}

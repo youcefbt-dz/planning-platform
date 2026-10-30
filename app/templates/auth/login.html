@@ -1,0 +1,18 @@
+{% extends "layouts/gate.html" %}
+{% from "components/ui.html" import csrf, flashes %}
+{% from "auth/_fields.html" import gfield %}
+{% block title %}{{ t('auth.login') }}{% endblock %}
+{% block mode %}login{% endblock %}
+{% block topnav %}<a class="gate__alt" href="{{ url_for('auth.register') }}">{{ t('auth.no_account') }} <b>{{ t('auth.register') }}</b></a>{% endblock %}
+{% block card %}
+  <h1>{{ t('auth.login_title') }}</h1>
+  <p class="gate__sub">{{ t('auth.login_sub') }}</p>
+  {{ flashes() }}
+  <form method="post" class="gform" data-gform>{{ csrf() }}
+    {{ gfield(t('auth.email'), 'email', 'mail', 'email', value=request.form.get('email', ''), required=true, auto='username', live='email') }}
+    {{ gfield(t('auth.password'), 'password', 'key', 'password', required=true, auto='current-password', live='password') }}
+    <button class="gbtn" type="submit"><span>{{ t('auth.login') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
+  </form>
+  {% if config.ENABLE_DEMO %}<p class="gate__or"><span>{{ t('gate.or') }}</span></p>
+  <a class="gbtn gbtn--soft" href="{{ url_for('site.demo') }}">{{ icon('eye', 17) }}<span>{{ t('auth.try_demo') }}</span></a>{% endif %}
+{% endblock %}

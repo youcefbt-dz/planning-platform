@@ -1,0 +1,211 @@
+/* ==========================================================================
+   SHELL — the signed-in frame, in the same identity as the landing page:
+   saturated blue top, blue hero cards with wave + dot grid, pill buttons, lavender icon wells.
+   topbar (sticky) -> band (organization, sub-tab pill track) -> lavender canvas of cards.
+   Loaded after app.css; only the signed-in layout uses it.
+   ========================================================================== */
+
+.app-body{
+  --shell-blue:color-mix(in srgb,var(--brand-primary) 94%,var(--brand-ink));
+  --shell-blue-deep:color-mix(in srgb,var(--brand-primary) 80%,var(--brand-ink));
+  /* a little larger than the marketing scale: this is a reading-and-working surface */
+  --fs-xs:.8125rem;--fs-sm:.9rem;--fs-base:1rem;--fs-md:1.125rem;--fs-xl:1.625rem;
+  background:var(--c-primary-softer);
+}
+
+/* ---- topbar ------------------------------------------------------------ */
+.topbar{position:sticky;top:0;z-index:30;background:var(--shell-blue);color:#fff}
+.topbar a{color:#fff}
+.topbar__inner{display:flex;align-items:center;gap:var(--sp-5);min-height:72px}
+.topbar .brand-link{display:flex;align-items:center;flex:none}
+.topbar .logo-full,.topbar .logo-lockup{height:50px}
+.topbar .logo-lockup__mark{width:46px;height:46px;flex-basis:46px}
+.topbar .logo-lockup__text{font-size:28px;color:#fff}
+.topbar .logo-text{color:#fff}
+.topbar .logo-mark{display:none}
+
+.mainnav{display:flex;gap:2px;align-items:center;min-width:0}
+.mainnav a{position:relative;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:var(--r-pill);font-weight:600;font-size:var(--fs-sm);color:rgba(255,255,255,.88);white-space:nowrap}
+.mainnav a:hover{background:rgba(255,255,255,.12);color:#fff;text-decoration:none}
+.mainnav a[aria-current=page]{color:#fff}
+.mainnav a[aria-current=page]::after{content:"";position:absolute;inset-inline:14px;bottom:2px;height:3px;border-radius:3px;background:var(--c-accent)}
+.mainnav .icon{opacity:.9}
+
+.topbar__tools{display:flex;align-items:center;gap:var(--sp-2);margin-inline-start:auto}
+.topsearch{position:relative;width:210px}
+.topsearch input{width:100%;min-height:40px;padding:6px 14px;padding-inline-start:38px;border-radius:var(--r-pill);border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.12);color:#fff;font-size:var(--fs-sm)}
+.topsearch input::placeholder{color:rgba(255,255,255,.75)}
+.topsearch input:focus{outline:0;background:#fff;color:var(--c-ink);border-color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.25)}
+.topsearch input:focus::placeholder{color:var(--c-muted)}
+.topsearch .icon{position:absolute;inset-inline-start:13px;top:50%;translate:0 -50%;pointer-events:none;opacity:.85}
+.topsearch:focus-within .icon{color:var(--c-muted);opacity:1}
+.topsearch kbd{position:absolute;inset-inline-end:10px;top:50%;translate:0 -50%;font:inherit;font-size:var(--fs-xs);padding:0 7px;border:1px solid rgba(255,255,255,.35);border-radius:6px;opacity:.8}
+.topsearch:focus-within kbd{display:none}
+
+.tbtn{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:5px 14px;border-radius:var(--r-pill);border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;cursor:pointer;font-weight:600;font-size:var(--fs-sm);white-space:nowrap}
+.tbtn:hover{background:rgba(255,255,255,.12);text-decoration:none}
+.tbtn .truncate{max-width:150px}
+.tbtn--solid{background:#fff;color:var(--c-primary-text);border-color:#fff}
+.tbtn--solid:hover{background:var(--c-accent);color:var(--c-ink);border-color:var(--c-accent)}
+.tbtn--round{padding:3px;min-width:40px;justify-content:center}
+.topbar .avatar{width:32px;height:32px;font-size:.75rem;background:#fff;color:var(--c-primary-text)}
+.topbar .menu{position:relative}
+.topbar .menu__panel{min-width:260px;border-radius:var(--r-lg);padding:8px;color:var(--c-body)}
+.topbar .menu__panel a,.topbar .menu__panel button{border-radius:var(--r-md);padding:8px 10px;font-weight:600}
+.menu__ic{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--c-primary-softer);color:var(--c-primary-text);flex:none}
+.menu__panel a:hover .menu__ic,.menu__panel button:hover .menu__ic{background:#fff}
+.menu__head{display:flex;align-items:center;gap:var(--sp-3);padding:8px 10px 12px;margin-block-end:6px;border-block-end:1px solid var(--c-line)}
+.menu__head>div{min-width:0;display:grid}
+.menu__head b{color:var(--c-ink);font-size:var(--fs-sm)}
+.menu__head .muted{font-size:var(--fs-xs)}
+
+/* ---- the organization's own tile --------------------------------------------- */
+.org-tile{display:inline-grid;place-items:center;flex:none;background:#fff;color:var(--c-primary-text);font-family:var(--font-heading);font-weight:700;overflow:hidden;border:1px solid var(--c-line)}
+.org-tile img{width:100%;height:100%;object-fit:contain;padding:12%}
+.org-tile--sm{width:34px;height:34px;border-radius:10px;font-size:.8rem}
+.org-tile--md{width:48px;height:48px;border-radius:14px;font-size:1rem}
+.org-tile--lg{width:64px;height:64px;border-radius:20px;font-size:1.4rem;border:0;box-shadow:0 10px 24px rgba(14,22,66,.28)}
+.org-tile--xl{width:104px;height:104px;border-radius:28px;font-size:2.1rem;background:var(--c-primary-softer)}
+
+/* ---- band: the organization and where you are ----------------------------------------------
+   One flat blue field (the landing page's blue), the organization on it, kept flat (no wave here). Sub-navigation is a white pill track that sits half on the band, half on the page. */
+.band{position:relative;background:var(--shell-blue);color:#fff;padding-block:18px 26px}
+.band--tabs{padding-block-end:48px;margin-block-end:30px}
+.band>.wrap{position:relative;z-index:2}
+.band__inner{display:flex;align-items:center;gap:var(--sp-5);flex-wrap:wrap}
+.orgcard{display:flex;align-items:center;gap:var(--sp-4);min-width:0;flex:1 1 380px}
+.orgcard__text{min-width:0}
+.orgcard__name{margin:0;font-family:var(--font-heading);font-weight:700;font-size:var(--fs-xl);line-height:1.2;color:#fff;overflow-wrap:anywhere}
+.orgcard__meta{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:4px var(--sp-4);font-size:var(--fs-sm);color:rgba(255,255,255,.88)}
+.orgcard__meta span{display:inline-flex;align-items:center;gap:6px}
+
+.setup-chip{display:inline-flex;align-items:center;gap:var(--sp-3);padding:9px 18px;border-radius:var(--r-pill);background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.34);color:#fff;font-size:var(--fs-sm)}
+.setup-chip:hover{background:rgba(255,255,255,.22);text-decoration:none}
+.setup-chip>span:nth-child(2){display:grid;line-height:1.35}
+.setup-chip small{color:rgba(255,255,255,.85);font-size:var(--fs-xs)}
+.setup-chip__dots{display:inline-flex;gap:4px}
+.setup-chip__dots i{width:9px;height:9px;border-radius:50%;border:2px solid rgba(255,255,255,.7)}
+.setup-chip__dots i[data-done=true]{background:var(--c-accent);border-color:var(--c-accent)}
+
+.bandtabs{position:absolute;inset-inline-start:var(--sp-5);bottom:-24px;display:flex;gap:4px;width:max-content;max-width:calc(100% - var(--sp-5) * 2);overflow-x:auto;scrollbar-width:none;padding:6px;border-radius:var(--r-pill);background:#fff;box-shadow:0 10px 28px color-mix(in srgb,var(--brand-ink) 22%,transparent),0 0 0 1px color-mix(in srgb,var(--brand-ink) 6%,transparent)}
+.band--tabs>.wrap:last-child{position:absolute;inset-inline:0;bottom:0;height:0;margin-inline:auto;z-index:3}
+.bandtabs::-webkit-scrollbar{display:none}
+.bandtabs a{position:relative;display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:var(--r-pill);color:var(--c-body);font-weight:600;font-size:var(--fs-sm);white-space:nowrap;transition:background .15s,color .15s}
+.bandtabs a:hover{background:var(--c-primary-softer);color:var(--c-primary-text);text-decoration:none}
+.bandtabs a[aria-current=page]{background:var(--c-primary);color:#fff}
+.bandtabs a[aria-current=page]::after{content:"";position:absolute;inset-inline:22px;bottom:3px;height:3px;border-radius:3px;background:var(--c-accent)}
+
+/* ---- the white sheet ---------------------------------------------------------------- */
+.app-body .page{padding-block:var(--sp-5) var(--sp-8)}
+.app-body .band:not(.band--tabs)+.page{padding-block-start:var(--sp-6)}
+.app-body .page-head h1{font-size:var(--fs-xl);gap:var(--sp-3);position:relative;padding-block-end:12px}
+.app-body .page-head h1::after{content:"";position:absolute;inset-inline-start:0;bottom:0;width:44px;height:4px;border-radius:4px;background:var(--c-accent)}
+.app-body .page-head h1>.icon:first-child{display:none}
+
+/* ---- ONE card language for the whole product -------------------------------------------------
+   white sheet, 20px corners, hairline border, a soft blue-tinted shadow; the head carries a lavender icon well;
+   every other "card" in the app (tiles, nodes, chart boxes, answers) uses the same tokens. */
+.app-body{--card-r:24px;--card-bd:var(--c-line);--card-sh:0 1px 2px color-mix(in srgb,var(--brand-ink) 5%,transparent),0 12px 28px -18px color-mix(in srgb,var(--c-primary) 38%,transparent)}
+.app-body .box,.app-body .tile,.app-body .node,.app-body .chartbox,.app-body .answer__ask{border-radius:var(--card-r);border:1px solid var(--card-bd);box-shadow:var(--card-sh);background:#fff}
+.app-body .box{position:relative;overflow:hidden}
+.app-body .box-head{position:relative;background:#fff;padding:16px 22px;border-block-end:1px solid var(--card-bd)}
+.app-body .box-head h2,.app-body .box-head h3{font-size:var(--fs-md);gap:var(--sp-3);position:relative;z-index:1}
+.app-body .box-head .actions,.app-body .box-head .seg,.app-body .box-head .muted{position:relative;z-index:1}
+.app-body .box-head h2>.icon:first-child,.app-body .box-head h3>.icon:first-child{width:38px;height:38px;padding:10px;border-radius:50%;background:var(--c-primary-softer);color:var(--c-primary-text)}
+.app-body .box-body{padding:22px}
+.app-body .box-row{padding:16px 22px}
+.app-body .box-row:hover{background:var(--c-primary-softer)}
+.app-body .tile{padding:var(--sp-4);background:var(--c-primary-softer);border-color:transparent;box-shadow:none;border-radius:16px}
+
+/* ---- pills for every action ---------------------------------------------------------------- */
+.app-body .btn{border-radius:var(--r-pill);padding-inline:18px;min-height:40px}
+.app-body .btn-sm{min-height:32px;padding-inline:14px}
+.app-body .btn-lg{min-height:48px;padding-inline:26px}
+.app-body .btn-icon{padding-inline:8px}
+.app-body .btn-primary{box-shadow:0 8px 18px -8px color-mix(in srgb,var(--c-primary) 70%,transparent)}
+.app-body .btn-primary:hover{box-shadow:0 10px 22px -8px color-mix(in srgb,var(--c-primary) 80%,transparent)}
+.app-body .input,.app-body .select,.app-body .textarea{border-radius:var(--r-md);min-height:42px}
+.app-body .chip,.app-body .count{border-radius:var(--r-pill)}
+.app-body .empty .well{width:84px;height:84px;background:var(--c-primary-softer)}
+.app-body .seg{border-radius:var(--r-pill)}
+.app-body .flash{border-radius:var(--r-lg)}
+.app-body .demo-banner{background:var(--c-accent);color:var(--c-ink)}
+.app-body .demo-banner a.btn{box-shadow:none}
+
+/* ---- "thinking": what shows while the AI reads or answers ----------------------------------------
+   The brand mark builds itself (three bars rise, the yellow one last) while the steps tick off. No spinner. */
+.think{display:flex;gap:var(--sp-4);align-items:center;padding:20px 24px;border-radius:var(--card-r,20px);border:1px solid var(--c-line);background:#fff;box-shadow:var(--card-sh,none);position:relative;overflow:hidden}
+.think::before{content:"";position:absolute;inset-block-start:0;inset-inline:0;height:3px;background:linear-gradient(90deg,transparent,var(--c-primary),var(--c-accent),transparent);background-size:240% 100%;animation:think-sweep 1.8s linear infinite}
+.think__mark{display:flex;align-items:flex-end;gap:5px;height:34px;flex:none;padding:8px 10px;border-radius:14px;background:var(--c-primary-softer);box-sizing:content-box}
+.think__mark i{display:block;width:7px;border-radius:3px;background:var(--c-primary);transform-origin:bottom;animation:think-bar 1.15s ease-in-out infinite}
+.think__mark i:nth-child(1){height:14px}
+.think__mark i:nth-child(2){height:24px;animation-delay:.16s}
+.think__mark i:nth-child(3){height:34px;background:var(--c-accent);animation-delay:.32s}
+.think__body{min-width:0}
+.think__body b{color:var(--c-ink);font-size:var(--fs-md)}
+.think__steps{display:flex;flex-wrap:wrap;gap:4px 18px;margin:6px 0 0;padding:0;list-style:none;font-size:var(--fs-sm);color:var(--c-muted)}
+.think__steps li{position:relative;padding-inline-start:18px;opacity:.45;animation:think-step 3.6s linear infinite}
+.think__steps li::before{content:"";position:absolute;inset-inline-start:0;top:.55em;width:8px;height:8px;border-radius:50%;background:var(--c-primary)}
+.think__steps li:nth-child(2){animation-delay:1.2s}
+.think__steps li:nth-child(3){animation-delay:2.4s}
+@keyframes think-bar{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+@keyframes think-step{0%,8%{opacity:.4}18%,38%{opacity:1;color:var(--c-ink)}50%,100%{opacity:.4}}
+@keyframes think-sweep{from{background-position:120% 0}to{background-position:-120% 0}}
+/* any control that waits for the AI: the same three bars instead of a spinner */
+[aria-busy=true]{position:relative;pointer-events:none}
+.btn[aria-busy=true]{color:transparent!important}
+.btn[aria-busy=true]>*{opacity:0}
+.btn[aria-busy=true]::after{content:"";position:absolute;inset:0;margin:auto;width:22px;height:16px;background:
+  linear-gradient(#fff,#fff) 0 100%/4px 40% no-repeat,linear-gradient(#fff,#fff) 9px 100%/4px 70% no-repeat,linear-gradient(var(--c-accent),var(--c-accent)) 18px 100%/4px 100% no-repeat;animation:think-bars-btn 1s ease-in-out infinite;transform-origin:bottom}
+@keyframes think-bars-btn{0%,100%{opacity:.55}50%{opacity:1}}
+.panel-loading{position:relative;opacity:1!important}
+.panel-loading>*{opacity:.45;transition:opacity .15s}
+.panel-loading::after{content:"";position:absolute;inset-inline:0;top:0;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--c-primary),var(--c-accent),transparent);background-size:240% 100%;animation:think-sweep 1.8s linear infinite}
+@media (prefers-reduced-motion:reduce){.think__mark i,.think__steps li,.think::before,.panel-loading::after,.btn[aria-busy=true]::after{animation:none}.think__steps li{opacity:1}.think__mark i{transform:none}}
+
+/* ---- profile form ------------------------------------------------------------------------ */
+.profile-form{display:grid;gap:var(--sp-5);max-width:860px;margin-inline:auto}
+.profile-form .box+.box{margin:0}
+.logo-edit{display:flex;gap:var(--sp-5);align-items:center;margin-block-end:var(--sp-5);flex-wrap:wrap}
+.logo-edit .label{margin:0}
+.file-btn{position:relative;cursor:pointer;overflow:hidden}
+.file-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.file-btn:focus-within{outline:2px solid var(--c-primary);outline-offset:2px}
+
+/* ---- responsive ----------------------------------------------------------------------------- */
+@media (max-width:1180px){
+  .topsearch{width:150px}
+  .tbtn .lbl.truncate{display:none}
+}
+@media (max-width:980px){
+  .topbar__inner{flex-wrap:wrap;gap:var(--sp-2) var(--sp-3);padding-block:10px 0}
+  .topbar__tools{order:2}
+  .mainnav{order:3;flex-basis:100%;overflow-x:auto;scrollbar-width:none;margin-inline:calc(var(--sp-5) * -1);padding-inline:var(--sp-5)}
+  .mainnav::-webkit-scrollbar{display:none}
+  .topsearch{display:none}
+}
+@media (max-width:720px){
+  .topbar .logo-lockup__text{font-size:24px}
+  .topbar .logo-lockup__mark{width:40px;height:40px;flex-basis:40px}
+  .mainnav{margin-inline:calc(var(--sp-4) * -1);padding-inline:var(--sp-4)}
+  .tbtn .lbl{display:none}
+  .tbtn{padding-inline:11px}
+  .band{padding-block:12px 20px}
+  .band--tabs{padding-block-end:44px}
+  .orgcard{flex-basis:100%}
+  .org-tile--lg{width:52px;height:52px;border-radius:16px;font-size:1.15rem}
+  .orgcard__name{font-size:var(--fs-xl)}
+  .setup-chip{width:100%;justify-content:space-between}
+  .app-body .page-head h1>.icon:first-child{display:none}
+}
+@media print{
+  .topbar,.band{display:none!important}
+}
+.app-body .tile .v{font-size:var(--fs-2xl)}
+.app-body .tile-warn{background:color-mix(in srgb,var(--st-at_risk-bg) 60%,#fff)}
+
+/* the same card language everywhere else: lavender figure tiles, white panels with the shared radius and shadow */
+.app-body .num-card,.app-body .facts>div{background:var(--c-primary-softer);border-color:transparent;border-radius:16px;box-shadow:none}
+.app-body .explain,.app-body .ccard,.app-body .filepane,.app-body .brief,.app-body .omap__goal{border-radius:var(--card-r);box-shadow:var(--card-sh)}
+.app-body .krrow,.app-body .sug,.app-body .qitem,.app-body .mtab{border-radius:16px}
+.btn:not(.btn-primary)[aria-busy=true]::after{background:linear-gradient(var(--c-primary),var(--c-primary)) 0 100%/4px 40% no-repeat,linear-gradient(var(--c-primary),var(--c-primary)) 9px 100%/4px 70% no-repeat,linear-gradient(var(--c-accent),var(--c-accent)) 18px 100%/4px 100% no-repeat}

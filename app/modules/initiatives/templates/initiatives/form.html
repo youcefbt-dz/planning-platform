@@ -1,0 +1,26 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, field, textarea, select %}
+{% block title %}{{ t('initiatives.create') if mode == 'new' else t('goals.edit_title') }}{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{{ url_for('initiatives.index') }}">{{ t('initiatives.module') }}</a>{{ icon('chevron-right', 13, flip=true) }}<span>{{ t('initiatives.create') if mode == 'new' else t('goals.edit_title') }}</span></div>
+<div class="page-head"><div><h1>{{ icon('rocket', 22) }}{{ t('initiatives.create') if mode == 'new' else t('goals.edit_title') }}</h1><p class="sub">{{ t('initiatives.form_sub') }}</p></div></div>
+<form method="post" style="max-width:860px">{{ csrf() }}
+  <div class="box"><div class="box-body">
+    {{ field(t('goals.field_title'), 'title', it.title or '', required=true) }}
+    {{ textarea(t('common.description'), 'description', it.description) }}
+    <div class="form-grid">
+      {{ select(t('common.state'), 'state', topts(states, 'initiatives.state.'), it.state) }}
+      {{ select(t('initiatives.priority_label'), 'priority', topts(priorities, 'initiatives.priority.'), it.priority) }}
+      {{ select(t('common.owner'), 'owner_id', opts(members, 'user_id', 'user.name'), it.owner_id, blank=t('common.unassigned')) }}
+      {{ select(t('common.unit'), 'unit_id', opts(units, 'id', 'name'), it.unit_id, blank=t('common.none')) }}
+      {{ select(t('common.cycle'), 'cycle_id', opts(cycles, 'id', 'name'), it.cycle_id, blank=t('common.none')) }}
+      {% if goals %}{{ select(t('initiatives.link_objective'), 'goal_id', opts(goals, 'id', 'title'), preset_goal, blank=t('common.none')) }}{% endif %}
+      {{ field(t('common.start_date'), 'start_date', it.start_date.isoformat() if it.start_date else '', 'date') }}
+      {{ field(t('common.end_date'), 'end_date', it.end_date.isoformat() if it.end_date else '', 'date') }}
+      {{ field(t('initiatives.manual_progress'), 'manual_progress', ((it.manual_progress * 100)|round|int) if it.manual_progress is not none else '', 'number', hint=t('initiatives.manual_progress_hint')) }}
+    </div>
+  </div></div>
+  <div class="form-actions"><button class="btn btn-primary" type="submit">{{ t('common.save') if mode == 'edit' else t('common.create') }}</button>
+    <a class="btn" href="{{ url_for('initiatives.detail', id=it.id) if mode == 'edit' else url_for('initiatives.index') }}">{{ t('common.cancel') }}</a></div>
+</form>
+{% endblock %}

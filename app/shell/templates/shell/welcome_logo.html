@@ -1,0 +1,35 @@
+{% extends "layouts/welcome.html" %}
+{% from "components/ui.html" import csrf, org_tile %}
+{% block title %}{{ t('welcome.steps.logo') }}{% endblock %}
+{% block step %}2{% endblock %}
+{% block main %}
+<div class="wl" data-wl data-max="{{ max_kb }}" data-err-type="{{ t('profile.errors.logo') }}">
+  <div class="wl__head">
+    <p class="eyebrow">{{ t('welcome.step', n=2, total=3) }}</p>
+    <h1>{{ t('welcome.logo.title') }}</h1>
+    <p class="lead">{{ t('welcome.logo.sub') }}</p>
+  </div>
+  <form method="post" enctype="multipart/form-data" class="wl__body">{{ csrf() }}
+    <div class="mock" aria-hidden="true">
+      <div class="mock__bar"><span class="mock__tile" data-tile>{{ org_tile(org, 'md') }}</span><span class="mock__name"><b>{{ org.name }}</b><small>{{ t('welcome.logo.workspace') }}</small></span></div>
+      <div class="mock__body"><i style="width:46%"></i><i style="width:78%"></i><i style="width:62%"></i>
+        <div class="mock__cards"><span></span><span></span><span></span></div></div>
+    </div>
+    <div class="wl__side">
+      <input class="wl__input" id="logo-file" type="file" name="logo" accept="image/png,image/jpeg,image/webp" tabindex="-1">
+      <button type="button" class="drop" data-drop>
+        <svg class="drop__ants" aria-hidden="true"><rect width="100%" height="100%" rx="21"/></svg>
+        <span class="drop__ic"><span class="up">{{ icon('upload', 24) }}</span><span class="ok">{{ icon('check', 24) }}</span></span>
+        <b data-drop-t data-idle="{{ t('welcome.logo.drop') }}">{{ t('welcome.logo.drop') }}</b>
+        <small data-drop-s data-idle="{{ t('welcome.logo.pick') }}">{{ t('welcome.logo.pick') }}</small>
+      </button>
+      <p class="hint" data-err hidden role="alert"></p>
+      <p class="hint">{{ t('profile.logo_hint') }}</p>
+      <div class="wl__act">
+        <button class="wbtn" type="submit"><span>{{ t('welcome.logo.next') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
+        <button class="wlink" type="submit" name="skip" value="1" formnovalidate>{{ t('welcome.logo.skip') }}</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

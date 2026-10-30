@@ -1,0 +1,60 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import badge, empty, sec %}
+{% block title %}{{ t('goals.health.title') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/goals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/goalsflow.css') }}">{% endblock %}
+{% block content %}
+{% set c = data.counts %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ t('goals.health.title') }}</h1><p class="sub">{{ t('goals.health.sub') }}</p></div>
+  <div class="actions"><form method="get"><select class="select" name="cycle" onchange="this.form.submit()" aria-label="{{ t('common.cycle') }}">
+    <option value="all" {% if not cycle_id %}selected{% endif %}>{{ t('goals.health.all_cycles') }}</option>
+    {% for cy in cycles %}<option value="{{ cy.id }}" {% if cy.id == cycle_id %}selected{% endif %}>{{ cy.name }}</option>{% endfor %}
+  </select></form></div>
+  {% if data.total %}<dl class="hstats">
+    <div><dt>{{ t('goals.health.h_total') }}</dt><dd class="num">{{ n(data.total) }}</dd></div>
+    <div data-s="off_track"><dt>{{ t('status.off_track') }}</dt><dd class="num">{{ n(c.off_track) }}</dd></div>
+    <div data-s="at_risk"><dt>{{ t('status.at_risk') }}</dt><dd class="num">{{ n(c.at_risk) }}</dd></div>
+    <div data-s="on_track"><dt>{{ t('status.on_track') }}</dt><dd class="num">{{ n(c.on_track + c.completed) }}</dd></div>
+  </dl>{% endif %}
+</div>
+
+{% if not buckets %}
+  <div class="box">{% call empty('progress-check', t('goals.health.empty_t'), t('goals.health.empty')) %}{% endcall %}</div>
+{% else %}
+
+{% call sec('brief', 'bulb', t('goals.health.brief_h'), t('goals.health.brief_sub')) %}
+<div class="brief" id="brief-box">
+  <div class="brief__head"><span></span><button class="btn btn-sm" type="button" data-brief="{{ url_for('goals.health_brief') }}" data-cycle="{{ cycle_id or '' }}">{{ t('goals.health.brief_btn') }}</button></div>
+  <div id="brief" aria-live="polite"><p class="muted brief__idle">{{ t('goals.health.brief_idle') }}</p></div>
+</div>
+{% endcall %}
+
+{% for st, rows in buckets.items() %}
+{% call sec('b-' ~ st, {'off_track':'alert-circle','at_risk':'alert-triangle','on_track':'trending-up','completed':'check','not_started':'player-pause'}[st], t('goals.health.g_' ~ st), t('goals.health.g_' ~ st ~ '_sub', n=rows|length)) %}
+<ul class="krl" data-status="{{ st }}">
+  {% for r in rows %}{% set k = r.kr %}{% set o = r.obj %}
+  <li class="krr">
+    <div class="krr__main">
+      <a class="krr__t" href="{{ url_for('goals.detail', id=o.id) }}#kr-{{ k.id }}" dir="auto">{{ k.title }}</a>
+      <p><a href="{{ url_for('goals.detail', id=o.id) }}">{{ icon('target-arrow', 13) }}{{ o.title }}</a>{% if r.data %}<span>{{ icon('table', 12) }}{{ r.data.series.name }}</span>{% endif %}</p>
+    </div>
+    <div class="krr__nums"><span class="krr__lbl">{{ t('goals.now') }}</span><b class="num"><bdi dir="ltr">{{ val(k.current_value, k.unit_label) }}</bdi></b><span class="krr__lbl">{{ t('goals.target') }} <bdi dir="ltr" class="num">{{ val(k.target_value, k.unit_label) }}</bdi></span></div>
+    <div class="krr__end">
+      <span class="krr__lbl">{{ t('goals.health.expected_end') }}</span>
+      {% if r.projected and r.bar %}{% set b = r.bar %}
+        <div class="rbar rbar--sm" role="img" aria-label="{{ t('goals.likely_end') }}"><span class="rbar__axis"></span><span class="rbar__band" style="inset-inline-start:{{ b.low }}%;width:{{ (b.high - b.low)|round(1) }}%"></span><span class="rbar__mid" style="inset-inline-start:{{ b.mid }}%"></span><span class="rbar__now" style="inset-inline-start:{{ b.current }}%"></span><span class="rbar__goal" style="inset-inline-start:{{ b.target }}%"></span></div>
+        <span class="krr__why"><bdi dir="ltr" class="num">{{ val(r.projected.low, k.unit_label) }} – {{ val(r.projected.high, k.unit_label) }}</bdi></span>
+      {% elif r.source == 'data_short' %}<span class="krr__why">{{ icon('help-circle', 13) }}{{ t('goals.health.short_history') }}</span>
+      {% else %}<span class="krr__why">{{ t('goals.health.by_time') }}</span>{% endif %}
+    </div>
+    <div class="krr__st">{{ badge(r.status) }}{% if r.stale %}<span class="warn-text">{{ icon('alert-triangle', 12) }}{{ tn('goals.data_old', r.data.age_days) }}</span>{% endif %}</div>
+  </li>
+  {% endfor %}
+</ul>
+{% endcall %}
+{% endfor %}
+
+<p class="hint hint--note">{{ icon('info-circle', 14) }}{{ t('goals.health.policy') }}</p>
+{% endif %}
+{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/goals.js') }}" defer></script>{% endblock %}

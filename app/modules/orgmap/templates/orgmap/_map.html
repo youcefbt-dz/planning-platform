@@ -1,0 +1,31 @@
+{# The layered map. Expects `m` (orgmap.build.build). #}
+{% from "components/ui.html" import badge, empty, org_tile %}
+<section class="omap">
+  <div class="omap__org">
+    {{ org_tile(g.org, 'lg') }}
+    <div><span class="omap__layer">{{ t('orgmap.layer.org') }}</span><h2>{{ g.org.name }}</h2>
+      {% if m.profile.vision %}<p dir="auto">{{ m.profile.vision }}</p>{% endif %}</div>
+  </div>
+  {% if not m.goals %}
+  <div class="box">{% call empty('target-arrow', t('orgmap.no_goals')) %}{% if can('goals.edit') %}<a class="btn btn-primary" href="{{ url_for('goals.new') }}">{{ icon('plus', 16) }}{{ t('goals.create.objective') }}</a>{% endif %}{% endcall %}</div>
+  {% else %}
+  <div class="omap__goals">
+    {% for gl in m.goals %}
+    <article class="omap__goal" data-attn="{{ 'true' if gl.attention else 'false' }}">
+      <header><span class="omap__layer">{{ t('orgmap.layer.goals') }}</span>
+        <h3><a href="{{ url_for('goals.detail', id=gl.obj.id) }}">{{ gl.obj.title }}</a></h3>
+        {{ badge(gl.status) }}</header>
+      {% for k in gl.krs %}
+      <div class="omap__kr" data-s="{{ k.status }}">
+        <div class="omap__krhead"><b dir="auto">{{ k.kr.title }}</b>{{ badge(k.status) }}</div>
+        <div class="muted num"><bdi dir="ltr">{{ val(k.kr.current_value, k.kr.unit_label) }}</bdi> / <bdi dir="ltr">{{ val(k.kr.target_value, k.kr.unit_label) }}</bdi></div>
+        {% if k.gap is not none and k.gap > 0 and k.status in ('at_risk','off_track') %}<p class="omap__gap">{{ icon('alert-triangle', 14) }}{{ t('orgmap.gap', gap=val(k.gap|round|int, k.kr.unit_label)) }}</p>{% endif %}
+        {% if k.branches %}<div class="omap__chips" aria-label="{{ t('orgmap.layer.branches') }}">{% for b in k.branches %}<span class="omap__chip" data-tone="{{ b.tone }}">{{ b.name }} <bdi dir="ltr">{{ b.text }}</bdi></span>{% endfor %}</div>{% endif %}
+        <div class="omap__levers">{% for lv in k.levers %}<span class="lever-st" data-s="{{ lv.status }}">{{ icon('rocket', 12) }}{{ lv.title }} · {{ t('goals.factors.state.' ~ lv.status) }}</span>{% else %}<span class="muted" style="font-size:var(--fs-xs)">{{ t('orgmap.no_levers') }}</span>{% endfor %}</div>
+      </div>
+      {% endfor %}
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>

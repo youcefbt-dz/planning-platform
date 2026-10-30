@@ -1,0 +1,81 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, badge, meter, avatar, delete_button, status_select, empty, quick_notes %}
+{% block title %}{{ it.title }}{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{{ url_for('initiatives.index') }}">{{ t('initiatives.module') }}</a>{{ icon('chevron-right', 13, flip=true) }}<span>{{ t('initiatives.entity') }}</span></div>
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ it.title }}</h1>
+    <p class="sub row-wrap" style="gap:var(--sp-3)">{{ badge(v.status) }}<span class="chip">{{ t('initiatives.state.' ~ it.state) }}</span><span class="chip">{{ icon('flag', 12) }}{{ t('initiatives.priority.' ~ it.priority) }}</span></p></div>
+  <div class="actions">
+    {% if can('initiatives.edit') %}<a class="btn" href="{{ url_for('initiatives.edit', id=it.id) }}">{{ icon('pencil', 15) }}{{ t('common.edit') }}</a>{% endif %}
+    {% if can('initiatives.delete') %}{{ delete_button(url_for('initiatives.delete', id=it.id)) }}{% endif %}
+  </div>
+</div>
+<div class="layout-side">
+  <div class="stack">
+    <div class="box"><div class="box-body">
+      <div class="row" style="justify-content:space-between;align-items:flex-end;margin-block-end:var(--sp-3)">
+        <div><div class="muted" style="font-size:var(--fs-xs);font-weight:600">{{ t('common.progress') }}</div>
+          <div class="num" style="font-family:var(--font-heading);font-size:var(--fs-3xl);font-weight:700;color:var(--c-ink);line-height:1.1">{{ pct(v.progress) }}</div></div>
+        {% if it.state == 'active' %}<div class="muted" style="font-size:var(--fs-sm);text-align:end">{{ t('common.expected') }}: <b class="ink num">{{ pct(v.expected) }}</b></div>{% endif %}
+      </div>
+      {{ meter(v.progress, v.status, v.expected if it.state == 'active' else none, lg=true) }}
+    </div></div>
+
+    <div class="box" id="milestones">
+      <div class="box-head"><h2>{{ icon('checklist', 18) }}{{ t('initiatives.milestones') }}</h2><span class="count num">{{ v.done }}/{{ v.total }}</span></div>
+      {% for m in it.milestones %}
+      <div class="box-row">
+        {% if can('initiatives.edit') %}
+        <form method="post" action="{{ url_for('initiatives.milestone_toggle', mid=m.id) }}">{{ csrf() }}<button class="btn btn-sm btn-icon {% if m.done %}btn-primary{% endif %}" type="submit" aria-label="{{ t('initiatives.toggle_done') }}" aria-pressed="{{ 'true' if m.done else 'false' }}">{{ icon('check', 14) }}</button></form>
+        {% else %}<span class="status-dot" data-status="{{ 'completed' if m.done else 'not_started' }}">{{ icon('check', 13) }}</span>{% endif %}
+        <div class="main"><span class="title" {% if m.done %}style="text-decoration:line-through;color:var(--c-muted)"{% endif %}>{{ m.title }}</span>
+          <div class="meta">{% if m.due_date %}<span {% if not m.done and m.due_date < today %}class="stale"{% endif %}>{{ icon('calendar', 13) }}{{ d(m.due_date) }}</span>{% endif %}</div></div>
+        {% if can('initiatives.edit') %}<form method="post" action="{{ url_for('initiatives.milestone_delete', mid=m.id) }}" data-confirm="{{ t('common.confirm_delete') }}">{{ csrf() }}<button class="btn btn-sm btn-ghost btn-icon btn-danger" type="submit" aria-label="{{ t('common.delete') }}">{{ icon('trash', 14) }}</button></form>{% endif %}
+      </div>
+      {% else %}{% call empty('checklist', t('initiatives.no_milestones'), t('initiatives.no_milestones_text')) %}{% endcall %}{% endfor %}
+      {% if can('initiatives.edit') %}
+      <form method="post" action="{{ url_for('initiatives.milestone_add', id=it.id) }}" class="inline-edit" style="grid-template-columns:1fr 170px auto">{{ csrf() }}
+        <input class="input input-sm" name="title" placeholder="{{ t('initiatives.milestone_title') }}" required aria-label="{{ t('initiatives.milestone_title') }}">
+        <input class="input input-sm" type="date" name="due_date" aria-label="{{ t('initiatives.due_date') }}">
+        <button class="btn btn-sm btn-primary" type="submit">{{ icon('plus', 14) }}{{ t('common.add') }}</button>
+      </form>{% endif %}
+    </div>
+
+    {% if it.description %}<div class="box"><div class="box-head"><h2>{{ t('common.description') }}</h2></div><div class="box-body" style="white-space:pre-line">{{ it.description }}</div></div>{% endif %}
+
+    <div class="box" id="feed">
+      <div class="box-head"><h2>{{ icon('message-circle', 18) }}{{ t('goals.checkins') }}</h2></div>
+      {% if can('checkin') %}
+      <form method="post" action="{{ url_for('initiatives.checkin', id=it.id) }}" class="box-body" style="border-block-end:1px solid var(--c-line)">{{ csrf() }}
+        <div class="field"><label for="ci">{{ t('goals.checkin_prompt') }}</label><textarea class="textarea" id="ci" name="comment" rows="2"></textarea>{{ quick_notes('#ci') }}</div>
+        <div class="row-wrap">{{ status_select() }}<button class="btn btn-sm btn-primary" type="submit">{{ icon('message', 15) }}{{ t('goals.post_checkin') }}</button></div>
+      </form>{% endif %}
+      {% if feed %}<div class="timeline">{% for c in feed %}<div class="tl-item"><span class="avatar">{{ c.user.initials if c.user else '–' }}</span><div class="body">
+        <div class="who">{{ c.user.name if c.user else t('common.system') }}<span class="when">{{ c.created_at|ago }}</span></div>
+        {% if c.status %}<div class="change">{{ badge(c.status) }}</div>{% endif %}{% if c.comment %}<p>{{ c.comment }}</p>{% endif %}</div></div>{% endfor %}</div>
+      {% else %}{% call empty('message-circle', t('goals.no_checkins')) %}{% endcall %}{% endif %}
+    </div>
+  </div>
+
+  <aside class="stack">
+    <div class="box"><div class="box-body"><dl class="kv">
+      <div><dt>{{ t('common.owner') }}</dt><dd>{% if it.owner %}{{ avatar(it.owner, 'avatar-sm') }}{{ it.owner.name }}{% else %}—{% endif %}</dd></div>
+      <div><dt>{{ t('common.unit') }}</dt><dd>{{ it.unit.name if it.unit else '—' }}</dd></div>
+      <div><dt>{{ t('common.cycle') }}</dt><dd>{{ it.cycle.name if it.cycle else '—' }}</dd></div>
+      <div><dt>{{ t('common.dates') }}</dt><dd class="num">{{ d(it.start_date, 'day') }} → {{ d(it.end_date) }}</dd></div>
+    </dl></div></div>
+
+    {% if modules.is_enabled('goals') %}
+    <div class="box" id="supports"><div class="box-head"><h3>{{ icon('target-arrow', 16) }}{{ t('initiatives.supports') }}</h3><span class="count">{{ n(supports|length) }}</span></div>
+      {% for s in supports %}<div class="box-row"><div class="main"><a class="title" href="{{ s.url }}">{{ s.title }}</a></div>
+        {% if can('initiatives.edit') %}<form method="post" action="{{ url_for('initiatives.unlink', id=it.id, link_id=s.id) }}">{{ csrf() }}<button class="btn btn-sm btn-ghost btn-icon" type="submit" aria-label="{{ t('initiatives.unlink') }}">{{ icon('x', 14) }}</button></form>{% endif %}</div>
+      {% else %}<div class="box-body muted" style="font-size:var(--fs-sm)">{{ t('initiatives.no_supports') }}</div>{% endfor %}
+      {% if can('initiatives.edit') and goals %}
+      <form method="post" action="{{ url_for('initiatives.link_goal', id=it.id) }}" class="inline-edit" style="grid-template-columns:1fr auto">{{ csrf() }}
+        <select class="select select-sm" name="goal_id" aria-label="{{ t('initiatives.link_objective') }}">{% for g_ in goals %}<option value="{{ g_.id }}">{{ g_.title }}</option>{% endfor %}</select>
+        <button class="btn btn-sm" type="submit">{{ icon('link', 14) }}{{ t('initiatives.link') }}</button></form>{% endif %}
+    </div>{% endif %}
+  </aside>
+</div>
+{% endblock %}

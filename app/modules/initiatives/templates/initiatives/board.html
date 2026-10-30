@@ -1,0 +1,33 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, dot, meter, avatar %}
+{% block title %}{{ t('initiatives.tabs.board') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('layout-kanban', 22) }}{{ t('initiatives.tabs.board') }}</h1><p class="sub">{{ t('initiatives.board_sub') }}</p></div>
+  <div class="actions">{% if can('initiatives.edit') %}<a class="btn btn-primary" href="{{ url_for('initiatives.new') }}">{{ icon('plus', 16) }}{{ t('initiatives.create') }}</a>{% endif %}</div></div>
+<div class="board">
+  {% for s in states %}
+  <section class="col" aria-label="{{ t('initiatives.state.' ~ s) }}">
+    <div class="col-head">{{ dot('not_started' if s == 'planned' else 'on_track' if s == 'active' else s) }}{{ t('initiatives.state.' ~ s) }}<span class="count">{{ n(cols[s]|length) }}</span></div>
+    <div class="col-body">
+      {% for v in cols[s] %}
+      <article class="card">
+        <a class="title" href="{{ url_for('initiatives.detail', id=v.obj.id) }}">{{ v.obj.title }}</a>
+        {{ meter(v.progress, v.status) }}
+        <div class="foot">
+          {{ avatar(v.obj.owner, 'avatar-sm') }}
+          {% if v.obj.end_date %}<span>{{ icon('calendar', 13) }}{{ d(v.obj.end_date, 'day') }}</span>{% endif %}
+          {% if v.overdue %}<span class="stale">{{ icon('alert-circle', 13) }}{{ n(v.overdue) }}</span>{% endif %}
+          {% if can('initiatives.edit') %}
+          <details class="menu" style="margin-inline-start:auto"><summary class="btn btn-sm btn-ghost btn-icon" aria-label="{{ t('initiatives.move') }}">{{ icon('dots', 16) }}</summary>
+            <div class="menu__panel" style="min-width:170px"><div class="menu__label">{{ t('initiatives.move') }}</div>
+              {% for st in states if st != s %}<form method="post" action="{{ url_for('initiatives.set_state', id=v.obj.id) }}">{{ csrf() }}<input type="hidden" name="state" value="{{ st }}"><button type="submit">{{ t('initiatives.state.' ~ st) }}</button></form>{% endfor %}
+            </div></details>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

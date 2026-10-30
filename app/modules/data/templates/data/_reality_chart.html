@@ -1,0 +1,19 @@
+{# The reality chart. Expects `ch` (chart.reality_chart) and `unit`. History · range the history shows is reachable · path the target needs · the target. #}
+<div class="chart-wrap rc" data-chart>
+  <svg class="chart rc__svg" viewBox="0 0 {{ ch.w }} {{ ch.h }}" role="img" aria-label="{{ t('data.reality.chart_label') }}">
+    {% for tk in ch.y_ticks %}<line class="grid" x1="{{ ch.left }}" x2="{{ ch.right }}" y1="{{ tk.y }}" y2="{{ tk.y }}"/><text class="axis" x="{{ ch.left - 8 }}" y="{{ tk.y + 4 }}" text-anchor="end">{{ n(tk.v) }}</text>{% endfor %}
+    <line class="rc__now" x1="{{ ch.now_x }}" x2="{{ ch.now_x }}" y1="{{ ch.top }}" y2="{{ ch.baseline }}"/>
+    {% if ch.cone %}<path class="rc__cone" d="{{ ch.cone }}"/><path class="rc__typical" d="{{ ch.typical_path }}"/>{% endif %}
+    <path class="rc__hist" d="{{ ch.hist_path }}"/>
+    {% for p in ch.dots %}<circle class="hit" cx="{{ p.x }}" cy="{{ p.y }}" r="10" data-tip="{{ d(p.date, 'month') }} · {{ n(p.value) }}{{ (' ' ~ unit) if unit else '' }}"/>{% endfor %}
+    <path class="rc__req" d="{{ ch.required_path }}"/>
+    <circle class="rc__target" cx="{{ ch.target.x }}" cy="{{ ch.target.y }}" r="6" data-tip="{{ t('data.reality.target') }} · {{ n(ch.target.v) }}{{ (' ' ~ unit) if unit else '' }}"/>
+    {% for p in ch.x_ticks %}<text class="axis" x="{{ p.x }}" y="{{ ch.h - 6 }}" text-anchor="{{ p.anchor }}">{{ d(p.date, 'month') }}</text>{% endfor %}
+  </svg>
+</div>
+<div class="legend rc__legend">
+  <span class="item"><i class="sw sw-hist"></i>{{ t('data.reality.l_hist') }}</span>
+  {% if ch.cone %}<span class="item"><i class="sw sw-cone"></i>{{ t('data.reality.l_cone') }}</span>{% endif %}
+  <span class="item"><i class="sw sw-req"></i>{{ t('data.reality.l_req') }}</span>
+  <span class="item"><i class="sw sw-target"></i>{{ t('data.reality.l_target') }}</span>
+</div>

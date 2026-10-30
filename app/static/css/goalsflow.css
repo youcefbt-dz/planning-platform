@@ -1,0 +1,74 @@
+/* ==========================================================================
+   GOALS — one vocabulary: .sc (a status card that filters), .gcard (a goal and its key results), .krr (a key result to follow up),
+   .ot (a node of the alignment map), .icard (an indicator). Same white cards on the lavender canvas as the rest of the app.
+   ========================================================================== */
+.sgrid-s{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-3)}
+.sc{display:grid;gap:2px;padding:16px 20px;border-radius:20px;background:#fff;color:var(--c-body);box-shadow:0 12px 28px -22px color-mix(in srgb,var(--brand-ink) 40%,transparent);border:2px solid transparent}
+.sc:hover{text-decoration:none;border-color:var(--c-line-strong)}
+.sc[aria-current=true]{border-color:var(--c-primary);background:var(--c-primary-softer)}
+.sc b{font:800 var(--fs-2xl) var(--font-heading);color:var(--c-ink);line-height:1.2}
+.sc span{display:inline-flex;gap:8px;align-items:center;font-size:var(--fs-sm);font-weight:600}
+.sc i{width:10px;height:10px;border-radius:50%;background:var(--c-muted)}
+.sc[data-s=on_track] i,.sc[data-s=completed] i{background:var(--st-on_track-fg)}.sc[data-s=at_risk] i{background:#e0a100}.sc[data-s=off_track] i{background:var(--st-off_track-fg)}
+.dsec .fbar{margin-block-end:var(--sp-4)}
+
+/* goal cards */
+.gcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:var(--sp-4);list-style:none;margin:0;padding:0}
+.gcard{display:grid;gap:14px;align-content:start;padding:20px 22px;border-radius:24px;background:#fff;box-shadow:0 14px 34px -22px color-mix(in srgb,var(--brand-ink) 38%,transparent)}
+.gcard__top{display:flex;gap:14px;align-items:center}
+.gcard__title{min-width:0;display:grid;gap:3px}
+.gcard__title a{font:700 var(--fs-md) var(--font-heading);color:var(--c-ink);line-height:1.5}
+.gcard__title p{margin:0;display:flex;gap:5px;align-items:center;color:var(--c-muted);font-size:var(--fs-xs)}
+.gcard__krs{margin:0;padding:12px 0 0;list-style:none;display:grid;gap:9px;border-block-start:1px solid var(--c-line)}
+.gcard__krs li{display:grid;grid-template-columns:minmax(0,1fr) 84px 40px;gap:10px;align-items:center;font-size:var(--fs-sm)}
+.gcard__kt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--c-body)}
+.gcard__bar{height:6px;border-radius:99px;background:var(--c-primary-softer);overflow:hidden}.gcard__bar i{display:block;height:100%;border-radius:99px;background:var(--c-primary)}
+.gcard__bar[data-status=on_track] i,.gcard__bar[data-status=completed] i{background:var(--st-on_track-fg)}.gcard__bar[data-status=at_risk] i{background:#e0a100}.gcard__bar[data-status=off_track] i{background:var(--st-off_track-fg)}
+.gcard__krs b{font-size:var(--fs-xs);text-align:end;color:var(--c-ink)}
+.gcard__more{color:var(--c-muted);font-size:var(--fs-xs)!important;display:block!important}
+.gcard__none{margin:0;padding-block-start:12px;border-block-start:1px solid var(--c-line);color:var(--c-muted);font-size:var(--fs-sm)}
+.gcard__foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-block-start:12px;border-block-start:1px solid var(--c-line)}
+.gcard__who{display:inline-flex;gap:8px;align-items:center;font-size:var(--fs-sm);margin-inline-end:auto;min-width:0}
+.gcard__pace{font-size:var(--fs-xs);font-weight:700;padding:3px 10px;border-radius:99px;background:var(--st-on_track-bg);color:var(--st-on_track-fg)}
+.gcard__pace[data-tone=bad]{background:var(--st-off_track-bg);color:var(--st-off_track-fg)}
+.gcard__stale{margin:-4px 0 0;display:flex;gap:5px;align-items:center;color:var(--st-at_risk-fg);font-size:var(--fs-xs)}
+
+/* key results to follow up */
+.krl{margin:0;padding:0;list-style:none;display:grid;gap:var(--sp-3)}
+.krr{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(110px,.6fr) minmax(190px,1fr) auto;gap:var(--sp-5);align-items:center;padding:16px 22px;border-radius:20px;background:#fff;border-inline-start:6px solid var(--c-primary);box-shadow:0 12px 28px -22px color-mix(in srgb,var(--brand-ink) 40%,transparent)}
+.krl[data-status=off_track] .krr{border-inline-start-color:var(--st-off_track-fg)}.krl[data-status=at_risk] .krr{border-inline-start-color:#e0a100}.krl[data-status=on_track] .krr,.krl[data-status=completed] .krr{border-inline-start-color:var(--st-on_track-fg)}
+.krr__main{min-width:0}.krr__t{font:700 var(--fs-base) var(--font-heading);color:var(--c-ink)}
+.krr__main p{margin:3px 0 0;display:flex;gap:12px;flex-wrap:wrap;font-size:var(--fs-xs);color:var(--c-muted)}.krr__main p a,.krr__main p span{display:inline-flex;gap:4px;align-items:center;color:var(--c-muted)}
+.krr__nums,.krr__end{display:grid;gap:3px;min-width:0}.krr__nums b{font-size:var(--fs-lg);color:var(--c-ink)}
+.krr__lbl{font-size:var(--fs-xs);color:var(--c-muted)}.krr__why{font-size:var(--fs-xs);color:var(--c-muted);display:inline-flex;gap:4px;align-items:center}
+.krr__st{display:grid;gap:4px;justify-items:end}
+.hint--note{display:flex;gap:6px;align-items:flex-start;color:var(--c-muted);font-size:var(--fs-sm);margin-block-end:var(--sp-6)}
+
+/* alignment map: one lane per top-level goal; what serves it sits underneath, joined by a rail */
+.otwrap{padding-block-end:var(--sp-3)}
+.ot__roots{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:var(--sp-5);align-items:start}
+.ot__roots>.ot{padding:var(--sp-4);border-radius:28px;background:color-mix(in srgb,var(--c-primary) 6%,#fff);border:1px solid var(--c-line)}
+.ot{display:grid;gap:var(--sp-3)}
+.ot__kids{list-style:none;margin:0;padding:0;margin-inline-start:26px;padding-inline-start:22px;border-inline-start:2px solid var(--c-line-strong);display:grid;gap:var(--sp-3)}
+.ot__kids>.ot{position:relative}
+.ot__kids>.ot::before{content:"";position:absolute;inset-block-start:34px;inset-inline-start:-22px;width:22px;border-block-start:2px solid var(--c-line-strong)}
+.ot__n{position:relative;display:grid;gap:8px;padding:16px 18px;border-radius:20px;background:#fff;color:var(--c-body);border-block-start:5px solid var(--c-primary);box-shadow:0 14px 30px -20px color-mix(in srgb,var(--brand-ink) 45%,transparent)}
+.ot__n:hover{text-decoration:none;translate:0 -3px}
+.ot__n[data-status=on_track],.ot__n[data-status=completed]{border-block-start-color:var(--st-on_track-fg)}.ot__n[data-status=at_risk]{border-block-start-color:#e0a100}.ot__n[data-status=off_track]{border-block-start-color:var(--st-off_track-fg)}
+.ot__lvl{font-size:var(--fs-xs);color:var(--c-primary-text);font-weight:700}
+.ot__t{font:700 var(--fs-sm) var(--font-heading);color:var(--c-ink);line-height:1.6}
+.ot__meta{display:grid;gap:2px;font-size:var(--fs-xs);color:var(--c-muted)}.ot__meta>*{display:inline-flex;gap:5px;align-items:center}
+.ot__bar{height:6px;border-radius:99px;background:var(--c-primary-softer);overflow:hidden}.ot__bar i{display:block;height:100%;background:var(--c-primary);border-radius:99px}
+.ot__foot{display:flex;justify-content:space-between;align-items:center}.ot__foot b{color:var(--c-ink)}
+
+/* indicator cards */
+.icards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:var(--sp-4);list-style:none;margin:var(--sp-4) 0 0;padding:0}
+.icard{position:relative;display:grid;gap:6px;height:100%;padding:20px 22px;border-radius:24px;background:#fff;color:inherit;box-shadow:0 14px 34px -22px color-mix(in srgb,var(--brand-ink) 38%,transparent);transition:translate .15s}
+.icard:hover{text-decoration:none;translate:0 -3px}
+.icard__name{font:700 var(--fs-base) var(--font-heading);color:var(--c-ink)}.icard__sub{font-size:var(--fs-xs);color:var(--c-muted)}
+.icard__val{font:800 var(--fs-xl) var(--font-heading);color:var(--c-ink);margin-block-start:6px}
+.icard__line{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:var(--fs-sm);color:var(--c-muted)}
+.icard__spark{width:100%;height:40px;fill:none;stroke:var(--c-primary);stroke-width:2;vector-effect:non-scaling-stroke}.icard__spark path{vector-effect:non-scaling-stroke}
+.icard__foot{display:flex;gap:8px;align-items:center;justify-content:space-between;padding-block-start:10px;border-block-start:1px solid var(--c-line);font-size:var(--fs-sm)}
+
+@media (max-width:900px){.krr{grid-template-columns:1fr 1fr}.krr__main{grid-column:1/-1}.gcards{grid-template-columns:1fr}}

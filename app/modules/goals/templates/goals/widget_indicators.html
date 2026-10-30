@@ -1,0 +1,19 @@
+{% from "components/ui.html" import dot %}
+{% if data["items"] %}<section class="orb">
+  <header class="orb__head"><h2>{{ icon('chart-line', 18) }}{{ t('goals.widget.indicators') }}</h2><a class="btn btn-sm" href="{{ url_for('goals.indicators') }}">{{ t('common.view_all') }}</a></header>
+  <ul class="inds">
+    {% for v in data["items"] %}
+    {% set tgt = v.ind.target_value %}
+    {% set at = (v.attainment if v.attainment is not none else 0) %}
+    <li class="ind" data-status="{{ v.status }}">
+      <a class="ind__name" href="{{ url_for('goals.indicator_detail', id=v.ind.id) }}">{{ v.ind.name }}</a>
+      <div class="ind__row">
+        <b class="ind__val num"><bdi dir="ltr">{{ val(v.latest, v.ind.unit_label, v.ind.metric_type) }}</bdi></b>
+        {% set sp = spark(v.series) %}{% if sp %}<svg class="spark" viewBox="0 0 96 28" aria-hidden="true"><path d="{{ sp }}"/></svg>{% endif %}
+      </div>
+      <div class="bullet" role="img" aria-label="{{ t('status.' ~ v.status) }}"><span class="bullet__fill" style="width:{{ [100, (at * 100)|round|int]|min }}%"></span><span class="bullet__goal"></span></div>
+      <div class="ind__foot"><span>{{ icon(STATUS_ICONS.get(v.status, 'circle'), 13) }}{{ t('status.' ~ v.status) }}</span><span class="num"><bdi dir="ltr">{{ val(tgt, v.ind.unit_label, v.ind.metric_type) }}</bdi></span></div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>{% endif %}

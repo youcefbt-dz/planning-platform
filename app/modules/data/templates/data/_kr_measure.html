@@ -1,0 +1,16 @@
+{# "Measured by" picker for a key result + the live reality verdict. Rendered by goals forms; only if the data module is enabled and has series.
+   params: name (form field), selected (series id or none), uid, end (iso date) or end_from (css selector of the end-date input),
+           target_from (selector of the target input), start_to / unit_to (selectors to fill from the series), goal (text) #}
+{% if data_series_options is defined %}{% set _series = data_series_options() %}{% if _series %}
+<div class="kr-measure" data-reality data-endpoint="{{ url_for('data.reality_check') }}" data-target="#kp-{{ uid }}"
+     {% if end %}data-end="{{ end }}"{% endif %} {% if end_from %}data-end-from="{{ end_from }}"{% endif %}
+     data-target-from="{{ target_from }}" {% if start_to %}data-start-to="{{ start_to }}"{% endif %} {% if unit_to %}data-unit-to="{{ unit_to }}"{% endif %} data-goal="{{ goal or '' }}">
+  <div class="field"><label for="ms-{{ uid }}">{{ icon('table', 14) }} {{ t('data.goal.measured_by') }}</label>
+    <select class="select select-sm" id="ms-{{ uid }}" name="{{ name }}" data-r="series">
+      <option value="">{{ t('data.goal.none') }}</option>
+      {% for s in _series %}{% set lp = s.latest %}<option value="{{ s.id }}" data-latest="{{ lp[1] if lp else '' }}" data-unit="{{ s.unit }}" {% if selected == s.id %}selected{% endif %}>{{ s.name }} · {{ s.dataset.name }}</option>{% endfor %}
+    </select>
+    <p class="hint">{{ t('data.goal.hint') }}</p></div>
+  <div id="kp-{{ uid }}" class="kr-reality" aria-live="polite"></div>
+</div>
+{% endif %}{% endif %}

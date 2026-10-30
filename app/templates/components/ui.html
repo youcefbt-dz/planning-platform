@@ -1,0 +1,136 @@
+{# Shared UI macros. Import with:  {% from "components/ui.html" import badge, meter, avatar … %} #}
+
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro badge(status) -%}
+<span class="badge" data-status="{{ status }}">{{ icon(STATUS_ICONS.get(status, 'circle'), 13) }}{{ t('status.' ~ status) }}</span>
+{%- endmacro %}
+
+{% macro dot(status) -%}
+<span class="status-dot" data-status="{{ status }}" title="{{ t('status.' ~ status) }}">{{ icon(STATUS_ICONS.get(status, 'circle'), 13) }}<span class="sr-only">{{ t('status.' ~ status) }}</span></span>
+{%- endmacro %}
+
+{% macro meter(progress, status=none, expected=none, lg=false) -%}
+{% set pc = ((progress or 0) * 100)|round|int %}
+<div class="meter{% if lg %} meter-lg{% endif %}">
+  <div class="meter__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pc }}">
+    <span class="meter__fill" data-status="{{ status or '' }}" style="width:{{ pc }}%"></span>
+    {% if expected is not none %}<span class="meter__expected" style="inset-inline-start:{{ (expected * 100)|round|int }}%" title="{{ t('common.expected') }}: {{ pct(expected) }}"></span>{% endif %}
+  </div>
+  <span class="meter__value num">{{ pct(progress) }}</span>
+</div>
+{%- endmacro %}
+
+{# the organization's logo tile: its uploaded logo, or its initials on a tinted tile #}
+{% macro org_tile(o, size='md') -%}
+{% set src = org_logo_url(o) %}
+<span class="org-tile org-tile--{{ size }}" {% if not src %}aria-hidden="true"{% endif %}>{% if src %}<img src="{{ src }}" alt="{{ o.name }}">{% else %}{{ org_initials(o) }}{% endif %}</span>
+{%- endmacro %}
+
+{% macro avatar(user, size='') -%}
+{% if user %}<span class="avatar {{ size }}" title="{{ user.name }}">{{ user.initials }}</span>{% else %}<span class="avatar {{ size }}" style="background:var(--c-subtle);color:var(--c-muted)" title="{{ t('common.unassigned') }}">–</span>{% endif %}
+{%- endmacro %}
+
+{% macro stackbar(counts, order=('completed','on_track','at_risk','off_track','on_hold','not_started','cancelled')) -%}
+<div class="stackbar" role="img" aria-label="{% for s in order if counts.get(s) %}{{ t('status.' ~ s) }} {{ counts[s] }}{% if not loop.last %}, {% endif %}{% endfor %}">
+  {% for s in order if counts.get(s) %}<span data-status="{{ s }}" style="flex:{{ counts[s] }}" title="{{ t('status.' ~ s) }}: {{ counts[s] }}"></span>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro legend(counts, order=('completed','on_track','at_risk','off_track','on_hold','not_started','cancelled'), href=none) -%}
+<div class="legend">
+  {% for s in order if counts.get(s) %}
+    {% if href %}<a href="{{ href(s) }}"><i data-status="{{ s }}"></i>{{ t('status.' ~ s) }} <b class="num">{{ n(counts[s]) }}</b></a>
+    {% else %}<span class="item"><i data-status="{{ s }}"></i>{{ t('status.' ~ s) }} <b class="num">{{ n(counts[s]) }}</b></span>{% endif %}
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{# the gauge: outer ring = time passed, inner ring = progress; `g` comes from goals.widgets.gauge #}
+{% macro orbit_gauge(g, progress) -%}
+<svg class="gauge" viewBox="0 0 240 240" role="img" aria-label="{{ pct(progress) }}">
+  <circle cx="120" cy="120" r="104" class="gauge__track gauge__track--time"/>
+  {% if g.outer %}<circle cx="120" cy="120" r="104" class="gauge__arc gauge__arc--time" stroke-dasharray="{{ g.outer.len }} {{ g.outer.circ }}" transform="rotate(-90 120 120)"/><circle cx="{{ g.outer.x }}" cy="{{ g.outer.y }}" r="7" class="gauge__sat gauge__sat--time"/>{% endif %}
+  <circle cx="120" cy="120" r="76" class="gauge__track"/>
+  <circle cx="120" cy="120" r="76" class="gauge__arc" stroke-dasharray="{{ g.inner.len }} {{ g.inner.circ }}" transform="rotate(-90 120 120)"/>
+  <circle cx="{{ g.inner.x }}" cy="{{ g.inner.y }}" r="10" class="gauge__sat"/>
+  <text x="120" y="126" class="gauge__num">{{ pct(progress) }}</text>
+</svg>
+{%- endmacro %}
+
+{% macro empty(ic, title, text='') -%}
+<div class="empty">
+  <div class="well">{{ icon(ic, 30) }}</div>
+  <h3>{{ title }}</h3>
+  {% if text %}<p>{{ text }}</p>{% endif %}
+  {{ caller() if caller else '' }}
+</div>
+{%- endmacro %}
+
+{# ---- form fields ---- #}
+{% macro field(label, name, value='', type='text', required=false, hint='', placeholder='', cls='') -%}
+<div class="field {{ cls }}">
+  <label for="f-{{ name }}">{{ label }}{% if required %} <span class="muted" aria-hidden="true">*</span>{% endif %}</label>
+  <input class="input" id="f-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ value if value is not none else '' }}" {% if required %}required{% endif %} {% if placeholder %}placeholder="{{ placeholder }}"{% endif %} {% if type == 'number' %}step="any" inputmode="decimal"{% endif %}>
+  {% if hint %}<p class="hint">{{ hint }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro textarea(label, name, value='', hint='', rows=3, cls='') -%}
+<div class="field {{ cls }}">
+  <label for="f-{{ name }}">{{ label }}</label>
+  <textarea class="textarea" id="f-{{ name }}" name="{{ name }}" rows="{{ rows }}">{{ value or '' }}</textarea>
+  {% if hint %}<p class="hint">{{ hint }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{# options = [(value, label)] #}
+{% macro select(label, name, options, selected=none, blank='', cls='') -%}
+<div class="field {{ cls }}">
+  <label for="f-{{ name }}">{{ label }}</label>
+  <select class="select" id="f-{{ name }}" name="{{ name }}">
+    {% if blank %}<option value="">{{ blank }}</option>{% endif %}
+    {% for v, l in options %}<option value="{{ v }}" {% if selected is not none and selected|string == v|string %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+</div>
+{%- endmacro %}
+
+{% macro flashes() -%}
+{% with msgs = get_flashed_messages(with_categories=true) %}
+{% if msgs %}<div class="flashes" role="status">{% for cat, m in msgs %}<div class="flash flash-{{ cat if cat in ('success','error') else 'info' }}">{{ icon('circle-check' if cat == 'success' else 'alert-circle' if cat == 'error' else 'info-circle', 18) }}<span>{{ m }}</span></div>{% endfor %}</div>{% endif %}
+{% endwith %}
+{%- endmacro %}
+
+{% macro delete_button(action, label=none, confirm=none, cls='btn btn-danger btn-sm') -%}
+<form method="post" action="{{ action }}" class="inline-form" data-confirm="{{ confirm or t('common.confirm_delete') }}">{{ csrf() }}<button class="{{ cls }}" type="submit">{{ icon('trash', 14) }}{{ label or t('common.delete') }}</button></form>
+{%- endmacro %}
+
+{# a status <select> used by check-in forms #}
+{% macro status_select(name='status', statuses=('on_track','at_risk','off_track'), blank=none) -%}
+<select class="select select-sm" name="{{ name }}" aria-label="{{ t('common.status') }}">
+  <option value="">{{ blank or t('common.status_keep') }}</option>
+  {% for s in statuses %}<option value="{{ s }}">{{ t('status.' ~ s) }}</option>{% endfor %}
+</select>
+{%- endmacro %}
+
+{# one-click replies for an update box: quick_notes('#ci-comment') #}
+{% macro quick_notes(target) -%}
+<div class="chips" role="group" aria-label="{{ t('common.quick.title') }}">{% for k in ('on_plan','delay','need_help','review','nothing') %}<button class="chip-btn" type="button" data-fill="{{ t('common.quick.' ~ k) }}" data-target="{{ target }}" data-mode="append">{{ t('common.quick.' ~ k ~ '_chip') }}</button>{% endfor %}</div>
+{%- endmacro %}
+
+{# A titled section of a page: a circular icon well, a title, one line saying what it is for; the content is the caller block. #}
+{% macro sec(id, ic, title, sub='') %}
+<section class="dsec" id="{{ id }}" aria-labelledby="{{ id }}-h">
+  <header class="dsec__head"><span class="dsec__ic">{{ icon(ic, 20) }}</span><div><h2 id="{{ id }}-h">{{ title }}</h2>{% if sub %}<p>{{ sub }}</p>{% endif %}</div></header>
+  {{ caller() }}
+</section>
+{% endmacro %}
+
+{# A progress ring: the number sits inside, colour comes from the status. #}
+{% macro ring(progress, status, size=64) %}
+{% set pc = ((progress or 0) * 100)|round|int %}{% set c = 175.9 %}
+<span class="ring" data-status="{{ status }}" style="--s:{{ size }}px" role="img" aria-label="{{ pc }}%">
+  <svg viewBox="0 0 64 64" aria-hidden="true"><circle class="ring__bg" cx="32" cy="32" r="28"/><circle class="ring__fg" cx="32" cy="32" r="28" stroke-dasharray="{{ (c * [pc, 100]|min / 100)|round(1) }} {{ c }}" transform="rotate(-90 32 32)"/></svg>
+  <b class="num">{{ pc }}<small>%</small></b>
+</span>
+{% endmacro %}

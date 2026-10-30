@@ -1,0 +1,113 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, field, textarea, select %}
+{% block title %}{{ t('goals.create.objective') if mode == 'new' else t('goals.edit_title') }}{% endblock %}
+{% block content %}
+{% set hints = {} %}{% set tlabels = {} %}{% for kt in kr_types %}{% set _ = hints.update({kt: t('goals.kr_type_hint.' ~ kt)}) %}{% set _ = tlabels.update({kt: t('goals.target_label.' ~ kt)}) %}{% endfor %}{% set lnames = {} %}{% for k in ('conservative','ambitious','stretch') %}{% set _ = lnames.update({k: t('goals.level.' ~ k)}) %}{% endfor %}
+<div class="crumbs"><a href="{{ url_for('goals.index') }}">{{ t('goals.module') }}</a>{{ icon('chevron-right', 13, flip=true) }}<span>{{ t('goals.create.objective') if mode == 'new' else t('goals.edit_title') }}</span></div>
+<div class="page-head"><div><h1>{{ icon('target-arrow', 22) }}{{ t('goals.create.objective') if mode == 'new' else t('goals.edit_title') }}</h1>
+  <p class="sub">{{ t('goals.form_sub') }}</p></div></div>
+
+<form method="post" data-goal-form data-review-url="{{ url_for('goals.review') }}" data-suggest-url="{{ url_for('goals.suggest_krs') }}"
+      {% if has_series %}data-levels-url="{{ url_for('data.levels') }}"{% endif %} data-mode="{{ mode }}"
+      data-hints='{{ hints|tojson }}' data-tlabels='{{ tlabels|tojson }}' data-lnames='{{ lnames|tojson }}'
+      data-t-need-end="{{ t('goals.levels.need_end') }}" data-t-short="{{ t('goals.levels.insufficient') }}" data-t-basis="{{ t('goals.levels.basis', n='{n}') }}">
+  {{ csrf() }}
+  <div class="layout-side">
+  <div class="stack">
+    {% if mode == 'new' %}
+    <div class="box" data-assist="{{ url_for('goals.draft') }}" data-assist-from="#draft-intent" data-assist-failed="{{ t('goals.draft.failed') }}">
+      <div class="box-body stack-sm">
+        <label for="draft-intent"><b>{{ icon('bulb', 16) }}{{ t('goals.draft.title') }}</b></label>
+        <p class="hint">{{ t('goals.draft.sub') }}</p>
+        <div class="row-wrap"><input class="input" id="draft-intent" name="intent" maxlength="200" dir="auto" autocomplete="off" placeholder="{{ t('goals.draft.ph') }}" style="flex:1;min-width:220px">
+          <button class="btn btn-primary" type="button" data-assist-run>{{ icon('bulb', 15) }}{{ t('goals.draft.btn') }}</button></div>
+        <div class="chips" role="group" aria-label="{{ t('goals.draft.examples') }}">{% for k in ('sales','costs','customers','team','delivery','cash') %}<button class="chip-btn" type="button" data-fill="{{ t('goals.draft.ex.' ~ k) }}" data-target="#draft-intent">{{ t('goals.draft.ex.' ~ k) }}</button>{% endfor %}</div>
+        <div class="sug-list" data-assist-out aria-live="polite"></div>
+      </div>
+    </div>
+    {% endif %}
+    <div class="box"><div class="box-body">
+      {{ field(t('goals.field_title'), 'title', o.title or '', required=true, hint=t('goals.field_title_hint')) }}
+      {{ textarea(t('goals.rationale'), 'rationale', o.rationale, hint=t('goals.rationale_hint'), rows=3) }}
+      <fieldset class="choice"><legend>{{ t('goals.commitment_h') }}</legend>
+        <div class="choice__grid">
+        {% for c in commitments %}<label class="choice__card"><input type="radio" name="commitment" value="{{ c }}" {% if (o.commitment or 'committed') == c %}checked{% endif %}>
+          <span><b>{{ icon('flag-3' if c == 'committed' else 'mountain', 15) }}{{ t('goals.commitment.' ~ c) }}</b><small>{{ t('goals.commitment_hint.' ~ c) }}</small></span></label>{% endfor %}
+        </div></fieldset>
+      <div class="form-grid">
+        <div class="field"><label for="f-cycle_id">{{ t('common.cycle') }}</label>
+          <select class="select" id="f-cycle_id" name="cycle_id"><option value="">{{ t('common.none') }}</option>{% for c in cycles %}<option value="{{ c.id }}" data-end="{{ c.end_date.isoformat() }}" {% if o.cycle_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></div>
+        {{ select(t('common.owner'), 'owner_id', opts(members, 'user_id', 'user.name'), o.owner_id, blank=t('common.unassigned')) }}
+      </div>
+      <details class="more" {% if mode == 'edit' or o.description or o.parent_id or o.unit_id or o.perspective or o.start_date or o.end_date %}open{% endif %}>
+        <summary>{{ icon('adjustments', 15) }}{{ t('goals.more_options') }}</summary>
+        <div class="more__body">
+          {{ textarea(t('common.description'), 'description', o.description) }}
+          <div class="form-grid">
+            {{ select(t('common.unit'), 'unit_id', opts(units, 'id', 'name'), o.unit_id, blank=t('common.none')) }}
+            {{ select(t('goals.parent'), 'parent_id', opts(parents, 'id', 'title'), o.parent_id, blank=t('goals.no_parent')) }}
+            {{ select(t('goals.perspective'), 'perspective', topts(perspectives, 'goals.perspectives.'), o.perspective, blank=t('common.none')) }}
+            {{ select(t('goals.progress_driver'), 'progress_driver', topts(drivers, 'goals.drivers.'), o.progress_driver) }}
+            {{ field(t('common.start_date'), 'start_date', o.start_date.isoformat() if o.start_date else '', 'date', hint=t('goals.dates_hint')) }}
+            {{ field(t('common.end_date'), 'end_date', o.end_date.isoformat() if o.end_date else '', 'date') }}
+            {{ field(t('goals.weight'), 'weight', o.weight if o.weight is not none else 1, 'number', hint=t('goals.weight_hint')) }}
+            {{ select(t('goals.state'), 'state', topts(('active','on_hold','cancelled'), 'goals.states.'), o.state or 'active') }}
+          </div>
+        </div>
+      </details>
+    </div></div>
+
+    {% if mode == 'new' %}
+    <div class="box"><div class="box-head"><h2>{{ icon('flag', 18) }}{{ t('goals.entity.key_results') }}</h2><span class="muted" style="font-size:var(--fs-sm)">{{ t('goals.kr_form_hint') }}</span></div>
+      <div class="box-body stack-sm">
+        {% for i in range(5) %}
+        <div class="krrow" data-row="{{ i }}" {% if i >= 3 %}hidden{% endif %}>
+          <input type="hidden" name="kr_level" value="" data-f="level">
+          <div class="krrow__head"><label for="kt{{ i }}">{{ t('goals.kr_n', n=i+1) }}</label>
+            <select class="select select-sm" name="kr_type" data-f="type" aria-label="{{ t('goals.kr_type_h') }}">{% for kt in kr_types %}<option value="{{ kt }}">{{ t('goals.kr_type.' ~ kt) }}</option>{% endfor %}</select></div>
+          <input class="input" id="kt{{ i }}" name="kr_title" data-f="title" dir="auto" placeholder="{{ t('goals.kr_title_ph') }}">
+          <div class="krrow__nums">
+            <div class="field" data-for="start"><label for="ks{{ i }}">{{ t('goals.start_value') }}</label><input class="input" id="ks{{ i }}" name="kr_start" data-f="start" inputmode="decimal" placeholder="0"></div>
+            <div class="field" data-for="target"><label for="kg{{ i }}" data-label-target>{{ t('goals.target_value') }}</label><input class="input" id="kg{{ i }}" name="kr_target" data-f="target" inputmode="decimal" placeholder="100"></div>
+            <div class="field" data-for="unit"><label for="ku{{ i }}">{{ t('goals.unit_label') }}</label><input class="input" id="ku{{ i }}" name="kr_unit" data-f="unit" maxlength="24"></div>
+          </div>
+          <p class="hint krrow__hint" data-kind-hint></p>
+          <div class="levels" data-levels hidden>
+            <span class="levels__h">{{ icon('bulb', 14) }}{{ t('goals.levels.title') }}</span>
+            <div class="levelrow" role="group" aria-label="{{ t('goals.levels.title') }}"></div>
+            <p class="hint levels__note"></p>
+          </div>
+          {% if has_series %}{% with name='kr_series', selected=none, uid='n' ~ i, end='', end_from='#f-end_date', target_from='#kg' ~ i, start_to='#ks' ~ i, unit_to='#ku' ~ i, goal='' %}{% include "data/_kr_measure.html" %}{% endwith %}{% endif %}
+        </div>
+        {% endfor %}
+        <button class="btn btn-sm" type="button" data-add-kr>{{ icon('plus', 14) }}{{ t('goals.add_another_kr') }}</button>
+      </div></div>
+    {% endif %}
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('common.save') if mode == 'edit' else t('common.create') }}</button>
+      <a class="btn" href="{{ url_for('goals.detail', id=o.id) if mode == 'edit' else url_for('goals.index') }}">{{ t('common.cancel') }}</a>
+    </div>
+  </div>
+
+  <aside class="stack form-aside">
+    <div class="box"><div class="box-head"><h3>{{ icon('clipboard-check', 16) }}{{ t('goals.coach.title') }}</h3></div>
+      <div class="box-body">
+        <p class="hint" style="margin-block-end:var(--sp-3)">{{ t('goals.coach.sub') }}</p>
+        <div id="review" aria-live="polite" data-review></div>
+        <button class="btn btn-sm" type="button" data-review-ai>{{ icon('bulb', 14) }}{{ t('goals.coach.ai_btn') }}</button>
+        <p class="hint" style="margin-block-start:var(--sp-2)">
+          {% if ai_state.models %}{% if ai_state.consent %}{{ t('goals.ai.on', model=t('ai.provider.' ~ ai_state.models[0])) }}{% else %}{{ t('goals.ai.need_consent') }}{% endif %}{% else %}{{ t('goals.ai.none') }}{% endif %}</p>
+      </div></div>
+    {% if mode == 'new' and has_series %}
+    <div class="box"><div class="box-head"><h3>{{ icon('table', 16) }}{{ t('goals.suggest.title') }}</h3></div>
+      <div class="box-body"><p class="hint" style="margin-block-end:var(--sp-3)">{{ t('goals.suggest.sub') }}</p>
+        <button class="btn btn-sm btn-primary" type="button" data-suggest>{{ icon('bulb', 14) }}{{ t('goals.suggest.btn') }}</button>
+        <div id="suggest" class="sug-list" aria-live="polite"></div></div></div>
+    {% endif %}
+  </aside>
+  </div>
+</form>
+{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/goals.css') }}">{% if data_series_options is defined %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}">{% endif %}{% endblock %}
+{% block js_page %}{% if data_series_options is defined %}<script src="{{ url_for('static', filename='js/reality.js') }}" defer></script>{% endif %}<script src="{{ url_for('static', filename='js/goals.js') }}" defer></script>{% endblock %}

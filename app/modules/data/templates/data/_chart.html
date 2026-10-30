@@ -1,0 +1,115 @@
+{# One chart box. Expects `c` (dashboard.build output). Colour is never the only signal: tones also carry an icon, a sign or a word. #}
+{% set kind = c.kind %}
+{% set kicon = {'trend':'chart-line','branches':'chart-bar','contribution':'chart-bar','heatmap':'calendar','compare':'chart-line','share':'chart-donut','ranking':'chart-bar','bars':'chart-bar','stacked':'chart-area','growth':'trending-up','cumulative':'chart-line','scatter':'chart-line','table':'table','kpi':'target'} %}
+<section class="box chartbox" data-kind="{{ kind }}">
+  <div class="box-head"><h2>{{ icon(kicon[kind], 18) }}{{ c.title }}</h2>
+    {% if kind == 'trend' and c.views|length > 1 %}
+      <div class="seg" role="tablist" data-range>{% for v in c.views %}<button type="button" class="seg__b" role="tab" data-i="{{ loop.index0 }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ v.label }}</button>{% endfor %}</div>
+    {% elif c.unit %}<span class="muted chartbox__unit">{{ c.unit }}</span>{% endif %}
+  </div>
+  <div class="box-body">
+  {% if kind == 'trend' %}
+    {% if c.head %}<p class="trendhead"><span class="trendhead__v num"><bdi dir="ltr">{{ c.head.value }}</bdi></span><span class="trendhead__p">{{ c.head.period }}</span><span class="delta-chip" data-tone="{{ c.head.tone }}">{{ c.head.phrase }}</span></p>{% endif %}
+    {% for g in c.views %}
+    <div class="dview" data-view="{{ loop.index0 }}" {% if not loop.first %}hidden{% endif %}>
+      <div class="legend legend--chart">
+        <span class="item"><i class="sw sw--line"></i>{{ c.title }}</span>
+        {% if g.has_prior %}<span class="item"><i class="sw sw--prior"></i>{{ t('data.dash.prior_year') }}</span>{% endif %}
+        {% if g.marks %}<span class="item"><i class="sw sw--mark"></i>{{ t('data.dash.odd_months') }}</span>{% endif %}
+        {% if g.goal %}<span class="item"><i class="sw sw--goal"></i>{{ t('data.dash.goal') }}</span>{% endif %}
+      </div>
+      <div class="chart-wrap dchart" dir="ltr" data-hover='{{ g.hover|tojson }}' data-w="{{ g.w }}" data-prior="{{ t('data.dash.tip_prior') }}">
+        <svg class="chart chart--trend" viewBox="0 0 {{ g.w }} {{ g.h }}" role="img" aria-label="{{ c.title }}">
+          {% for y in g.yt %}<line class="grid" x1="{{ g.left }}" x2="{{ g.right }}" y1="{{ y.y }}" y2="{{ y.y }}"/><text class="axis" x="{{ g.left - 8 }}" y="{{ y.y + 4 }}" text-anchor="end">{{ y.label }}</text>{% endfor %}
+          {% for x in g.xt %}<text class="axis" x="{{ x.x }}" y="{{ g.base + 22 }}" text-anchor="middle">{{ x.label }}</text>{% endfor %}
+          {% if g.goal %}<line class="goalline" x1="{{ g.left }}" x2="{{ g.right }}" y1="{{ g.goal.y }}" y2="{{ g.goal.y }}"/><text class="goaltxt" x="{{ g.right - 4 }}" y="{{ g.goal.y - 6 }}" text-anchor="end">{{ g.goal.label }}</text>{% endif %}
+          <path class="area" d="{{ g.area }}"/>
+          {% if g.prior %}<path class="line line--prior" d="{{ g.prior }}"/>{% endif %}
+          <path class="line line--main" d="{{ g.path }}"/>
+          {% for mk in g.marks %}<circle class="mark" cx="{{ mk.x }}" cy="{{ mk.y }}" r="9"/><text class="mark__n" x="{{ mk.x }}" y="{{ mk.y + 4 }}" text-anchor="middle">{{ mk.n }}</text>{% endfor %}
+          <circle class="end" cx="{{ g.end.x }}" cy="{{ g.end.y }}" r="4.5"/>
+          <line class="xh" y1="{{ g.top }}" y2="{{ g.base }}" hidden/><circle class="xd" r="5" hidden/>
+          <rect class="hitarea" x="{{ g.left }}" y="{{ g.top }}" width="{{ g.right - g.left }}" height="{{ g.base - g.top }}" fill="transparent"/>
+        </svg>
+        <div class="dtip" hidden></div>
+      </div>
+      {% if g.notes %}<ul class="chart-notes">{% for nt in g.notes %}<li><span class="mark__chip">{{ nt.n }}</span>{{ nt.text }}</li>{% endfor %}</ul>{% endif %}
+    </div>{% endfor %}
+
+  {% elif kind == 'compare' %}{% set g = c.view %}
+    <div class="legend legend--chart"><span class="item"><i class="sw sw--line"></i>{{ g.ea.label.rsplit(' ', 1)[0] }}</span><span class="item"><i class="sw sw--b"></i>{{ g.eb.label.rsplit(' ', 1)[0] }}</span><span class="item muted">{{ t('data.dash.cmp.base') }}</span></div>
+    <div class="chart-wrap dchart" dir="ltr" data-hover='{{ g.hover|tojson }}' data-w="{{ g.w }}" data-prior="">
+      <svg class="chart chart--trend" viewBox="0 0 {{ g.w }} {{ g.h }}" role="img" aria-label="{{ c.title }}">
+        {% for y in g.yt %}<line class="grid" x1="{{ g.left }}" x2="{{ g.right }}" y1="{{ y.y }}" y2="{{ y.y }}"/><text class="axis" x="{{ g.left - 8 }}" y="{{ y.y + 4 }}" text-anchor="end">{{ y.label }}</text>{% endfor %}
+        {% for x in g.xt %}<text class="axis" x="{{ x.x }}" y="{{ g.base + 22 }}" text-anchor="middle">{{ x.label }}</text>{% endfor %}
+        <line class="goalline" x1="{{ g.left }}" x2="{{ g.right }}" y1="{{ g.base100 }}" y2="{{ g.base100 }}" style="opacity:.45"/>
+        <path class="line line--main" d="{{ g.a }}"/><path class="line line--b" d="{{ g.b }}"/>
+        <circle class="end" cx="{{ g.ea.x }}" cy="{{ g.ea.y }}" r="4.5"/><circle class="end end--b" cx="{{ g.eb.x }}" cy="{{ g.eb.y }}" r="4.5"/>
+        <text class="endlabel" x="{{ g.right + 12 }}" y="{{ g.ea.ly + 4 }}">{{ g.ea.label }}</text><text class="endlabel endlabel--b" x="{{ g.right + 12 }}" y="{{ g.eb.ly + 4 }}">{{ g.eb.label }}</text>
+        <line class="xh" y1="{{ g.top }}" y2="{{ g.base }}" hidden/><circle class="xd" r="5" hidden/>
+        <rect class="hitarea" x="{{ g.left }}" y="{{ g.top }}" width="{{ g.right - g.left }}" height="{{ g.base - g.top }}" fill="transparent"/>
+      </svg><div class="dtip" hidden></div>
+    </div>
+
+  {% elif kind == 'branches' %}
+    <p class="muted chartbox__sub">{{ c.sub }}</p>
+    <ul class="smult">
+      {% for r in c.rows %}
+      <li class="smult__row">
+        <span class="smult__id"><b>{{ r.name }}</b>{% if r.share %}<small>{{ r.share }}</small>{% endif %}</span>
+        <svg class="smult__svg" viewBox="0 0 {{ r.mini.w }} {{ r.mini.h }}" preserveAspectRatio="none" aria-hidden="true"><path class="smult__area" d="{{ r.mini.area }}"/><path class="smult__line" d="{{ r.mini.path }}"/><circle class="smult__end" cx="{{ r.mini.end.x }}" cy="{{ r.mini.end.y }}" r="3"/></svg>
+        <span class="smult__v num"><bdi dir="ltr">{{ r.text }}</bdi></span>
+        {% if r.delta %}<span class="delta-chip" data-tone="{{ r.tone }}">{{ icon(r.arrow, 13) }}<bdi dir="ltr">{{ r.delta }}</bdi></span>{% endif %}
+      </li>{% endfor %}
+    </ul>
+
+  {% elif kind in ('bars','growth','cumulative','scatter','ranking','stacked','share') %}
+    <div class="dvwrap{% if c.side %} dvwrap--side{% endif %}">
+      <div class="dvfig">{{ c.svg|safe }}</div>
+      {% if c.legend %}<ul class="dvlegend">{% for l in c.legend %}<li><i style="background:{{ l.color }}"></i><b>{{ l.name }}</b>{% if l.text %}<span class="num">{{ l.text }}</span>{% endif %}{% if l.value %}<small class="num"><bdi dir="ltr">{{ l.value }}</bdi></small>{% endif %}</li>{% endfor %}</ul>{% endif %}
+    </div>
+  {% elif kind == 'kpi' %}
+    <div class="kpi"><div><span class="kpi__v num"><bdi dir="ltr">{{ c.value }}</bdi></span><span class="kpi__p">{{ c.period }}</span><span class="delta-chip" data-tone="{{ c.tone }}">{{ c.phrase }}</span></div>
+      <svg class="kpi__svg" viewBox="0 0 {{ c.mini.w }} {{ c.mini.h }}" preserveAspectRatio="none" aria-hidden="true"><path class="smult__area" d="{{ c.mini.area }}"/><path class="smult__line" d="{{ c.mini.path }}"/><circle class="smult__end" cx="{{ c.mini.end.x }}" cy="{{ c.mini.end.y }}" r="3.5"/></svg></div>
+  {% elif kind == 'table' %}
+    <table class="table dvtable"><thead><tr>{% for h in c.head %}<th>{{ h }}</th>{% endfor %}</tr></thead><tbody>
+      {% for r in c.rows %}<tr><td>{{ r.period }}</td><td class="num"><bdi dir="ltr">{{ r.value }}</bdi></td><td>{% if r.delta %}<span class="delta-chip" data-tone="{{ r.tone }}"><bdi dir="ltr">{{ r.delta }}</bdi></span>{% endif %}</td></tr>{% endfor %}
+    </tbody></table>
+  {% elif kind == 'contribution' %}
+    {% if c.bridge %}{% set b = c.bridge %}
+    <div class="bridge" dir="ltr">
+      <svg viewBox="0 0 {{ b.w }} {{ b.h }}" class="chart chart--bridge" role="img" aria-label="{{ c.title }}">
+        <line class="bridge__base" x1="0" x2="{{ b.w }}" y1="{{ b.base }}" y2="{{ b.base }}"/>
+        {% for l in b.links %}<line class="bridge__link" x1="{{ l.x1 }}" x2="{{ l.x2 }}" y1="{{ l.y }}" y2="{{ l.y }}"/>{% endfor %}
+        {% for r in b.bars %}
+          <rect class="bridge__bar" data-k="{{ r.kind }}" x="{{ r.x }}" y="{{ r.y }}" width="{{ r.w }}" height="{{ r.h }}" rx="3"/>
+          <text class="bridge__val" data-k="{{ r.kind }}" x="{{ r.cx }}" y="{{ r.label_y }}" text-anchor="middle">{{ r.label }}</text>
+          <text class="bridge__name" x="{{ r.cx }}" y="{{ b.name_y }}" text-anchor="middle">{{ r.name }}</text>
+        {% endfor %}
+      </svg>
+    </div>
+    {% if b.truncated %}<p class="muted chartbox__sub">{{ t('data.dash.axis_cut') }}</p>{% endif %}
+    {% else %}
+    <ul class="contrib">
+      {% for r in c.rows %}
+      <li class="contrib__row">
+        <span class="bars__name">{{ r.name }}</span>
+        <span class="contrib__axis"><span class="contrib__bar" data-up="{{ 'true' if r.up else 'false' }}" data-tone="{{ r.tone }}" style="width:{{ r.pct_bar / 2 }}%"></span></span>
+        <span class="bars__val num" data-tone="{{ r.tone }}">{{ icon('trending-up' if r.up else 'trending-down', 14) }}<bdi dir="ltr">{{ r.text }}</bdi></span>
+      </li>{% endfor %}
+    </ul>
+    {% endif %}
+
+  {% elif kind == 'heatmap' %}
+    <div class="heat" dir="ltr">
+      <div class="heat__row heat__row--head"><span></span>{% for mn in c.months %}<span data-mark="{{ mn.mark }}">{{ mn.name }}</span>{% endfor %}</div>
+      {% for row in c.rows %}
+      <div class="heat__row"><b class="heat__year num">{{ row.year }}</b>
+        {% for cell in row.cells %}<span class="heat__cell" data-level="{{ cell.level if cell.level is not none else 'none' }}" data-mark="{{ cell.mark }}" {% if cell.text %}title="{{ cell.text }}"{% endif %}></span>{% endfor %}
+      </div>{% endfor %}
+    </div>
+    <div class="heat__legend"><span>{{ t('data.dash.heat_low') }}</span><span class="heat__scale"><i data-level="0"></i><i data-level="1"></i><i data-level="2"></i><i data-level="3"></i><i data-level="4"></i></span><span>{{ t('data.dash.heat_high') }}</span><span class="muted">· {{ t('data.dash.heat_strong') }}: <b class="mk mk--strong"></b> · {{ t('data.dash.heat_weak') }}: <b class="mk mk--weak"></b> · {{ t('data.dash.heat_hover') }}</span></div>
+  {% endif %}
+  {% if c.insight %}<p class="insight">{{ icon('bulb', 16) }}<span>{{ c.insight }}</span></p>{% endif %}
+  </div>
+</section>

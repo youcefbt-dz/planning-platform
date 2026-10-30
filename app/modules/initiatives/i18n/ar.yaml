@@ -1,0 +1,66 @@
+# وحدة المبادرات (تُضاف البادئة "initiatives." تلقائيًا).
+module: المبادرات
+sub: المشاريع والإجراءات التي تحرّك الأهداف، بمسؤولين وتواريخ ومعالم.
+tabs:
+  list: القائمة
+  board: اللوحة
+  roadmap: خارطة الطريق
+create: مبادرة جديدة
+entity: مبادرة
+
+flash:
+  created: أُنشئت المبادرة.
+  saved: تم الحفظ.
+  deleted: تم الحذف.
+  checkin: تم نشر التحديث.
+errors:
+  title_required: العنوان مطلوب.
+  dates: يجب أن يكون تاريخ النهاية بعد تاريخ البداية.
+  checkin_empty: اكتب تعليقًا أو اختر حالة.
+
+state:
+  planned: مخطَّطة
+  active: نشطة
+  on_hold: معلَّقة
+  completed: مكتملة
+  cancelled: ملغاة
+priority:
+  high: عالية
+  medium: متوسطة
+  low: منخفضة
+priority_label: الأولوية
+
+milestones: المعالم
+milestone: معلَم
+milestone_title: عنوان المعلَم
+due_date: تاريخ الاستحقاق
+toggle_done: تبديل إنجاز المعلَم
+no_milestones: لا توجد معالم بعد
+no_milestones_text: قسِّم المبادرة إلى خطوات بتواريخ. يُحسب التقدّم من المعالم المنجَزة.
+supports: الأهداف التي تدعمها هذه المبادرة
+no_supports: غير مرتبطة بأي هدف بعد.
+link_objective: ربط بهدف
+link: ربط
+unlink: إزالة الربط
+overdue:
+  zero: لا معالم متأخرة
+  one: معلَم متأخر واحد
+  two: معلَمان متأخران
+  few: "{n} معالم متأخرة"
+  many: "{n} معلَمًا متأخرًا"
+  other: "{n} معلَم متأخر"
+
+filter_placeholder: صفِّ المبادرات…
+empty_title: لا توجد مبادرات بعد
+empty_text: المبادرات هي العمل الذي يقف وراء أهدافك. أنشئ مبادرة واربطها بالهدف الذي تخدمه.
+board_sub: المبادرات مجمَّعة حسب الوضع. انقل البطاقة لتغيير وضعها.
+roadmap_sub: المبادرات على جدول زمني، مع المعالم وعلامة اليوم الحالي.
+roadmap_empty: تظهر هنا المبادرات التي لها تاريخا بداية ونهاية.
+move: نقل إلى
+manual_progress: التقدّم
+manual_progress_hint: يُستعمل فقط حين لا تكون للمبادرة معالم.
+form_sub: اذكر ما سيُنجَز، ومن يتولّاه، ومتى ينتهي.
+
+widget:
+  health: المبادرات
+  upcoming: القادم

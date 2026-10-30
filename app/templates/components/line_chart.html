@@ -1,0 +1,17 @@
+{# Line chart. Expects `chart` (app/core/charts.line_chart), optional `chart_unit`, `chart_target_label`. #}
+<div class="chart-wrap" data-chart>
+  <svg class="chart" viewBox="0 0 {{ chart.w }} {{ chart.h }}" role="img" aria-label="{{ t('common.chart') }}">
+    {% for tk in chart.y_ticks %}
+      <line class="grid" x1="{{ chart.left }}" x2="{{ chart.right }}" y1="{{ tk.y }}" y2="{{ tk.y }}"/>
+      <text class="axis" x="{{ chart.left - 8 }}" y="{{ tk.y + 4 }}" text-anchor="end">{{ n(tk.v) }}</text>
+    {% endfor %}
+    {% if chart.target_y is not none %}<line class="target" x1="{{ chart.left }}" x2="{{ chart.right }}" y1="{{ chart.target_y }}" y2="{{ chart.target_y }}"/>{% endif %}
+    <path class="area" d="{{ chart.area }}"/>
+    <path class="line" d="{{ chart.path }}"/>
+    {% for p in chart.x_ticks %}<text class="axis" x="{{ p.x }}" y="{{ chart.h - 6 }}" text-anchor="middle">{{ d(p.date, 'day') }}</text>{% endfor %}
+    {% for p in chart.dots %}
+      <circle class="hit" cx="{{ p.x }}" cy="{{ p.y }}" r="14" data-tip="{{ d(p.date) }} · {{ n(p.value) }}{{ chart_unit or '' }}"/>
+      <circle class="dot" cx="{{ p.x }}" cy="{{ p.y }}" r="4" pointer-events="none"/>
+    {% endfor %}
+  </svg>
+</div>

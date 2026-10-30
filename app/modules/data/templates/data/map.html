@@ -1,0 +1,164 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf %}
+{% block title %}{{ ds.name }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css') }}">{% endblock %}
+{% block content %}
+{% set meta = ds.meta or {} %}
+{% set is_model = meta.provider and meta.provider != 'offline' %}
+{% set edit = can('data.edit') %}
+{% set ricon = {'date':'calendar','measure':'chart-bar','dimension':'category','ignore':'circle-dashed'} %}
+{% set ready = ds.status == 'ready' %}
+
+<div class="crumbs"><a href="{{ url_for('data.index') }}">{{ t('data.module') }}</a>{{ icon('chevron-right', 13, flip=true) }}<span>{{ ds.name }}</span></div>
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ icon('table', 22) }}{{ ds.name }}</h1>
+    <p class="sub"><bdi dir="ltr">{{ ds.filename }}</bdi> · {{ t('data.rows_n', n=n(meta.rows or 0)) }} · {{ t('data.layout.' ~ ds.layout) }}</p></div>
+  <ol class="steps" aria-label="{{ t('data.rv.steps.review') }}">
+    <li data-s="done"><i>{{ icon('check', 14) }}</i>{{ t('data.rv.steps.upload') }}</li>
+    <li data-s="{{ 'done' if ready else 'now' }}"><i>{% if ready %}{{ icon('check', 14) }}{% else %}2{% endif %}</i>{{ t('data.rv.steps.review') }}</li>
+    <li data-s="{{ 'done' if ready else 'next' }}"><i>{% if ready %}{{ icon('check', 14) }}{% else %}3{% endif %}</i>{{ t('data.rv.steps.confirm') }}</li>
+  </ol>
+</div>
+
+<div class="rv" data-review data-t-saved="{{ t('data.rv.saved') }}" data-t-answered="{{ t('data.rv.answered', label='%s') }}">
+  <div class="rv__main">
+
+    {# 1 — what we understood #}
+    <section class="rc" id="understood">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('bulb' if is_model else 'checklist', 20) }}</span>{{ t('data.rv.understood') }}</h2></header>
+      <div class="rc__body">
+        <p class="rv__sum" dir="auto">{{ ds.summary }}</p>
+        <ul class="wells">
+          {% for r in roles %}
+          <li data-role="{{ r }}"><b class="num" data-count="{{ r }}">{{ n(counts[r]) }}</b><span>{{ icon(ricon[r], 15) }}{{ t('data.rv.wells.' ~ r) }}</span></li>
+          {% endfor %}
+        </ul>
+        <p class="rv__who">{{ icon('info-circle', 14) }}
+          {% if is_model %}{{ t('ai.badge.model', provider=t('ai.provider.' ~ meta.provider)) }}{% elif ai_state.needs_consent %}{{ t('ai.badge.rules_consent') }}{% elif meta.fell_back %}{{ t('ai.badge.fell_back') }}{% else %}{{ t('ai.badge.rules') }}{% endif %}
+          {% if ai_state.needs_consent and can('settings.manage') %}<a href="{{ url_for('shell.settings_ai') }}">{{ t('data.ai.enable') }}</a>{% endif %}</p>
+        {% if meta.fell_back and meta.errors %}<p class="mstatus__err" dir="ltr">{{ meta.errors|join(' | ') }}</p>{% endif %}
+
+        <form id="notes-form" method="post" action="{{ url_for('data.explain', id=ds.id) }}" class="rv__explain">{{ csrf() }}
+          <details {% if meta.file_note %}open{% endif %}>
+            <summary>{{ icon('message', 16) }}{{ t('data.rv.explain_open') }}{{ icon('chevron-down', 15, cls='rv__chev') }}</summary>
+            <p class="hint">{{ t('data.explain.file_hint') }}</p>
+            <div class="chips">{% for k in ('sales','costs','stock','hr','production') %}<button class="chip-btn" type="button" data-fill="{{ t('data.explain.file_chips.' ~ k) }}" data-target="textarea[name=file_note]">{{ t('data.explain.file_chips.' ~ k) }}</button>{% endfor %}</div>
+            <textarea class="textarea" name="file_note" rows="2" maxlength="800" placeholder="{{ t('data.explain.file_ph') }}" data-note {% if not edit %}disabled{% endif %}>{{ meta.file_note or '' }}</textarea>
+            {% if edit %}<div class="rv__row"><button class="btn btn-sm" type="submit" name="reread" value="1">{{ icon('refresh', 15) }}{{ t('data.explain.reread') }}</button><span class="hint">{{ t('data.explain.reread_hint') }}</span><span class="rv__saved" data-saved hidden>{{ icon('check', 13) }}{{ t('data.rv.saved') }}</span></div>{% endif %}
+          </details>
+        </form>
+      </div>
+    </section>
+
+    {# 2 — the questions, one clear block each #}
+    <section class="rc rc--ask" id="ask" data-ask {% if not n_questions %}hidden{% endif %}>
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('help-circle', 20) }}</span>{{ t('data.rv.ask_title') }}<span class="count count-ask" data-f="qcount">{{ n(n_questions) }}</span></h2><p>{{ t('data.rv.ask_sub') }}</p></header>
+      <div class="rc__body qs">
+        {% for card in cards if card.q %}{% set c = card.col %}{% set q = card.q %}
+        <article class="q" data-q="{{ c.index }}">
+          <div class="q__who"><span class="letter">{{ card.letter }}</span><b dir="auto">{{ c.label }}</b>{% if c.examples %}<span class="q__ex" dir="auto">{{ (c.examples or [])[:3]|join('  ·  ') }}</span>{% endif %}</div>
+          <p class="q__text" dir="auto">{{ q.question }}</p>
+          <div class="q__opts">
+            {% for o in q.options %}
+            <form method="post" action="{{ url_for('data.column', id=ds.id, idx=c.index) }}" data-answer>{{ csrf() }}<input type="hidden" name="option" value="{{ loop.index0 }}">
+              <button class="opt" type="submit" {% if not edit %}disabled{% endif %}><span class="opt__dot"></span><span>{{ o.label }}</span></button></form>
+            {% endfor %}
+          </div>
+          <p class="q__done" hidden>{{ icon('circle-check', 16) }}<span data-answer-text></span></p>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# 3 — every column, editable in place #}
+    <section class="rc" id="columns" data-panel="columns">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('layout-list', 20) }}</span>{{ t('data.rv.cols_title') }}<span class="count">{{ n(cards|length) }}</span></h2><p>{{ t('data.rv.cols_sub') }}</p></header>
+      <div class="rtable" role="table">
+        <div class="rtable__head" role="row">
+          <span>{{ t('data.rv.th.col') }}</span><span>{{ t('data.rv.th.role') }}</span><span>{{ t('data.rv.th.unit') }}</span>
+          <span title="{{ t('data.rv.repeat_hint') }}">{{ t('data.rv.th.repeat') }} {{ icon('info-circle', 13) }}</span><span>{{ t('data.rv.th.better') }}</span>
+        </div>
+        {% for card in cards|sort(attribute='idx') %}{% set c = card.col %}
+        <div class="rrow" role="row" data-colrow="{{ c.index }}" data-col="{{ c.index }}" data-role="{{ c.role }}" data-url="{{ url_for('data.column', id=ds.id, idx=c.index) }}">
+          <div class="rrow__name">
+            <span class="letter">{{ card.letter }}</span>
+            <div><input class="rrow__label" name="label" value="{{ c.label }}" maxlength="80" aria-label="{{ t('data.col.label') }}" dir="auto" {% if not edit %}disabled{% endif %}>
+              <span class="rrow__ex" dir="auto">{{ (c.examples or [])[:3]|join('  ·  ') }}</span></div>
+          </div>
+          <div class="rrow__role"><select class="select select-sm" name="role" aria-label="{{ t('data.col.role') }}" {% if not edit %}disabled{% endif %}>{% for r in roles %}<option value="{{ r }}" {% if r == c.role %}selected{% endif %}>{{ t('data.role.' ~ r) }}</option>{% endfor %}</select></div>
+          <div class="rrow__m"><input class="input input-sm" name="unit" value="{{ c.unit }}" maxlength="12" placeholder="DZD ، % ، kg" aria-label="{{ t('data.col.unit') }}" {% if not edit %}disabled{% endif %}></div>
+          <div class="rrow__m"><select class="select select-sm" name="aggregation" aria-label="{{ t('data.col.agg') }}" {% if not edit %}disabled{% endif %}>{% for a in aggs %}<option value="{{ a }}" {% if a == c.aggregation %}selected{% endif %}>{{ t('data.rv.agg.' ~ a) }}</option>{% endfor %}</select></div>
+          <div class="rrow__m"><select class="select select-sm" name="direction" aria-label="{{ t('data.col.direction') }}" {% if not edit %}disabled{% endif %}>{% for dd in ('higher_better','lower_better') %}<option value="{{ dd }}" {% if dd == c.direction %}selected{% endif %}>{{ t('data.rv.dir.' ~ dd) }}</option>{% endfor %}</select></div>
+          <div class="rrow__off">{% for r in roles %}<span data-for="{{ r }}">{{ t('data.rv.off.' ~ r) }}</span>{% endfor %}</div>
+          {% if edit %}
+          <details class="rrow__note" {% if card.note %}open{% endif %}>
+            <summary>{{ icon('message', 13) }}{{ t('data.rv.note_add') }}</summary>
+            <textarea class="textarea" id="note-{{ c.index }}" name="note_{{ c.index }}" form="notes-form" rows="2" maxlength="400" placeholder="{{ t('data.rv.note_ph') }}" data-note>{{ card.note }}</textarea>
+          </details>
+          {% elif card.note %}<p class="rrow__note rrow__note--read">{{ icon('message', 13) }}{{ card.note }}</p>{% endif %}
+          <span class="rrow__saved" data-rowsaved hidden>{{ icon('check', 13) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    {# 4 — numbers that look odd #}
+    {% if report %}{% include "data/_quality.html" %}{% endif %}
+
+    {# 5 — the file itself #}
+    <details class="rc rc--fold" id="preview">
+      <summary class="rc__head"><h2><span class="rc__ic">{{ icon('table', 20) }}</span>{{ t('data.rv.preview') }}</h2><p>{{ t('data.grid_hint') }}</p>{{ icon('chevron-down', 18, cls='rv__chev') }}</summary>
+      <div class="rc__body">
+        <div class="legend-roles" aria-label="{{ t('data.role_legend') }}">
+          {% for r in roles %}<span class="role-chip" data-role="{{ r }}">{{ icon(ricon[r], 13) }}{{ t('data.role.' ~ r) }}</span>{% endfor %}
+          <span class="role-chip" data-bad="true">{{ icon('alert-circle', 13) }}{{ t('data.cell_bad') }}</span>
+        </div>
+        {% include "data/_grid.html" %}
+      </div>
+    </details>
+  </div>
+
+  {# the side: where things stand and the one way forward #}
+  <aside class="rv__side">
+    <section class="rc rside" data-ready="{{ 'false' if n_questions else 'true' }}">
+      <header class="rc__head"><h2><span class="rc__ic">{{ icon('circle-check', 20) }}</span>{{ t('data.rv.side.title') }}</h2></header>
+      <div class="rc__body">
+        <p class="rside__state" data-f="remaining" data-done="{{ 'false' if n_questions else 'true' }}">{{ icon('help-circle' if n_questions else 'circle-check', 22) }}
+          <span data-f="remaining_text">{% if n_questions %}{{ tn('data.questions_open', n_questions) }}{% else %}{{ t('data.rv.side.ready') }}{% endif %}</span></p>
+        {% if open_findings %}<a class="rside__odd" href="#quality">{{ icon('alert-triangle', 16) }}{{ tn('data.quality.open_n', open_findings) }}</a>{% endif %}
+        {% if ready_error %}<p class="note note-warn" data-ready-error>{{ icon('alert-triangle', 16) }}{{ t('data.errors.' ~ ready_error) }}</p>{% endif %}
+        {% if edit %}
+        <form method="post" action="{{ url_for('data.confirm', id=ds.id) }}">{{ csrf() }}
+          <button class="btn btn-primary btn-lg rside__go" type="submit" data-confirm-btn {% if ready_error %}disabled{% endif %}>{{ icon('check', 18) }}{{ t('data.confirm_create') if ds.status == 'draft' else t('data.confirm_update') }}</button>
+        </form>
+        <p class="hint">{{ t('data.rv.side.note') }}</p>{% endif %}
+      </div>
+    </section>
+
+    <details class="rc rc--fold rside2" {% if meta.assumed_year and not ds.year_hint %}open{% endif %}>
+      <summary class="rc__head"><h2><span class="rc__ic">{{ icon('adjustments', 20) }}</span>{{ t('data.rv.side.reading') }}</h2>{{ icon('chevron-down', 18, cls='rv__chev') }}</summary>
+      <form method="post" action="{{ url_for('data.analyze', id=ds.id) }}" id="reading-form" class="rc__body">{{ csrf() }}
+        <p class="hint">{{ t('data.rv.side.reading_sub') }}</p>
+        <div class="field"><label for="f-hr">{{ t('data.header_row') }}</label>
+          <div class="rv__row"><input class="input input-sm" id="f-hr" name="header_row" type="number" min="1" value="{{ (view.header_row or 0) + 1 }}" style="width:90px" {% if not edit %}disabled{% endif %}>
+            <button class="btn btn-sm" type="submit" {% if not edit %}disabled{% endif %}>{{ t('data.apply') }}</button>
+            <button class="btn btn-sm" type="submit" name="header_auto" value="1" {% if not edit %}disabled{% endif %}>{{ t('data.auto') }}</button></div>
+          <p class="hint">{{ t('data.header_row_hint') }}</p></div>
+        {% if meta.assumed_year or ds.year_hint %}
+        <div class="field"><label for="f-year">{{ t('data.year') }}</label>
+          <div class="rv__row"><input class="input input-sm" id="f-year" name="year" type="number" min="1990" max="2100" value="{{ ds.year_hint or meta.assumed_year }}" style="width:100px" {% if not edit %}disabled{% endif %}>
+            <button class="btn btn-sm" type="submit" {% if not edit %}disabled{% endif %}>{{ t('data.apply') }}</button></div>
+          {% if meta.assumed_year and not ds.year_hint %}<p class="hint warn">{{ t('data.year_assumed', year=meta.assumed_year) }}</p>{% endif %}</div>
+        {% endif %}
+        <ul class="notes">
+          {% if meta.excluded %}<li>{{ icon('info-circle', 14) }}{{ tn('data.note.total_rows', meta.excluded) }}</li>{% endif %}
+          {% if meta.truncated %}<li>{{ icon('alert-triangle', 14) }}{{ t('data.note.truncated') }}</li>{% endif %}
+          {% if ds.layout == 'wide' %}<li>{{ icon('info-circle', 14) }}{{ t('data.note.wide') }}</li>{% endif %}
+          {% for code in meta.notes if code in ('multi_sheet',) %}<li>{{ icon('info-circle', 14) }}{{ t('data.note.' ~ code) }}</li>{% endfor %}
+        </ul>
+      </form>
+    </details>
+  </aside>
+</div>
+{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/data.js') }}" defer></script><script src="{{ url_for('static', filename='js/review.js') }}" defer></script>{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import csrf, field, textarea, select %}
+{% block title %}{{ t('goals.create.indicator') if mode == 'new' else t('goals.edit_title') }}{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{{ url_for('goals.indicators') }}">{{ t('goals.tabs.indicators') }}</a>{{ icon('chevron-right', 13, flip=true) }}<span>{{ t('goals.create.indicator') if mode == 'new' else t('goals.edit_title') }}</span></div>
+<div class="page-head"><div><h1>{{ icon('chart-line', 22) }}{{ t('goals.create.indicator') if mode == 'new' else t('goals.edit_title') }}</h1><p class="sub">{{ t('goals.indicator_form_sub') }}</p></div></div>
+<form method="post" style="max-width:860px">{{ csrf() }}
+  <div class="box"><div class="box-body">
+    {{ field(t('goals.indicator_name'), 'name', i.name or '', required=true, hint=t('goals.indicator_name_hint')) }}
+    {{ textarea(t('common.description'), 'description', i.description) }}
+    <div class="form-grid">
+      {{ field(t('goals.target_value'), 'target_value', i.target_value if i.target_value is not none else '', 'number', required=true) }}
+      {{ field(t('goals.baseline'), 'baseline_value', i.baseline_value if i.baseline_value is not none else '', 'number') }}
+      {{ field(t('goals.unit_label'), 'unit_label', i.unit_label or '', hint='DZD, %, …') }}
+      {{ select(t('goals.metric_type'), 'metric_type', topts(('number','percent'), 'goals.metric.'), i.metric_type or 'number') }}
+      {{ select(t('goals.direction'), 'direction', [('higher_better', t('goals.higher_better')), ('lower_better', t('goals.lower_better'))], i.direction or 'higher_better') }}
+      {{ select(t('goals.frequency'), 'frequency', topts(('weekly','monthly','quarterly','yearly'), 'goals.freq.'), i.frequency or 'monthly') }}
+      {{ select(t('common.owner'), 'owner_id', opts(members, 'user_id', 'user.name'), i.owner_id, blank=t('common.unassigned')) }}
+      {{ select(t('common.unit'), 'unit_id', opts(units, 'id', 'name'), i.unit_id, blank=t('common.none')) }}
+      {{ select(t('goals.perspective'), 'perspective', topts(perspectives, 'goals.perspectives.'), i.perspective, blank=t('common.none')) }}
+    </div>
+  </div></div>
+  <div class="form-actions"><button class="btn btn-primary" type="submit">{{ t('common.save') if mode == 'edit' else t('common.create') }}</button>
+    <a class="btn" href="{{ url_for('goals.indicator_detail', id=i.id) if mode == 'edit' else url_for('goals.indicators') }}">{{ t('common.cancel') }}</a></div>
+</form>
+{% endblock %}

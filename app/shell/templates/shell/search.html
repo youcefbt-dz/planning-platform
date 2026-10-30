@@ -1,0 +1,20 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import empty %}
+{% block title %}{{ t('shell.search') }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('search', 22) }}{{ t('shell.search') }}</h1>
+  <p class="sub">{% if q %}{{ tn('shell.results', total, q=q) }}{% else %}{{ t('shell.search_hint') }}{% endif %}</p></div></div>
+<form action="{{ url_for('shell.search') }}" class="filters">
+  <input class="input grow" type="search" name="q" value="{{ q }}" placeholder="{{ t('shell.search_placeholder') }}" autofocus>
+  <button class="btn btn-primary" type="submit">{{ icon('search', 16) }}{{ t('shell.search') }}</button>
+</form>
+{% for type, hits in groups.items() %}
+<div class="box hit-group">
+  <div class="box-head"><h2>{{ icon(hits[0].icon, 18) }}{{ t('activity.type.' ~ type) }}</h2><span class="count">{{ n(hits|length) }}</span></div>
+  {% for h in hits %}
+  <div class="box-row"><div class="main"><a class="title" href="{{ h.url }}">{{ h.title }}</a>{% if h.subtitle %}<div class="meta">{{ h.subtitle }}</div>{% endif %}</div></div>
+  {% endfor %}
+</div>
+{% endfor %}
+{% if q and not total %}<div class="box">{% call empty('search', t('shell.no_results'), t('shell.no_results_text')) %}{% endcall %}</div>{% endif %}
+{% endblock %}

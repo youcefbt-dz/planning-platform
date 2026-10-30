@@ -1,0 +1,16 @@
+{# Fragment: goals proposed from one typed line. options, empty, advice #}
+{% if empty == 'short' %}
+  <p class="muted sug__note">{{ icon('info-circle', 14) }}{{ t('goals.draft.too_short') }}</p>
+{% else %}
+  {% if not options %}<p class="muted sug__note">{{ icon('info-circle', 14) }}{{ t('goals.draft.none') }}</p>{% endif %}
+  {% for o in options %}
+  <div class="sug" data-draft-opt>
+    <div class="sug__top"><b dir="auto">{{ o.title }}</b></div>
+    {% if o.rationale %}<p class="muted" style="margin:0" dir="auto">{{ o.rationale }}</p>{% endif %}
+    <ul class="draft-krs">{% for k in o.krs %}<li dir="auto">{{ k.title }} <span class="chip-type">{{ t('goals.kr_type.' ~ k.type) }}</span>{% if k.unit %} <span class="muted">{{ k.unit }}</span>{% endif %}</li>{% endfor %}</ul>
+    <button class="btn btn-sm btn-primary" type="button" data-pick-goal data-title="{{ o.title }}" data-rationale="{{ o.rationale }}" data-krs='{{ o.krs|tojson }}'>{{ icon('check', 14) }}{{ t('goals.draft.use') }}</button>
+  </div>
+  {% endfor %}
+  {% if options %}<p class="hint">{{ t('goals.draft.after') }}</p>{% endif %}
+  {% if advice %}<p class="advice__foot">{% set a = advice %}{% include "goals/_ai_tag.html" %}</p>{% endif %}
+{% endif %}
