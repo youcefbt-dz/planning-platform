@@ -143,3 +143,12 @@ scripts/                 make_logos · make_screenshots · crawl · audit_keys  
 - الفريق وروابط الدعوة (7 أيام، لمرة واحدة).
 - «المخطط» (`app/modules/orgmap`) وتقرير «ملف المؤسسة» (يبدأ بالمخطط) مع تصدير SVG.
 - ترحيلات قاعدة البيانات الجديدة: `flask db upgrade`.
+
+
+## Deploying on Render
+1. Push the folder to GitHub (the `.env` and `instance/` are ignored on purpose).
+2. Render → New → Blueprint → pick the repo. `render.yaml` creates the web service and a PostgreSQL database and sets `DATABASE_URL` for you.
+   Without the Blueprint: Build `pip install -r requirements.txt`, Start `bash scripts/start.sh`, and set `SECRET_KEY` and `DATABASE_URL`.
+3. Add the AI keys (`GROQ_API_KEY`, …) under Environment — never in the repo.
+SQLite works on Render only with a paid persistent disk (mount it at `instance/`); otherwise every deploy starts with an empty database.
+Files people upload (data files, logos) live in `instance/` too, so they need that disk as well.

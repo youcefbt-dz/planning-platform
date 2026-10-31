@@ -33,12 +33,36 @@ except ImportError:  # python-dotenv missing: the environment variables must be 
     pass
 
 
+def _database_url() -> str:
+    """DATABASE_URL as SQLAlchemy wants it: hosts hand out `postgres://…`, which SQLAlchemy no longer accepts."""
+    url = os.environ.get("DATABASE_URL") or "sqlite:///app.db"
+    if url.startswith("postgres://"):
+        url = "postgresql+psycopg://" + url[len("postgres://"):]
+    elif url.startswith("postgresql://"):
+        url = "postgresql+psycopg://" + url[len("postgresql://"):]
+    return url
+
+
+def _migrate_on_boot(app: Flask) -> None:
+    """On a host (Render sets RENDER) or with AUTO_MIGRATE=1, bring the database to the latest schema before serving, so a fresh or wiped
+    database never answers with `no such table`. Safe to repeat: it does nothing when the schema is current."""
+    if app.config.get("TESTING") or not (os.environ.get("RENDER") or os.environ.get("AUTO_MIGRATE") == "1"):
+        return
+    from flask_migrate import upgrade
+
+    with app.app_context():
+        try:
+            upgrade(directory=str(ROOT / "migrations"))
+        except Exception:  # never block the site from starting; the log shows why
+            app.logger.exception("automatic database upgrade failed")
+
+
 def create_app(config: dict | None = None) -> Flask:
     app = Flask(__name__, instance_path=str(ROOT / "instance"), instance_relative_config=True)
     os.makedirs(app.instance_path, exist_ok=True)
     app.config.update(
         SECRET_KEY=os.environ.get("SECRET_KEY", "dev-only-change-me"),
-        SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", "sqlite:///app.db"),
+        SQLALCHEMY_DATABASE_URI=_database_url(),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         ENABLE_DEMO=os.environ.get("ENABLE_DEMO", "1") == "1",
         WTF_CSRF_TIME_LIMIT=None,
@@ -94,6 +118,7 @@ def create_app(config: dict | None = None) -> Flask:
 
         return db.session.get(User, int(uid))
 
+    _migrate_on_boot(app)
     return app
 
 

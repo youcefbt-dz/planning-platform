@@ -1,0 +1,23 @@
+# Render Blueprint: a web service + a free PostgreSQL database that survives deploys.
+# (SQLite on Render's disk is wiped at every deploy/restart unless you pay for a persistent disk.)
+services:
+  - type: web
+    name: planwise
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash scripts/start.sh
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENABLE_DEMO
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: planwise-db
+          property: connectionString
+databases:
+  - name: planwise-db
+    plan: free
