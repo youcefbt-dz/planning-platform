@@ -13,9 +13,9 @@
     </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="{{ t('site.nav.menu') }}"><span></span><span></span><span></span></button>
     <nav class="site-nav" id="site-nav" aria-label="{{ t('site.nav.label') }}">
-      <a href="{{ url_for('site.landing') }}#workflow">{{ t('site.nav.workflow') }}</a>
-      <a href="{{ url_for('site.landing') }}#capabilities">{{ t('site.nav.features') }}</a>
-      <a href="{{ url_for('site.landing') }}#intelligence">{{ t('site.nav.ai') }}</a>
+      <a href="{{ url_for('site.landing') }}#features">{{ t('site.nav.features') }}</a>
+      <a href="{{ url_for('site.landing') }}#modular">{{ t('site.nav.modular') }}</a>
+      <a href="{{ url_for('site.landing') }}#waitlist">{{ t('site.nav.waitlist') }}</a>
       {% if config.ENABLE_DEMO %}<a href="{{ url_for('site.demo') }}">{{ t('site.nav.demo') }}</a>{% endif %}
       {% if me.is_authenticated %}<a class="btn-pill btn-pill--sm btn-pill--outline" href="{{ url_for('auth.app_home') }}">{{ t('site.nav.open_app') }}</a>
       {% else %}<a class="nav-login" href="{{ url_for('auth.login') }}">{{ t('auth.login') }}</a>
@@ -37,17 +37,17 @@
       </div>{% endif %}
     </div>
     <div><h4>{{ t('site.footer.product') }}</h4>
-      <a href="{{ url_for('site.landing') }}#workflow">{{ t('site.nav.workflow') }}</a>
-      <a href="{{ url_for('site.landing') }}#capabilities">{{ t('site.nav.features') }}</a>
-      <a href="{{ url_for('site.landing') }}#intelligence">{{ t('site.nav.ai') }}</a>
+      <a href="{{ url_for('site.landing') }}#features">{{ t('site.nav.features') }}</a>
+      <a href="{{ url_for('site.landing') }}#modular">{{ t('site.nav.modular') }}</a>
       {% if config.ENABLE_DEMO %}<a href="{{ url_for('site.demo') }}">{{ t('site.nav.demo') }}</a>{% endif %}
     </div>
     <div><h4>{{ t('site.footer.start') }}</h4>
       <a href="{{ url_for('auth.register') }}">{{ t('site.nav.start') }}</a>
       <a href="{{ url_for('auth.login') }}">{{ t('auth.login') }}</a>
+      <a href="{{ url_for('site.landing') }}#waitlist">{{ t('site.nav.waitlist') }}</a>
     </div>
   </div>
-  <div class="site-wrap site-footer__bar"><span>© {{ today.year }} {{ brand_name }}</span>{% if brand.placeholder %}<span>{{ t('shell.placeholder_notice') }}</span>{% endif %}</div>
+  <div class="site-wrap site-footer__bar"><span>© {{ today.year }} <bdi>{{ brand_name }}</bdi></span>{% if brand.placeholder %}<span>{{ t('shell.placeholder_notice') }}</span>{% endif %}</div>
 </footer>
 {% endblock %}
 

@@ -131,7 +131,7 @@ def _template_functions():
         if res.get("error"):
             return None
         return {"level": res["level"], "tone": res["tone"], "icon": res["icon"], "series": s,
-                "url": url_for("data.reality_page", series=s.id, start=kr.current_value, target=kr.target_value, end=end_date.isoformat(), goal=kr.title)}
+                "url": url_for("goals.reality_page", series=s.id, start=kr.current_value, target=kr.target_value, end=end_date.isoformat(), goal=kr.title)}
 
     def data_kr_series(kr):
         return service.linked_series_id(kr.org_id, kr.id)

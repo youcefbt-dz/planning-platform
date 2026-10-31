@@ -3,48 +3,52 @@
 {% block title %}{{ t('orgmap.title') }}{% endblock %}
 {% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/journey.css') }}">{% endblock %}
 {% block content %}
-<div class="page-head"><div class="page-head__title"><h1>{{ icon('sitemap', 22) }}{{ t('orgmap.title') }}</h1><p class="sub">{{ t('orgmap.sub') }}</p></div></div>
-
 {% if facts.empty %}
   <div class="box">{% call empty('target-arrow', t('orgmap.no_goals')) %}{% if can('goals.edit') %}<a class="btn btn-primary" href="{{ url_for('goals.new') }}">{{ icon('plus', 16) }}{{ t('goals.create.objective') }}</a>{% endif %}{% endcall %}</div>
 {% else %}
-<section class="jr" data-journey data-slug="{{ g.org.slug }}" aria-label="{{ t('orgmap.title') }}">
-  <script type="application/json" data-jr-data>{{ payload|tojson }}</script>
-  <header class="jr__bar">
-    <div class="jr__hud">
-      <div class="hud"><b class="num"><bdi dir="ltr">{{ payload.journey }}%</bdi></b><span>{{ t('orgmap.n.journey') }}</span></div>
-      {% if payload.time is not none %}<div class="hud"><b class="num"><bdi dir="ltr">{{ payload.time }}%</bdi></b><span>{{ t('orgmap.jr.of_time') }}</span></div>
-      {% set gap = payload.journey - payload.time %}
-      <div class="hud hud--pace" data-tone="{{ 'lead' if gap >= 0 else 'lag' }}"><b class="num"><bdi dir="ltr">{{ '+' if gap > 0 }}{{ gap if gap >= 0 else '−' ~ (-gap) }}</bdi></b><span>{{ t('orgmap.n.pace') }}</span></div>{% endif %}
-      {% if payload.days_left is not none %}<div class="hud"><b class="num"><bdi dir="ltr">{{ payload.days_left }}</bdi></b><span>{{ t('orgmap.n.left') }}</span></div>{% endif %}
-    </div>
-    <div class="jr__ctl">
-      <button type="button" class="jr-tog" data-layer="links" aria-pressed="true">{{ icon('sitemap', 15) }}{{ t('orgmap.jr.links') }}</button>
-      <button type="button" class="jr-tog" data-layer="gaps" aria-pressed="true">{{ icon('alert-triangle', 15) }}{{ t('orgmap.jr.gaps') }}</button>
-      <span class="jr-seg" role="group" aria-label="{{ t('orgmap.jr.order') }}">
-        <button type="button" data-order="plan" aria-pressed="true">{{ t('orgmap.jr.order_plan') }}</button>
-        <button type="button" data-order="late" aria-pressed="false">{{ t('orgmap.jr.order_late') }}</button>
-      </span>
-      <button type="button" class="jr-tog jr-tog--plain" data-export title="{{ t('orgmap.jr.export') }}">{{ icon('download', 15) }}<span>{{ t('orgmap.jr.export') }}</span></button>
-    </div>
-  </header>
-  <div class="jr__stage" data-stage>
-    <noscript><p class="jr__nojs">{{ t('orgmap.jr.no_js') }}</p><ul>{% for gl in payload.goals %}<li>{{ gl.title }} — {{ gl.progress }}%</li>{% endfor %}</ul></noscript>
-    <div class="jr__card" data-card hidden></div>
+{# The map is open space: it breaks out of the page column and fills the screen; the camera (drag, wheel, pinch, buttons) moves over a world much bigger than the screen. #}
+<section class="jx" data-journey data-slug="{{ g.org.slug }}" aria-label="{{ t('orgmap.jx.title') }}">
+  <script type="application/json" data-jx-data>{{ payload|tojson }}</script>
+  <div class="jx__stage" data-stage tabindex="0">
+    <noscript><div class="jx__nojs"><ul>{% for gl in payload.goals %}<li>{{ gl.title }} — {{ gl.progress }}%</li>{% endfor %}</ul></div></noscript>
   </div>
-  <footer class="jr__legend" aria-hidden="true">
-    <span class="lg"><i class="lg-head" data-s="completed"></i>{{ payload.i18n.status.completed }}</span>
-    <span class="lg"><i class="lg-head" data-s="on_track"></i>{{ payload.i18n.status.on_track }}</span>
-    <span class="lg"><i class="lg-head" data-s="at_risk"></i>{{ payload.i18n.status.at_risk }}</span>
-    <span class="lg"><i class="lg-head" data-s="off_track"></i>{{ payload.i18n.status.off_track }}</span>
-    <span class="lg"><i class="lg-head" data-s="not_started"></i>{{ payload.i18n.status.not_started }}</span>
-    <span class="lg"><i class="lg-today"></i>{{ payload.i18n.today }}</span>
-    <span class="lg"><i class="lg-gap"></i>{{ t('orgmap.jr.legend_gap') }}</span>
-    <span class="lg"><i class="lg-lead"></i>{{ t('orgmap.jr.legend_lead') }}</span>
-    <span class="lg"><i class="lg-link"></i>{{ t('orgmap.jr.legend_link') }}</span>
-    <span class="lg"><i class="lg-share"></i>{{ t('orgmap.jr.legend_share') }}</span>
-    <span class="lg lg--hint">{{ t('orgmap.jr.hint') }}</span>
-  </footer>
+
+  <div class="jx__hud" data-hud>
+    <div class="jx__title"><h1>{{ icon('sitemap', 20) }}{{ t('orgmap.jx.title') }}</h1><p>{{ t('orgmap.sub') }}</p></div>
+    <div class="jx__stats">
+      <div><b class="num"><bdi dir="ltr">{{ payload.journey }}%</bdi></b><span>{{ t('orgmap.jx.journey') }}</span></div>
+      {% if payload.time is not none %}{% set gap = payload.journey - payload.time %}
+      <div><b class="num"><bdi dir="ltr">{{ payload.time }}%</bdi></b><span>{{ t('orgmap.jx.of_time') }}</span></div>
+      <div data-tone="{{ 'lead' if gap >= 0 else 'lag' }}"><b class="num"><bdi dir="ltr">{{ '+' ~ gap if gap > 0 else ('−' ~ (-gap) if gap < 0 else '0') }}</bdi></b><span>{{ t('orgmap.jx.pace') }}</span></div>{% endif %}
+      {% if payload.days_left is not none %}<div><b class="num"><bdi dir="ltr">{{ payload.days_left }}</bdi></b><span>{{ t('orgmap.jx.left') }}</span></div>{% endif %}
+    </div>
+    <ul class="jx__legend" aria-hidden="true">
+      <li><i class="lg-gap"></i>{{ t('orgmap.jx.legend_gap') }}</li>
+      <li><i class="lg-tick"></i>{{ t('orgmap.jx.legend_today') }}</li>
+      <li><i class="lg-dep"></i>{{ t('orgmap.jx.legend_dep') }}</li>
+      <li><i class="lg-warn"></i>{{ t('orgmap.jx.legend_warn') }}</li>
+      <li><i class="lg-align"></i>{{ t('orgmap.jx.legend_align') }}</li>
+    </ul>
+  </div>
+
+  <nav class="jx__chips" data-chips aria-label="{{ t('orgmap.jx.map') }}"></nav>
+
+  <div class="jx__tools">
+    <button type="button" class="jx-tog" data-layer="deps" aria-pressed="true">{{ icon('route', 15) }}{{ t('orgmap.jx.deps') }}</button>
+    <button type="button" class="jx-tog" data-layer="align" aria-pressed="true">{{ icon('sitemap', 15) }}{{ t('orgmap.jx.align') }}</button>
+    <button type="button" class="jx-tog jx-tog--plain" data-export title="{{ t('orgmap.jx.export') }}">{{ icon('download', 15) }}</button>
+  </div>
+
+  <div class="jx__zoom" role="group" aria-label="{{ t('orgmap.jx.map') }}">
+    <button type="button" data-zoom="in" aria-label="{{ t('orgmap.jx.zoom_in') }}">{{ icon('plus', 18) }}</button>
+    <button type="button" data-zoom="out" aria-label="{{ t('orgmap.jx.zoom_out') }}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+    <button type="button" data-zoom="fit" aria-label="{{ t('orgmap.jx.fit') }}" title="{{ t('orgmap.jx.fit') }}">{{ icon('target-arrow', 18) }}</button>
+    <button type="button" data-zoom="full" aria-label="{{ t('orgmap.jx.full') }}" title="{{ t('orgmap.jx.full') }}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  </div>
+
+  <div class="jx__mini" data-mini aria-hidden="true"></div>
+  <p class="jx__hint" aria-hidden="true">{{ t('orgmap.jx.hint') }}</p>
+  <aside class="jx__panel" data-panel hidden aria-live="polite"></aside>
 </section>
 <p class="insight" style="margin-block-start:var(--sp-5)">{{ icon('bulb', 16) }}<span><b>{{ t('orgmap.read.title') }}:</b> {{ reading }}</span></p>
 {% endif %}

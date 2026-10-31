@@ -146,3 +146,55 @@ def test_invite_link_has_a_qr_code_only_for_who_manages_members(client, app):
     assert "no-store" in r.headers["Cache-Control"]
     assert f"/invite/{iid}/qr.svg" in client.get(f"/app/{slug}/settings/members").get_data(as_text=True)
     assert app.test_client().get(f"/app/{slug}/settings/members/invite/{iid}/qr.svg").status_code in (302, 401, 403)
+
+
+def test_compose_page_for_a_head_offers_only_their_departments_and_saves_there(client, app):
+    from app.modules.goals.models import Objective
+    slug = _owner(client)
+    with app.app_context():
+        root = OrgUnit.query.first()
+        a = OrgUnit(org_id=root.org_id, name="قسمي", kind="department", parent_id=root.id)
+        b = OrgUnit(org_id=root.org_id, name="قسم غيري", kind="department", parent_id=root.id)
+        db.session.add_all([a, b])
+        db.session.commit()
+        org_id, aid, bid = root.org_id, a.id, b.id
+    _person(app, org_id, "head@example.com", aid, head_of=aid)
+    c = _login(app, "head@example.com")
+    page = c.get(f"/app/{slug}/goals/compose").get_data(as_text=True)
+    assert "قسمي" in page and "قسم غيري" not in page and 'cai' in page
+    r = c.post(f"/app/{slug}/goals/compose", data={"source": "manual", "name": "عملاء", "start": "10", "target": "20", "end_date": "2099-01-01",
+                                                    "title": "نمو العملاء", "unit_id": str(bid), "do": "save"})
+    assert r.status_code == 302
+    with app.app_context():
+        assert Objective.query.one().unit_id == aid                                # asking for another department falls back to his own
+
+
+def test_split_a_goal_into_departments_by_a_head_and_by_the_owner(client, app):
+    from app.modules.goals.models import Objective
+    slug = _owner(client)
+    with app.app_context():
+        root = OrgUnit.query.first()
+        a = OrgUnit(org_id=root.org_id, name="المبيعات", kind="department", parent_id=root.id)
+        b = OrgUnit(org_id=root.org_id, name="المالية", kind="department", parent_id=root.id)
+        db.session.add_all([a, b])
+        db.session.flush()
+        top = Objective(org_id=root.org_id, title="نمو الإيراد", progress_driver="key_results", unit_id=root.id)
+        db.session.add(top)
+        db.session.commit()
+        org_id, aid, bid, tid = root.org_id, a.id, b.id, top.id
+    page = client.get(f"/app/{slug}/goals/{tid}").get_data(as_text=True)
+    assert "cai--split" in page                                                     # the owner sees the proposal box
+    frag = client.post(f"/app/{slug}/goals/{tid}/split").get_data(as_text=True)
+    assert f'name="title_{aid}"' in frag and f'name="title_{bid}"' in frag
+    r = client.post(f"/app/{slug}/goals/{tid}/split/save", data={"unit": [str(aid), str(bid)], f"title_{aid}": "نمو مبيعات القسم", f"title_{bid}": ""})
+    assert r.status_code == 302
+    with app.app_context():
+        kids = Objective.query.filter_by(parent_id=tid).all()
+        assert [k.unit_id for k in kids] == [aid]                                   # the empty title was skipped; the child is linked to its parent
+    _person(app, org_id, "h2@example.com", bid, head_of=bid)
+    c = _login(app, "h2@example.com")
+    frag = c.post(f"/app/{slug}/goals/{tid}/split").get_data(as_text=True)
+    assert f'name="title_{bid}"' in frag and f'name="title_{aid}"' not in frag     # a head is offered only his own department
+    assert c.post(f"/app/{slug}/goals/{tid}/split/save", data={"unit": [str(aid)], f"title_{aid}": "x"}).status_code == 302
+    with app.app_context():
+        assert Objective.query.filter_by(parent_id=tid, unit_id=aid).count() == 1   # he could not add one for another department

@@ -22,15 +22,15 @@ def test_new_with_series_goes_to_composer_and_shows_verdict(app, owner):
     sid = _ready(app, c, slug)
     r = c.get(f"/app/{slug}/goals/new?series={sid}")
     assert r.status_code == 302 and "/goals/compose" in r.headers["Location"]
-    page = c.get(f"/app/{slug}/goals/compose?series={sid}&target=999999999&end={END}").get_data(as_text=True)
+    page = c.get(f"/app/{slug}/goals/compose?series={sid}&target=999999999&end_date={END}").get_data(as_text=True)
     assert "verdict" in page and "lever_title" in page
 
 
 def test_saving_creates_goal_with_linked_series_and_levers(app, owner):
     c, slug = owner
     sid = _ready(app, c, slug)
-    r = c.post(f"/app/{slug}/goals/compose", data={"series": sid, "target": "999999999", "end": END, "title": "رفع المبيعات", "lever_title": ["فرع جديد", ""],
-                                                    "lever_effect": ["500", ""], "lever_certainty": ["probable", "hoped"], "commitment": "committed"})
+    r = c.post(f"/app/{slug}/goals/compose", data={"series": sid, "target": "999999999", "end_date": END, "title": "رفع المبيعات", "lever_title": ["فرع جديد", ""],
+                                                    "lever_effect": ["500", ""], "lever_certainty": ["probable", "hoped"], "commitment": "committed", "do": "save"})
     assert r.status_code == 302 and "/goals/" in r.headers["Location"]
     with app.app_context():
         o = Objective.query.one()
@@ -43,7 +43,7 @@ def test_saving_creates_goal_with_linked_series_and_levers(app, owner):
 def test_incomplete_post_creates_nothing(app, owner):
     c, slug = owner
     sid = _ready(app, c, slug)
-    c.post(f"/app/{slug}/goals/compose", data={"series": sid, "title": "x"})
+    c.post(f"/app/{slug}/goals/compose", data={"series": sid, "title": "x", "do": "save"})
     with app.app_context():
         assert Objective.query.count() == 0
 
@@ -52,8 +52,8 @@ def test_goal_outside_the_data_is_allowed(app, owner):
     c, slug = owner
     page = c.get(f"/app/{slug}/goals/new", follow_redirects=True).get_data(as_text=True)
     assert 'name="name"' in page
-    r = c.post(f"/app/{slug}/goals/compose", data={"source": "manual", "name": "رضا الزبائن", "unit": "%", "start": "70", "target": "85", "end": END,
-                                                    "title": "بلوغ رضا 85٪", "commitment": "committed"})
+    r = c.post(f"/app/{slug}/goals/compose", data={"source": "manual", "name": "رضا الزبائن", "unit": "%", "start": "70", "target": "85", "end_date": END,
+                                                    "title": "بلوغ رضا 85٪", "commitment": "committed", "do": "save"})
     assert r.status_code == 302
     with app.app_context():
         kr = KeyResult.query.one()
@@ -63,14 +63,14 @@ def test_goal_outside_the_data_is_allowed(app, owner):
 def test_goal_page_shows_path_levers_and_history(app, owner):
     c, slug = owner
     sid = _ready(app, c, slug)
-    c.post(f"/app/{slug}/goals/compose", data={"series": sid, "target": "999999999", "end": END, "title": "رفع", "lever_title": ["فرع جديد"], "lever_effect": ["500"],
-                                                "lever_certainty": ["probable"], "commitment": "committed"})
+    c.post(f"/app/{slug}/goals/compose", data={"series": sid, "target": "999999999", "end_date": END, "title": "رفع", "lever_title": ["فرع جديد"], "lever_effect": ["500"],
+                                                "lever_certainty": ["probable"], "commitment": "committed", "do": "save"})
     with app.app_context():
         o = Objective.query.one()
         oid, krid = o.id, KeyResult.query.one().id
         fid = KRFactor.query.one().id
     page = c.get(f"/app/{slug}/goals/{oid}").get_data(as_text=True)
-    assert "pathc__svg" in page and "events" in page
+    assert "pathc__svg" in page and "tl2" in page and "kj" in page
     assert c.post(f"/app/{slug}/goals/factor/{fid}/update", data={"status": "done", "actual": "300"}).status_code == 302
     assert c.post(f"/app/{slug}/goals/{oid}/decision", data={"text": "تأجيل الفرع"}).status_code == 302
     c.post(f"/app/{slug}/goals/kr/{krid}/edit", data={"title": "x", "target_value": "888", "start_value": "1", "reason": "السوق تغيّر"})

@@ -1,0 +1,19 @@
+{# Fragment: a drafted goal per department. rows [{unit, title, why, head, drafted}], advice #}
+{% from "components/ui.html" import csrf %}
+{% if not rows %}<p class="cai__idle">{{ t('goals.split.empty') }}</p>
+{% else %}
+<form method="post" action="{{ url_for('goals.split_save', id=o.id) }}" class="splt">{{ csrf() }}
+  <p class="cai__idle">{{ t('goals.split.review') }}</p>
+  {% for r in rows %}
+  <div class="splt__r">
+    <label class="splt__top"><input type="checkbox" name="unit" value="{{ r.unit.id }}" checked><b>{{ r.unit.name }}</b>
+      <small>{% if r.head %}{{ icon('user', 13) }}{{ r.head }}{% else %}{{ t('goals.split.no_head') }}{% endif %}</small></label>
+    <input class="input" name="title_{{ r.unit.id }}" value="{{ r.title }}" maxlength="255" dir="auto" aria-label="{{ t('goals.split.title_of', unit=r.unit.name) }}">
+    <input type="hidden" name="why_{{ r.unit.id }}" value="{{ r.why }}">
+    {% if not r.drafted %}<small class="muted">{{ t('goals.split.rough') }}</small>{% endif %}
+  </div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">{{ icon('check', 16) }}{{ t('goals.split.approve') }}</button>
+  {% if advice %}<p class="advice__foot">{% set a = advice %}{% include "goals/_ai_tag.html" %}</p>{% endif %}
+</form>
+{% endif %}

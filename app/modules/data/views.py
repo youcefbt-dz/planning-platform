@@ -564,12 +564,8 @@ def _check_from_args():
 
 @bp.get("/reality")
 def reality_page():
-    result, err = _check_from_args()
-    all_series = service.org_series(g.org.id)
-    sel = next((x for x in all_series if str(x.id) == request.args.get("series")), None)
-    start_default = request.args.get("start") or (f"{sel.latest[1]:.2f}".rstrip("0").rstrip(".") if sel and sel.latest else "")
-    return render_template("data/reality.html", all_series=all_series, result=result, err=err, args=request.args, ai_state=_ai_state(), start_default=start_default,
-                           default_end=date(date.today().year, 12, 31))
+    """Moved: the reality check is part of goals. Old links keep working."""
+    return redirect(url_for("goals.reality_page", **request.args.to_dict()))
 
 
 @bp.get("/reality/check")

@@ -100,7 +100,7 @@ def index():
     facts = FA.collect(g.org)
     m = build_map(g.org)
     prof = m["profile"]
-    payload = PL.build(facts, prof.get("vision") or "", prof.get("mission") or "")
+    payload = PL.build(g.org, facts, prof.get("vision") or "", prof.get("mission") or "")
     return render_template("orgmap/index.html", facts=facts, payload=payload, nums=numbers(facts), reading=reading(m), can_edit=_can_edit())
 
 

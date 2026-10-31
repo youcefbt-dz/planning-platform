@@ -1,20 +1,23 @@
 {% extends "layouts/app.html" %}
-{% from "components/ui.html" import csrf, badge, dot, meter, avatar, delete_button, status_select, empty, quick_notes %}
+{% from "components/ui.html" import csrf, badge, dot, meter, avatar, delete_button, status_select, empty, quick_notes, sec, ring %}
 {% block title %}{{ o.title }}{% endblock %}
 
 {% set kr_end = o.end_date or (o.cycle.end_date if o.cycle else none) %}
 {% set stale_days = 62 %}
-{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/goals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dash.css') }}">{% if data_series_options is defined %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}">{% endif %}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/goals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/compose.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/goaldetail.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dash.css') }}">{% if data_series_options is defined %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}">{% endif %}{% endblock %}
 {% block content %}
 <div class="crumbs">
   <a href="{{ url_for('goals.index') }}">{{ t('goals.module') }}</a>{{ icon('chevron-right', 13, flip=true) }}
   {% if parent_view %}<a href="{{ url_for('goals.detail', id=parent_view.obj.id) }}">{{ parent_view.obj.title }}</a>{{ icon('chevron-right', 13, flip=true) }}{% endif %}
   <span>{{ t('goals.entity.objective') }}</span>
 </div>
+{% set gp = ((v.progress - v.expected) * 100)|round(0)|int %}
+{% set left = ((kr_end - today).days if kr_end else none) %}
 <div class="page-head">
   <div style="min-width:0;flex:1">
     <h1>{{ o.title }}</h1>
     <p class="sub row-wrap" style="gap:var(--sp-3)">{{ badge(v.status) }}<span class="chip-type" data-commit="{{ o.commitment }}" title="{{ t('goals.commitment_hint.' ~ o.commitment) }}">{{ icon('flag-3' if o.commitment == 'committed' else 'mountain', 13) }}{{ t('goals.commitment.' ~ o.commitment) }}</span>
+      {% if o.unit %}<span class="chip-type">{{ icon('sitemap', 13) }}{{ o.unit.name }}</span>{% endif %}
       {% if v.stale %}<span class="stale">{{ icon('clock', 14) }}{{ t('goals.stale_since', ago=(v.last_update|ago) if v.last_update else t('goals.never')) }}</span>{% endif %}
     </p>
   </div>
@@ -23,40 +26,32 @@
     <a class="btn" href="{{ url_for('goals.new', parent=o.id) }}">{{ icon('plus', 15) }}{{ t('goals.add_child') }}</a>{% endif %}
     {% if can('goals.delete') and can_edit_goal(o) %}{{ delete_button(url_for('goals.delete', id=o.id), confirm=t('goals.confirm_delete')) }}{% endif %}
   </div>
-  {% set gp = ((v.progress - v.expected) * 100)|round(0)|int %}
-  {% set left = ((kr_end - today).days if kr_end else none) %}
   <dl class="hstats">
     <div><dt>{{ t('common.progress') }}</dt><dd class="num">{{ pct(v.progress) }}</dd></div>
     <div><dt>{{ t('common.expected') }}</dt><dd class="num">{{ pct(v.expected) }}</dd></div>
     <div data-s="{{ 'on_track' if gp >= 0 else 'off_track' }}"><dt>{{ t('goals.col.gap') }}</dt><dd class="num"><bdi dir="ltr">{{ '+' if gp > 0 else ('−' if gp < 0 else '') }}{{ n(gp|abs) }}</bdi></dd></div>
     {% if left is not none and left >= 0 %}<div><dt>{{ t('goals.widget.days_label') }}</dt><dd class="num">{{ n(left) }}</dd></div>{% endif %}
-    <div><dt>{{ t('goals.entity.key_results') }}</dt><dd class="num">{{ n(v.krs|length) }}</dd></div>
   </dl>
 </div>
 
 <div class="layout-side">
-  <div class="stack">
-    <div class="box">
-      <div class="box-head"><h2>{{ icon('target-arrow', 18) }}{{ t('goals.col.progress') }}</h2></div>
-      <div class="box-body">
-        {{ meter(v.progress, v.status, v.expected, lg=true) }}
-        <p class="pacekey">{{ t('goals.pace_hint') }}{% set gap = ((v.expected - v.progress) * 100)|round(0)|int %} — {% if gap > 0 %}{{ t('common.behind_by') }} <b class="num ink">{{ n(gap) }} {{ t('common.points') }}</b>{% elif gap < 0 %}{{ t('common.ahead_by') }} <b class="num ink">{{ n(-gap) }} {{ t('common.points') }}</b>{% else %}{{ t('common.on_plan') }}{% endif %}</p>
-        {% if chart %}
-        <details class="disclosure" style="margin-block-start:var(--sp-4)"><summary>{{ icon('chart-line', 15) }}{{ t('goals.history') }}</summary>
-          {% include "components/line_chart.html" %}
-        </details>{% endif %}
-      </div>
-    </div>
+  <div class="gd">
+    {# where the goal stands, in one glance and one sentence #}
+    <section class="gd__now" aria-label="{{ t('goals.kd.where') }}">
+      {{ ring(v.progress, v.status, 84) }}
+      <div><h2>{{ t('goals.kd.where') }}</h2>
+        <p>{% if gp > 0 %}{{ t('goals.kd.ahead', n=n(gp), expected=pct(v.expected)) }}{% elif gp < 0 %}{{ t('goals.kd.behind', n=n(gp|abs), expected=pct(v.expected)) }}{% else %}{{ t('goals.kd.on_plan', expected=pct(v.expected)) }}{% endif %}
+          {% if left is not none and left >= 0 %} {{ t('goals.kd.days_left', n=n(left), end=d(kr_end)) }}{% endif %}</p></div>
+    </section>
+    {% if o.rationale %}<blockquote class="gd__why">{{ icon('bulb', 18) }}<div><b>{{ t('goals.rationale') }}</b><p dir="auto">{{ o.rationale }}</p></div></blockquote>{% endif %}
 
-    <div class="box">
-      <div class="box-head"><h2>{{ icon('flag', 18) }}{{ t('goals.entity.key_results') }}</h2><span class="count">{{ n(v.krs|length) }}</span></div>
-      {% for k in v.krs %}
-      {% include "goals/_kr.html" %}
-      {% else %}
-        {% call empty('flag', t('goals.no_krs_title'), t('goals.no_krs_text')) %}{% endcall %}
-      {% endfor %}
+    {% call sec('krs', 'flag', t('goals.entity.key_results'), t('goals.kd.krs_sub')) %}
+    <div class="kcs">
+      {% for k in v.krs %}{% include "goals/_kr.html" %}
+      {% else %}{% call empty('flag', t('goals.no_krs_title'), t('goals.no_krs_text')) %}{% endcall %}{% endfor %}
+    </div>
       {% if can_edit_goal(o) %}
-      <details class="disclosure" style="padding:12px 16px;background:var(--c-subtle);border-block-start:1px solid var(--c-line)">
+      <details class="kadd">
         <summary>{{ icon('plus', 15) }}{{ t('goals.add_kr') }}</summary>
         <form method="post" action="{{ url_for('goals.kr_add', id=o.id) }}">{{ csrf() }}
           <div class="form-grid">
@@ -72,67 +67,39 @@
         </form>
       </details>
       {% endif %}
-    </div>
+    {% endcall %}
 
-    {% set ns = namespace(any=false) %}{% for k in v.krs %}{% if infos[k.kr.id].path %}{% set ns.any = true %}{% endif %}{% endfor %}
-    {% if ns.any %}
-    <div class="box" id="paths">
-      <div class="box-head"><h2>{{ icon('chart-line', 18) }}{{ t('goals.paths_title') }}</h2></div>
-      {% for k in v.krs %}{% set inf = infos[k.kr.id] %}{% if inf.path %}
-      <details class="pathrow">
-        <summary><span class="pathrow__t" dir="auto">{{ k.kr.title }}</span>{% if inf.row %}{{ badge(inf.row.status) }}{% endif %}{{ icon('chevron-down', 16) }}</summary>
-        <div class="box-body">
-          {% if inf.row and inf.data and inf.data.projected %}{% set pr = inf.data.projected %}
-          <p class="insight" style="margin:0 0 var(--sp-3)">{{ icon('bulb', 16) }}<span>{{ t('goals.path.sentence_' ~ inf.row.status, mid=val(pr.mid, k.kr.unit_label), low=val(pr.low, k.kr.unit_label), high=val(pr.high, k.kr.unit_label), target=val(k.kr.target_value, k.kr.unit_label), end=d(kr_end)) }}</span></p>
-          {% elif not inf.data %}<p class="muted" style="margin:0 0 var(--sp-3)">{{ t('goals.path.manual_note') }}</p>{% endif %}
-          {% set pc = inf.path %}{% include "goals/_path.html" %}
-          {% if inf.branches %}{% set c = inf.branches %}{% include "data/_chart.html" %}{% endif %}
-        </div>
-      </details>
-      {% endif %}{% endfor %}
-    </div>
-    {% endif %}
-
-    {% if o.rationale %}<div class="box"><div class="box-head"><h2>{{ icon('bulb', 18) }}{{ t('goals.rationale') }}</h2></div><div class="box-body" style="white-space:pre-line" dir="auto">{{ o.rationale }}</div></div>{% endif %}
-    {% if o.description %}<div class="box"><div class="box-head"><h2>{{ t('common.description') }}</h2></div><div class="box-body" style="white-space:pre-line">{{ o.description }}</div></div>{% endif %}
-
-    <div class="box" id="events">
-      <div class="box-head"><h2>{{ icon('gavel', 18) }}{{ t('goals.events.title') }}</h2><span class="count">{{ n(events|length) }}</span></div>
-      <div class="box-body events">
-        {% for e in events %}<div class="events__item">{{ icon('target-arrow' if e.kind == 'target' else 'gavel', 16) }}<div>
-          <b>{% if e.kind == 'target' %}{{ t('goals.events.target_changed', old=n(e.old_value), new=n(e.new_value)) }}{% else %}{{ t('goals.events.decision') }}{% endif %}</b>
-          <span class="muted"> · {{ e.user.name if e.user else t('common.system') }} · {{ e.created_at|ago }}</span>
-          {% if e.text %}<p style="margin:2px 0 0" dir="auto">{{ e.text }}</p>{% elif e.kind == 'target' %}<p class="muted" style="margin:2px 0 0">{{ t('goals.events.no_reason') }}</p>{% endif %}</div></div>
-        {% else %}<p class="muted" style="margin:0">{{ t('goals.events.none') }}</p>{% endfor %}
-        {% if can_edit_goal(o) %}<form method="post" action="{{ url_for('goals.decision_add', id=o.id) }}" class="row-wrap">{{ csrf() }}
-          <input class="input" name="text" maxlength="500" required placeholder="{{ t('goals.events.ph') }}" aria-label="{{ t('goals.events.decision') }}" style="flex:1;min-width:220px"><button class="btn btn-primary btn-sm" type="submit">{{ t('goals.events.add') }}</button></form>{% endif %}
-      </div>
-    </div>
-
-    <div class="box" id="feed">
-      <div class="box-head"><h2>{{ icon('message-circle', 18) }}{{ t('goals.checkins') }}</h2></div>
+    {% call sec('story', 'message-circle', t('goals.kd.story'), t('goals.kd.story_sub')) %}
+    <div class="gd__post">
       {% if can_update_goal(o) %}
-      <form method="post" action="{{ url_for('goals.checkin', id=o.id) }}" class="box-body" style="border-block-end:1px solid var(--c-line)">{{ csrf() }}
+      <form method="post" action="{{ url_for('goals.checkin', id=o.id) }}">{{ csrf() }}
         <div class="field"><label for="ci-comment">{{ t('goals.checkin_prompt') }}</label><textarea class="textarea" id="ci-comment" name="comment" rows="2"></textarea>{{ quick_notes('#ci-comment') }}</div>
-        <div class="row-wrap">{{ status_select() }}<button class="btn btn-primary btn-sm" type="submit">{{ icon('message', 15) }}{{ t('goals.post_checkin') }}</button>
-          <span class="hint">{{ t('goals.checkin_hint') }}</span></div>
+        <div class="row-wrap">{{ status_select() }}<button class="btn btn-primary btn-sm" type="submit">{{ icon('message', 15) }}{{ t('goals.post_checkin') }}</button><span class="hint">{{ t('goals.checkin_hint') }}</span></div>
       </form>{% endif %}
-      {% if feed %}
-      <div class="timeline">
-        {% for c in feed if c.comment or c.status or c.entity_type == 'key_result' %}
-        <div class="tl-item">
-          <span class="avatar">{{ c.user.initials if c.user else '–' }}</span>
-          <div class="body">
-            <div class="who">{{ c.user.name if c.user else t('common.system') }}<span class="when">{{ c.created_at|ago }}</span></div>
-            {% if c.entity_type == 'key_result' %}<div class="change">{{ icon('flag', 13) }}{{ kr_titles.get(c.entity_id, '') }}{% if c.value is not none %} → <b class="ink num">{{ n(c.value) }}</b>{% endif %}</div>{% endif %}
-            {% if c.status %}<div class="change">{{ badge(c.status) }}</div>{% endif %}
-            {% if c.comment == '@data' %}<p class="muted">{{ icon('refresh', 13) }}{{ t('goals.updated_from_data') }}</p>{% elif c.comment %}<p>{{ c.comment }}</p>{% endif %}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}{% call empty('message-circle', t('goals.no_checkins')) %}{% endcall %}{% endif %}
+      {% if can_edit_goal(o) %}
+      <details class="kadd"><summary>{{ icon('gavel', 15) }}{{ t('goals.kd.add_decision') }}</summary>
+        <form method="post" action="{{ url_for('goals.decision_add', id=o.id) }}" class="row-wrap">{{ csrf() }}
+          <input class="input" name="text" maxlength="500" required placeholder="{{ t('goals.events.ph') }}" aria-label="{{ t('goals.events.decision') }}" style="flex:1;min-width:220px"><button class="btn btn-primary btn-sm" type="submit">{{ t('goals.events.add') }}</button></form>
+      </details>{% endif %}
     </div>
+    {% if timeline %}
+    <ol class="tl2">
+      {% for it in timeline %}
+      {% if it.kind == 'update' %}{% set c = it.c %}
+      <li class="tl2__i"><span class="tl2__ic">{{ c.user.initials if c.user else '–' }}</span>
+        <div><p class="tl2__h"><b>{{ c.user.name if c.user else t('common.system') }}</b><span>{{ c.created_at|ago }}</span></p>
+          {% if c.entity_type == 'key_result' %}<p class="tl2__c">{{ icon('flag', 13) }}{{ kr_titles.get(c.entity_id, '') }}{% if c.value is not none %} → <b class="num">{{ n(c.value) }}</b>{% endif %}</p>{% endif %}
+          {% if c.status %}<p class="tl2__c">{{ badge(c.status) }}</p>{% endif %}
+          {% if c.comment == '@data' %}<p class="muted tl2__c">{{ icon('refresh', 13) }}{{ t('goals.updated_from_data') }}</p>{% elif c.comment %}<p class="tl2__t" dir="auto">{{ c.comment }}</p>{% endif %}</div></li>
+      {% else %}{% set e = it.e %}
+      <li class="tl2__i tl2__i--d"><span class="tl2__ic">{{ icon('target-arrow' if e.kind == 'target' else 'gavel', 15) }}</span>
+        <div><p class="tl2__h"><b>{% if e.kind == 'target' %}{{ t('goals.events.target_changed', old=n(e.old_value), new=n(e.new_value)) }}{% else %}{{ t('goals.events.decision') }}{% endif %}</b><span>{{ e.user.name if e.user else t('common.system') }} · {{ e.created_at|ago }}</span></p>
+          {% if e.text %}<p class="tl2__t" dir="auto">{{ e.text }}</p>{% elif e.kind == 'target' %}<p class="muted tl2__c">{{ t('goals.events.no_reason') }}</p>{% endif %}</div></li>
+      {% endif %}
+      {% endfor %}
+    </ol>
+    {% else %}{% call empty('message-circle', t('goals.no_checkins')) %}{% endcall %}{% endif %}
+    {% endcall %}
   </div>
 
   <aside class="stack">
@@ -148,10 +115,14 @@
       </dl>
     </div></div>
 
-    <div class="box" id="quality">
-      <div class="box-head"><h3>{{ icon('clipboard-check', 16) }}{{ t('goals.coach.title') }}</h3><span class="count {% if quality.open %}count-warn{% endif %}">{{ n(quality.passed) }}/{{ n(quality.total) }}</span></div>
-      {% set res = quality %}{% include "goals/_checks.html" %}
-    </div>
+    {% if split_n %}
+    <section class="cai cai--split" data-assist="{{ url_for('goals.split_preview', id=o.id) }}" data-assist-from="" data-assist-failed="{{ t('goals.draft.failed') }}">
+      <header class="cai__head"><span class="cai__ic">{{ icon('bulb', 22) }}</span><div><h2>{{ t('goals.split.title') }}</h2><p>{{ t('goals.split.sub', n=n(split_n)) }}</p></div></header>
+      <button class="btn btn-primary cai__run" type="button" data-assist-run>{{ icon('bulb', 16) }}{{ t('goals.split.run') }}</button>
+      <div data-assist-out aria-live="polite"></div>
+    </section>
+    {% endif %}
+
     {% if v.children %}
     <div class="box"><div class="box-head"><h3>{{ icon('sitemap', 16) }}{{ t('goals.children') }}</h3><span class="count">{{ n(v.children|length) }}</span></div>
       {% for c in v.children|sort(attribute='obj.id') %}
@@ -160,6 +131,9 @@
       {% endfor %}
     </div>{% endif %}
 
+    <details class="gd__q" id="quality"><summary>{{ icon('clipboard-check', 16) }}<b>{{ t('goals.coach.title') }}</b><span class="count {% if quality.open %}count-warn{% endif %}">{{ n(quality.passed) }}/{{ n(quality.total) }}</span>{{ icon('chevron-down', 15) }}</summary>
+      {% set res = quality %}{% include "goals/_checks.html" %}
+    </details>
     {% if modules.is_enabled('initiatives') %}
     <div class="box"><div class="box-head"><h3>{{ icon('rocket', 16) }}{{ t('goals.supporting_initiatives') }}</h3><span class="count">{{ n(supporters|length) }}</span>
       <div class="actions">{% if can('initiatives.edit') %}<a class="btn btn-sm btn-ghost btn-icon" href="{{ url_for('initiatives.new', goal=o.id) }}" title="{{ t('initiatives.create') }}">{{ icon('plus', 15) }}</a>{% endif %}</div></div>

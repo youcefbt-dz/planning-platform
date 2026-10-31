@@ -68,4 +68,16 @@
     if (panel) wire(panel, root);
     if (series && series.value) run(root, false);            // a key result that is already measured shows its verdict at once
   });
+
+  // the explain button inside a server-rendered panel (a new goal's page): fetch the explained panel and swap it in place
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-explain][data-fragment]');
+    if (!a || a.closest('[data-reality]') || !window.fetch) return;
+    var panel = a.closest('.verdict'); if (!panel) return;
+    e.preventDefault(); a.setAttribute('aria-busy', 'true'); a.classList.add('is-busy');
+    fetch(a.getAttribute('data-fragment'), { credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+      .then(function (r) { return r.ok ? r.text() : Promise.reject(r); })
+      .then(function (html) { var box = document.createElement('div'); box.innerHTML = html.trim(); var n = box.firstElementChild; if (n) { panel.replaceWith(n); if (window.initCharts) window.initCharts(n); } })
+      .catch(function () { window.location = a.href; });
+  });
 })();

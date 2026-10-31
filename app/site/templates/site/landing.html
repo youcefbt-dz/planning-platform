@@ -1,254 +1,98 @@
 {% extends "layouts/site.html" %}
-{% from "components/shapes.html" import hero_bg, blob, dots %}
+{% from "components/shapes.html" import hero_bg, blob, subscribe_wave, dots %}
+{% from "components/ui.html" import csrf, flashes %}
 {% block title %}{{ t('site.meta.title') }}{% endblock %}
 {% block title_full %}{{ brand_name }} · {{ t('site.meta.title') }}{% endblock %}
-{% block description %}{{ t('site.meta.description') }}{% endblock %}
 
-{% macro shot(name, alt, cls='') %}
-<img class="lp-shot {{ cls }}" src="{{ url_for('static', filename='img/shots/' ~ name ~ '-' ~ lang ~ '.png') }}" alt="{{ alt }}" loading="lazy" width="1536" height="1024">
+{% macro well(ic, title, text) %}
+<article class="promise"><span class="promise__well">{{ icon(ic, 44, cls='') }}</span><h3>{{ title }}</h3><p>{{ text }}</p></article>
+{% endmacro %}
+
+{% macro feat(ic, title, text) %}
+<article class="feat"><span class="feat__icon">{{ icon(ic, 46) }}</span><h3>{{ title }}</h3><p>{{ text }}</p></article>
+{% endmacro %}
+
+{% macro shot(name, alt) %}
+<img class="shot" src="{{ url_for('static', filename='img/shots/' ~ name ~ '-' ~ lang ~ '.png') }}" alt="{{ alt }}" loading="lazy" width="1280" height="800">
 {% endmacro %}
 
 {% block main %}
-<section class="hero lp-hero" aria-labelledby="hero-title">
+<section class="hero" aria-labelledby="hero-title">
   {{ hero_bg() }}
-  <div class="site-wrap lp-hero__grid">
-    <div class="lp-hero__copy">
-      <p class="lp-eyebrow lp-eyebrow--light"><span class="lp-eyebrow__dot"></span>{{ t('site.hero.eyebrow') }}</p>
-      <h1 id="hero-title">
-        <span>{{ t('site.hero.title_a') }}</span>
-        <span class="lp-hero__accent">{{ t('site.hero.title_b') }}</span>
-      </h1>
-      <p class="lp-hero__lead">{{ t('site.hero.text') }}</p>
-      <div class="hero__cta lp-hero__cta">
-        <a class="btn-pill btn-pill--white" href="{{ url_for('auth.register') }}">{{ t('site.hero.cta_start') }}{{ icon('arrow-up-right', 18) }}</a>
-        {% if config.ENABLE_DEMO %}<a class="btn-pill btn-pill--outline" href="{{ url_for('site.demo') }}">{{ t('site.hero.cta_demo') }}{{ icon('external-link', 17) }}</a>{% endif %}
-      </div>
-      <div class="lp-hero__notes">
-        <span>{{ icon('check', 16) }}{{ t('site.hero.note_one') }}</span>
-        <span>{{ icon('check', 16) }}{{ t('site.hero.note_two') }}</span>
+  <div class="site-wrap hero__grid">
+    <div class="hero__text">
+      <h1 id="hero-title">{{ t('site.hero.title') }}</h1>
+      <p>{{ t('site.hero.text') }}</p>
+      <div class="hero__cta">
+        {% if config.ENABLE_DEMO %}<a class="btn-pill btn-pill--white" href="{{ url_for('site.demo') }}">{{ t('site.hero.cta_demo') }}</a>{% endif %}
+        <a class="btn-pill btn-pill--outline" href="#waitlist">{{ t('site.hero.cta_waitlist') }}</a>
       </div>
     </div>
-
-    <div class="lp-hero__visual" role="group" aria-label="{{ t('site.hero.visual_alt') }}">
-      <div class="lp-hero__visual-glow"></div>
-      <div class="lp-hero__window">
-        <div class="lp-windowbar">
-          <span class="lp-windowbar__lights"><i></i><i></i><i></i></span>
-          <span class="lp-windowbar__label">{{ t('site.hero.window_label') }}</span>
-          <span class="lp-windowbar__status">{{ icon('circle-check', 13) }}{{ t('site.hero.window_status') }}</span>
-        </div>
-        {{ shot('overview', t('site.hero.visual_alt')) }}
-      </div>
-      <div class="lp-hero-float lp-hero-float--top">
-        <span class="lp-float-icon">{{ icon('target-arrow', 19) }}</span>
-        <span><b>{{ t('site.hero.float_one_title') }}</b><small>{{ t('site.hero.float_one_text') }}</small></span>
-      </div>
-      <div class="lp-hero-float lp-hero-float--bottom">
-        <span class="lp-float-icon lp-float-icon--yellow">{{ icon('chart-line', 19) }}</span>
-        <span><b>{{ t('site.hero.float_two_title') }}</b><small>{{ t('site.hero.float_two_text') }}</small></span>
-      </div>
-    </div>
+    <div class="hero__media">{{ shot('overview', t('site.hero.shot_alt')) }}</div>
   </div>
-  <a class="hero__down" href="#workflow" aria-label="{{ t('site.hero.scroll') }}">{{ icon('chevron-down', 22) }}</a>
+  <a class="hero__down" href="#promises" aria-label="{{ t('site.hero.scroll') }}">{{ icon('chevron-down', 22) }}</a>
 </section>
 
-<section class="lp-continuum" aria-label="{{ t('site.continuum.label') }}">
-  <div class="site-wrap lp-continuum__inner">
-    <span class="lp-continuum__intro">{{ t('site.continuum.intro') }}</span>
-    <div class="lp-continuum__track">
-      <span>{{ icon('compass', 17) }}{{ t('site.continuum.one') }}</span>
-      <i></i>
-      <span>{{ icon('target-arrow', 17) }}{{ t('site.continuum.two') }}</span>
-      <i></i>
-      <span>{{ icon('chart-line', 17) }}{{ t('site.continuum.three') }}</span>
-      <i></i>
-      <span>{{ icon('sitemap', 17) }}{{ t('site.continuum.four') }}</span>
+<section class="promises" id="promises">
+  <div class="site-wrap promises__grid">
+    {{ well('target-arrow', t('site.promises.align.title'), t('site.promises.align.text')) }}
+    {{ well('progress-check', t('site.promises.follow.title'), t('site.promises.follow.text')) }}
+    {{ well('report-analytics', t('site.promises.decide.title'), t('site.promises.decide.text')) }}
+  </div>
+</section>
+
+<section class="showcase" id="features">
+  <div class="site-wrap showcase__row">
+    <div class="showcase__media showcase__media--blob">
+      {{ blob('a1', 'a') }}{{ dots('dotgrid--a') }}
+      <div class="showcase__card">{{ shot('goal', t('site.showcase.first.alt')) }}</div>
+    </div>
+    <div class="showcase__text">
+      <h2>{{ t('site.showcase.first.title') }}</h2>
+      <p>{{ t('site.showcase.first.text') }}</p>
+      <ul class="bullets">{% for k in ('a','b','c') %}<li>{{ t('site.showcase.first.' ~ k) }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+  <div class="site-wrap showcase__row showcase__row--rev">
+    <div class="showcase__media showcase__media--blob">
+      {{ blob('b1', 'b') }}{{ dots('dotgrid--b') }}
+      <div class="showcase__card">{{ shot('roadmap', t('site.showcase.second.alt')) }}</div>
+    </div>
+    <div class="showcase__text">
+      <h2>{{ t('site.showcase.second.title') }}</h2>
+      <p>{{ t('site.showcase.second.text') }}</p>
+      <ul class="bullets">{% for k in ('a','b','c') %}<li>{{ t('site.showcase.second.' ~ k) }}</li>{% endfor %}</ul>
     </div>
   </div>
 </section>
 
-<section class="lp-workflow" id="workflow">
+<section class="features" id="modular">
   <div class="site-wrap">
-    <header class="lp-section-head">
-      <p class="lp-eyebrow">{{ t('site.workflow.eyebrow') }}</p>
-      <h2>{{ t('site.workflow.title') }}</h2>
-      <p>{{ t('site.workflow.text') }}</p>
-    </header>
-    <div class="lp-steps">
-      <article class="lp-step">
-        <span class="lp-step__number">01</span>
-        <span class="lp-step__icon">{{ icon('compass', 25) }}</span>
-        <h3>{{ t('site.workflow.direction.title') }}</h3>
-        <p>{{ t('site.workflow.direction.text') }}</p>
-        <span class="lp-step__foot">{{ t('site.workflow.direction.foot') }}</span>
-      </article>
-      <article class="lp-step">
-        <span class="lp-step__number">02</span>
-        <span class="lp-step__icon">{{ icon('target-arrow', 25) }}</span>
-        <h3>{{ t('site.workflow.goals.title') }}</h3>
-        <p>{{ t('site.workflow.goals.text') }}</p>
-        <span class="lp-step__foot">{{ t('site.workflow.goals.foot') }}</span>
-      </article>
-      <article class="lp-step">
-        <span class="lp-step__number">03</span>
-        <span class="lp-step__icon">{{ icon('table', 25) }}</span>
-        <h3>{{ t('site.workflow.data.title') }}</h3>
-        <p>{{ t('site.workflow.data.text') }}</p>
-        <span class="lp-step__foot">{{ t('site.workflow.data.foot') }}</span>
-      </article>
-      <article class="lp-step">
-        <span class="lp-step__number">04</span>
-        <span class="lp-step__icon">{{ icon('sitemap', 25) }}</span>
-        <h3>{{ t('site.workflow.map.title') }}</h3>
-        <p>{{ t('site.workflow.map.text') }}</p>
-        <span class="lp-step__foot">{{ t('site.workflow.map.foot') }}</span>
-      </article>
-      <article class="lp-step">
-        <span class="lp-step__number">05</span>
-        <span class="lp-step__icon">{{ icon('report-analytics', 25) }}</span>
-        <h3>{{ t('site.workflow.reports.title') }}</h3>
-        <p>{{ t('site.workflow.reports.text') }}</p>
-        <span class="lp-step__foot">{{ t('site.workflow.reports.foot') }}</span>
-      </article>
+    <header class="section-head"><h2>{{ t('site.features.title') }}</h2><p>{{ t('site.features.text') }}</p></header>
+    <div class="features__grid">
+      {{ feat('target-arrow', t('site.features.okr.title'), t('site.features.okr.text')) }}
+      {{ feat('chart-line', t('site.features.kpi.title'), t('site.features.kpi.text')) }}
+      {{ feat('rocket', t('site.features.initiatives.title'), t('site.features.initiatives.text')) }}
+      {{ feat('route', t('site.features.map.title'), t('site.features.map.text')) }}
+      {{ feat('puzzle', t('site.features.modular.title'), t('site.features.modular.text')) }}
+      {{ feat('language', t('site.features.lang.title'), t('site.features.lang.text')) }}
     </div>
   </div>
 </section>
 
-<section class="lp-showcase" id="capabilities">
-  <div class="site-wrap lp-showcase__row">
-    <div class="lp-showcase__media">
-      {{ blob('goals-scene', 'a') }}{{ dots('lp-dotgrid lp-dotgrid--a') }}
-      <div class="lp-showcase__shot">{{ shot('goal', t('site.showcase.goals.alt')) }}</div>
-      <span class="lp-media-caption">{{ icon('target-arrow', 15) }}{{ t('site.showcase.goals.caption') }}</span>
-    </div>
-    <div class="lp-showcase__copy">
-      <p class="lp-eyebrow">{{ t('site.showcase.goals.eyebrow') }}</p>
-      <h2>{{ t('site.showcase.goals.title') }}</h2>
-      <p class="lp-showcase__lead">{{ t('site.showcase.goals.text') }}</p>
-      <ul class="lp-checklist">
-        {% for k in ('one', 'two', 'three') %}<li>{{ icon('circle-check', 18) }}<span>{{ t('site.showcase.goals.' ~ k) }}</span></li>{% endfor %}
-      </ul>
-      <a class="lp-text-link" href="{{ url_for('auth.register') }}">{{ t('site.showcase.link') }}{{ icon('arrow-left', 17) }}</a>
-    </div>
-  </div>
-
-  <div class="site-wrap lp-showcase__row lp-showcase__row--reverse">
-    <div class="lp-showcase__media lp-showcase__media--data">
-      {{ blob('data-scene', 'b') }}{{ dots('lp-dotgrid lp-dotgrid--b') }}
-      <div class="lp-data-visual">
-        <div class="lp-data-visual__head">
-          <div><span class="lp-data-visual__mini">{{ t('site.showcase.data.kicker') }}</span><b>{{ t('site.showcase.data.visual_title') }}</b></div>
-          <span class="lp-data-visual__badge">{{ icon('check', 13) }}{{ t('site.showcase.data.badge') }}</span>
-        </div>
-        <div class="lp-data-visual__file">{{ icon('file-text', 20) }}<span><b>{{ t('site.showcase.data.file_name') }}</b><small>{{ t('site.showcase.data.file_note') }}</small></span><span class="lp-data-visual__file-mark">XLSX</span></div>
-        <div class="lp-data-table">
-          <div class="lp-data-table__row lp-data-table__row--head"><span>{{ t('site.showcase.data.col_one') }}</span><span>{{ t('site.showcase.data.col_two') }}</span><span>{{ t('site.showcase.data.col_three') }}</span></div>
-          <div class="lp-data-table__row"><span>{{ t('site.showcase.data.row_a') }}</span><i></i><i></i></div>
-          <div class="lp-data-table__row"><span>{{ t('site.showcase.data.row_b') }}</span><i></i><i></i></div>
-          <div class="lp-data-table__row"><span>{{ t('site.showcase.data.row_c') }}</span><i></i><i></i></div>
-        </div>
-        <div class="lp-data-visual__result"><span>{{ icon('chart-line', 18) }}</span><div><b>{{ t('site.showcase.data.result_title') }}</b><small>{{ t('site.showcase.data.result_text') }}</small></div>{{ icon('arrow-left', 17) }}</div>
-      </div>
-      <span class="lp-media-caption">{{ icon('table', 15) }}{{ t('site.showcase.data.caption') }}</span>
-    </div>
-    <div class="lp-showcase__copy">
-      <p class="lp-eyebrow">{{ t('site.showcase.data.eyebrow') }}</p>
-      <h2>{{ t('site.showcase.data.title') }}</h2>
-      <p class="lp-showcase__lead">{{ t('site.showcase.data.text') }}</p>
-      <ul class="lp-checklist">
-        {% for k in ('one', 'two', 'three') %}<li>{{ icon('circle-check', 18) }}<span>{{ t('site.showcase.data.' ~ k) }}</span></li>{% endfor %}
-      </ul>
-      <a class="lp-text-link" href="{{ url_for('auth.register') }}">{{ t('site.showcase.link') }}{{ icon('arrow-left', 17) }}</a>
-    </div>
-  </div>
-</section>
-
-<section class="lp-capabilities">
+<section class="waitlist" id="waitlist">
   <div class="site-wrap">
-    <header class="lp-section-head lp-section-head--wide">
-      <p class="lp-eyebrow">{{ t('site.capabilities.eyebrow') }}</p>
-      <h2>{{ t('site.capabilities.title') }}</h2>
-      <p>{{ t('site.capabilities.text') }}</p>
-    </header>
-    <div class="lp-cap-grid">
-      <article class="lp-cap">
-        <span class="lp-cap__icon">{{ icon('target-arrow', 24) }}</span>
-        <h3>{{ t('site.capabilities.goals.title') }}</h3>
-        <p>{{ t('site.capabilities.goals.text') }}</p>
-      </article>
-      <article class="lp-cap">
-        <span class="lp-cap__icon">{{ icon('chart-line', 24) }}</span>
-        <h3>{{ t('site.capabilities.indicators.title') }}</h3>
-        <p>{{ t('site.capabilities.indicators.text') }}</p>
-      </article>
-      <article class="lp-cap">
-        <span class="lp-cap__icon">{{ icon('table', 24) }}</span>
-        <h3>{{ t('site.capabilities.data.title') }}</h3>
-        <p>{{ t('site.capabilities.data.text') }}</p>
-      </article>
-      <article class="lp-cap">
-        <span class="lp-cap__icon">{{ icon('sitemap', 24) }}</span>
-        <h3>{{ t('site.capabilities.map.title') }}</h3>
-        <p>{{ t('site.capabilities.map.text') }}</p>
-      </article>
-      <article class="lp-cap">
-        <span class="lp-cap__icon">{{ icon('report-analytics', 24) }}</span>
-        <h3>{{ t('site.capabilities.reports.title') }}</h3>
-        <p>{{ t('site.capabilities.reports.text') }}</p>
-      </article>
-      <article class="lp-cap">
-        <span class="lp-cap__icon">{{ icon('users-group', 24) }}</span>
-        <h3>{{ t('site.capabilities.teams.title') }}</h3>
-        <p>{{ t('site.capabilities.teams.text') }}</p>
-      </article>
+    <div class="subscribe">
+      {{ subscribe_wave() }}
+      <div class="subscribe__text"><h2>{{ t('site.waitlist.title') }}</h2><p>{{ t('site.waitlist.text') }}</p></div>
+      <form class="subscribe__form" method="post" action="{{ url_for('site.waitlist') }}">
+        {{ csrf() }}
+        <label class="sr-only" for="wl-email">{{ t('auth.email') }}</label>
+        <input id="wl-email" name="email" type="email" required placeholder="{{ t('site.waitlist.placeholder') }}" autocomplete="email">
+        <button type="submit">{{ t('site.waitlist.button') }}</button>
+      </form>
     </div>
-  </div>
-</section>
-
-<section class="lp-ai" id="intelligence">
-  <div class="site-wrap lp-ai__grid">
-    <div class="lp-ai__visual" aria-hidden="true">
-      <div class="lp-ai-orbit lp-ai-orbit--outer"></div>
-      <div class="lp-ai-orbit lp-ai-orbit--inner"></div>
-      <div class="lp-ai-core">{{ icon('sparkles', 34) }}</div>
-      <div class="lp-ai-node lp-ai-node--one">{{ icon('target-arrow', 19) }}</div>
-      <div class="lp-ai-node lp-ai-node--two">{{ icon('table', 19) }}</div>
-      <div class="lp-ai-node lp-ai-node--three">{{ icon('chart-line', 19) }}</div>
-      <div class="lp-ai-label lp-ai-label--one">{{ t('site.ai.visual_one') }}</div>
-      <div class="lp-ai-label lp-ai-label--two">{{ t('site.ai.visual_two') }}</div>
-      <div class="lp-ai-label lp-ai-label--three">{{ t('site.ai.visual_three') }}</div>
-    </div>
-    <div class="lp-ai__copy">
-      <p class="lp-eyebrow">{{ t('site.ai.eyebrow') }}</p>
-      <h2>{{ t('site.ai.title') }}</h2>
-      <p class="lp-ai__lead">{{ t('site.ai.text') }}</p>
-      <div class="lp-ai__tasks">
-        <div><span>{{ icon('pencil', 17) }}</span>{{ t('site.ai.task_one') }}</div>
-        <div><span>{{ icon('message-circle', 17) }}</span>{{ t('site.ai.task_two') }}</div>
-        <div><span>{{ icon('chart-dots', 17) }}</span>{{ t('site.ai.task_three') }}</div>
-      </div>
-      <div class="lp-privacy-note">
-        {{ icon('shield-check', 19) }}
-        <p>{{ t('site.ai.privacy') }}</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="lp-start" id="start">
-  <div class="site-wrap">
-    <div class="lp-start__panel">
-      <div class="lp-start__pattern" aria-hidden="true"></div>
-      <div class="lp-start__copy">
-        <p class="lp-eyebrow lp-eyebrow--light">{{ t('site.start.eyebrow') }}</p>
-        <h2>{{ t('site.start.title') }}</h2>
-        <p>{{ t('site.start.text') }}</p>
-      </div>
-      <div class="lp-start__actions">
-        <a class="btn-pill btn-pill--white" href="{{ url_for('auth.register') }}">{{ t('site.start.cta') }}{{ icon('arrow-up-right', 18) }}</a>
-        {% if config.ENABLE_DEMO %}<a class="lp-start__demo" href="{{ url_for('site.demo') }}">{{ t('site.start.demo') }}{{ icon('arrow-left', 17) }}</a>{% endif %}
-      </div>
-    </div>
+    {{ flashes() }}
   </div>
 </section>
 {% endblock %}

@@ -141,3 +141,61 @@ unit:
   add_on: يعتمد على هدف
   s_numbers: أرقام القسم
   s_numbers_sub: المؤشرات المسنَدة إلى هذا القسم.
+jx:
+  title: رحلة المؤسسة
+  journey: المسافة المقطوعة
+  of_time: من وقت الدورة
+  pace: الفارق عن الجدول
+  left: المتبقي من الدورة
+  days: يومًا
+  all: الكل
+  attention: يحتاج انتباهًا
+  attention_none: لا شيء يحتاج انتباهًا الآن
+  deps: الاعتمادات
+  align: المواءمة
+  zoom_in: تكبير
+  zoom_out: تصغير
+  fit: عرض الكل
+  full: ملء الشاشة
+  exit_full: إنهاء ملء الشاشة
+  hint: اسحب لتحريك الخريطة، وبعجلة الفأرة أو بإصبعين تكبّر وتصغّر.
+  origin: الهوية
+  vision: الرؤية
+  mission: الرسالة
+  horizon: أفق الدورة
+  no_head: بلا رئيس قسم
+  head: رئيس القسم
+  people: أشخاص
+  goals: أهداف
+  avg: متوسط التقدّم
+  owner: المسؤول
+  unit: القسم
+  ends: ينتهي
+  krs: النتائج الرئيسية
+  gap: الفجوة
+  levers: الرافعات
+  behind: متأخر عن الجدول
+  ahead: متقدّم على الجدول
+  even: على الجدول تمامًا
+  points: نقطة
+  today: اليوم
+  depends: يعتمد على
+  needed: تعتمد عليه
+  serves: يخدم هدف
+  served: تخدمه أهداف
+  blocked: قد يتعطّل بسبب
+  open_goal: افتح الهدف
+  open_unit: صفحة القسم
+  close: إغلاق
+  export: تنزيل الصورة
+  map: الخريطة
+  cycle: الدورة
+  no_goals: لا أهداف بعد
+  org_goals: أهداف المؤسسة نفسها
+  legend_gap: متأخر عن موعده
+  legend_today: المفروض اليوم
+  legend_dep: يعتمد على
+  legend_warn: اعتماد مهدَّد
+  legend_align: يخدم
+  lands: ينتهي عند
+  stations: نتيجة رئيسية

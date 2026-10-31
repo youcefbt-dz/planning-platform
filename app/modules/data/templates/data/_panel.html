@@ -31,8 +31,8 @@
         {% if a.is_model %}{{ t('ai.badge.model', provider=t('ai.provider.' ~ a.provider)) }}{% elif a.errors and 'consent' in (a.errors|join(' ')) %}{{ t('ai.badge.rules_consent') }}{% elif a.errors and 'demo' in (a.errors|join(' ')) %}{{ t('ai.badge.rules_demo') }}{% elif a.fell_back %}{{ t('ai.badge.fell_back') }}{% else %}{{ t('ai.badge.rules') }}{% endif %}</span>
     {% else %}
       <span class="ai-tag" data-kind="rules">{{ icon('bulb', 14) }}{{ t('data.reality.by_rules') }}</span>
-      {% set qs = args.to_dict() %}{% set _ = qs.pop('ai', none) %}
-      <a class="btn btn-sm" href="{{ url_for('data.reality_page', ai=1, **qs) }}" data-explain>{{ icon('bulb', 14) }}{{ t('data.reality.explain_ai') }}</a>
+      {% set qs = {'series': result.series.id, 'start': result.start, 'target': result.target, 'end': result.end_date.isoformat(), 'goal': result.inputs.goal or ''} %}
+      <a class="btn btn-sm" href="{{ url_for('goals.reality_page', ai=1, **qs) }}" data-explain data-fragment="{{ url_for('data.reality_check', ai=1, **qs) }}">{{ icon('bulb', 14) }}{{ t('data.reality.explain_ai') }}</a>
     {% endif %}
     <span class="muted foot-note">{{ t('data.reality.method') }}</span>
   </div>

@@ -7,14 +7,14 @@ import re
 from app.ai import privacy
 
 _AR_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩٫٬", "0123456789.,")
-_NUM = re.compile(r"\d+(?:[.,]\d+)?")
+_NUM = re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:[.,]\d+)?")   # "8,990,000" is one number, not 8.99 and 0
 
 
 def numbers_in(text: str) -> list[float]:
     out = []
     for m in _NUM.findall((text or "").translate(_AR_DIGITS)):
         try:
-            out.append(float(m.replace(",", ".")))
+            out.append(float(m.replace(",", "")) if re.fullmatch(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?", m) else float(m.replace(",", ".")))
         except ValueError:
             pass
     return out

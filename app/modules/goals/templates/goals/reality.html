@@ -1,0 +1,33 @@
+{% extends "layouts/app.html" %}
+{% from "components/ui.html" import empty %}
+{% block title %}{{ t('data.tabs.reality') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}">{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('target-arrow', 22) }}{{ t('data.tabs.reality') }}</h1><p class="sub">{{ t('data.reality.sub') }}</p></div></div>
+{% if not all_series %}
+<div class="box">{% call empty('table', t('data.reality.no_series_title'), t('data.reality.no_series_text')) %}<a class="btn btn-primary" href="{{ url_for('data.index') }}">{{ icon('upload', 16) }}{{ t('data.upload_go') }}</a>{% endcall %}</div>
+{% else %}
+<div class="layout-reality">
+  <form class="box" method="get" action="{{ url_for('goals.reality_page') }}" data-reality data-endpoint="{{ url_for('data.reality_check') }}" data-target="#reality-panel">
+    <div class="box-head"><h2>{{ icon('flag', 18) }}{{ t('data.reality.target') }}</h2></div>
+    <div class="box-body stack-sm">
+      <div class="field"><label for="r-series">{{ t('data.entity.series') }}</label>
+        <select class="select" id="r-series" name="series" data-r="series" required>
+          <option value="">—</option>
+          {% for s in all_series %}{% set lp = s.latest %}<option value="{{ s.id }}" data-latest="{{ lp[1] if lp else '' }}" data-unit="{{ s.unit }}" data-dir="{{ s.direction }}" {% if args.get('series') == s.id|string %}selected{% endif %}>{{ s.name }} · {{ s.dataset.name }}</option>{% endfor %}
+        </select></div>
+      <div class="form-grid">
+        <div class="field"><label for="r-start">{{ t('data.reality.start') }}</label><input class="input" id="r-start" name="start" data-r="start" inputmode="decimal" value="{{ start_default }}" data-auto="{{ '0' if args.get('start') else '1' }}"><p class="hint">{{ t('data.reality.start_hint') }}</p></div>
+        <div class="field"><label for="r-target">{{ t('data.reality.target') }}</label><input class="input" id="r-target" name="target" data-r="target" inputmode="decimal" required value="{{ args.get('target', '') }}"></div>
+        <div class="field"><label for="r-end">{{ t('data.reality.end') }}</label><input class="input" id="r-end" name="end" data-r="end" type="date" required value="{{ args.get('end') or default_end.isoformat() }}"></div>
+        <div class="field"><label for="r-dir">{{ t('data.col.direction') }}</label><select class="select" id="r-dir" name="direction" data-r="direction">
+          <option value="">{{ t('data.reality.dir_auto') }}</option>{% for dd in ('higher_better','lower_better') %}<option value="{{ dd }}" {% if args.get('direction') == dd %}selected{% endif %}>{{ t('data.dir.' ~ dd) }}</option>{% endfor %}</select></div>
+      </div>
+      <button class="btn btn-primary" type="submit">{{ icon('target-arrow', 16) }}{{ t('data.reality.run') }}</button>
+    </div>
+  </form>
+  <div id="reality-panel" aria-live="polite">{% include "data/_panel.html" %}</div>
+</div>
+{% endif %}
+{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/reality.js') }}" defer></script>{% endblock %}

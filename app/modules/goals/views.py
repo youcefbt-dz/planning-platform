@@ -12,7 +12,7 @@ from app.core import forms as F
 from app.core import progress as P
 from app.core import scope as SC
 from app.core.charts import line_chart
-from app.core.i18n import t
+from app.core.i18n import t, tn
 from app.core.models import Cycle, Link, Membership, OrgUnit, CheckIn
 from app.core.permissions import require
 from app.core.services import (add_checkin, add_link, checkins_for, current_cycle, entity_title, entity_url,
@@ -193,25 +193,27 @@ def _arg_date(src, name):
 @bp.route("/compose", methods=["GET", "POST"])
 @require("goals.edit")
 def compose():
+    """One page, one form. The path (from the data / without data) is chosen on top; "check" re-renders the page with the data's verdict
+    and every typed value kept; "save" creates the goal with its first key result, in a department the person may edit."""
     if not SC.can_add_goal():
         abort(403)
     from app.modules.data import reality, service as DS
-    from app.modules.data.models import Series
 
     series_list = DS.org_series(g.org.id)
     src = request.form if request.method == "POST" else request.args
-    source = src.get("source") if src.get("source") in ("data", "manual") else ("data" if series_list else "manual")
-    if not series_list:
-        source = "manual"
+    pick = src.get("path") or src.get("source")
+    wants = pick if pick in ("data", "manual") else None
+    source = wants if (wants == "manual" or (wants == "data" and series_list)) else ("data" if series_list else "manual")
     sel = next((x for x in series_list if str(x.id) == str(src.get("series"))), None) if source == "data" else None
     cur = current_cycle(g.org)
-    end = _arg_date(src, "end") or (cur.end_date if cur else None)
+    end = _arg_date(src, "end_date") or _arg_date(src, "end") or (cur.end_date if cur else None)
     target = _arg_num(src, "target")
     start = (sel.latest[1] if sel and sel.latest else None)
     result, err = None, None
     man = {"name": (src.get("name") or "").strip()[:255], "unit": (src.get("unit") or "").strip()[:24], "start": _arg_num(src, "start"),
            "direction": "lower_better" if src.get("direction") == "lower_better" else "higher_better"}
     manual_ok = source == "manual" and man["name"] and target is not None and man["start"] is not None and end
+    asked = request.method == "POST" and src.get("do") in ("check", "save") or request.method == "GET" and src.get("do") == "check"
     if sel and target is not None and end and start is not None:
         result = reality.check(sel, start=start, target=target, end_date=end, goal=(src.get("title") or "")[:160])
         err = result.get("error") if result and result.get("error") else None
@@ -232,14 +234,29 @@ def compose():
     ready = bool(result or manual_ok)
     title = (src.get("title") or "").strip()
     lever_ideas = ai_library.levers(title, sel.name if sel else man["name"]) if ready else []
-    if request.method == "POST":
+
+    # where the goal lives: only departments this person may edit (a head: his own and those under it; an admin: any, or the whole organization)
+    all_units = units(g.org)
+    allowed = SC.allowed_units(all_units)
+    want_unit = _arg_num(src, "unit_id") or request.args.get("unit", type=int)
+    want_unit = int(want_unit) if want_unit else None
+    unit_id = want_unit if want_unit and any(u.id == want_unit for u in allowed) else SC.default_unit_id()
+    heads = {u.id: (u.head.name if u.head else "") for u in all_units}
+    parent_id = _arg_num(src, "parent_id")
+    parent_id = int(parent_id) if parent_id else None
+
+    if request.method == "POST" and src.get("do") == "save":
         if not (ready and title):
             flash(t("goals.compose.incomplete"), "error")
+        elif not SC.can_edit_unit(unit_id):
+            flash(t("goals.errors.unit_scope"), "error")
         else:
             o = Objective(org_id=g.org.id, progress_driver="key_results", title=title[:255], cycle_id=cur.id if cur else None, end_date=end)
+            o.rationale = (src.get("rationale") or "").strip()[:600] or None
             o.commitment = F.choice("commitment", COMMITMENTS, "committed")
-            want = F.integer("unit_id") or request.args.get("unit", type=int)
-            o.unit_id = want if SC.can_edit_unit(want) and want else SC.default_unit_id()
+            o.unit_id = unit_id
+            par = db.session.get(Objective, parent_id) if parent_id else None
+            o.parent_id = par.id if par and par.org_id == g.org.id else None
             owner = F.member_or_none(F.integer("owner_id"))
             o.owner_id = owner.id if owner else current_user.id
             db.session.add(o)
@@ -261,9 +278,32 @@ def compose():
             db.session.commit()
             flash(t("goals.flash.created"), "success")
             return redirect(url_for("goals.detail", id=o.id))
-    return render_template("goals/compose.html", series_list=series_list, sel=sel, source=source, man=man, ready=ready, target=target, end=end, start=start, result=result, err=err, supported=supported,
-                           gap=gap, cov=cov, levers=levers, lever_ideas=lever_ideas, title=title, members=Membership.query.filter_by(org_id=g.org.id).all(), commitments=COMMITMENTS,
-                           certainties=CERTAINTIES, args=src, ai_state=_ai_badge(), commitment=src.get("commitment", "committed"), owner_id=_arg_num(src, "owner_id"))
+    members = Membership.query.filter_by(org_id=g.org.id).all()
+    ctxs = {x.id: _series_ctx(x) for x in series_list} if source == "data" else {}
+    return render_template("goals/compose.html", ctxs=ctxs, series_list=series_list, sel=sel, source=source, man=man, ready=ready, asked=asked, target=target, end=end, start=start, result=result, err=err,
+                           supported=supported, gap=gap, cov=cov, levers=levers, lever_ideas=lever_ideas, title=title, rationale=(src.get("rationale") or "").strip(), members=members,
+                           commitments=COMMITMENTS, certainties=CERTAINTIES, args=src, ai_state=_ai_badge(), commitment=src.get("commitment", "committed"), owner_id=_arg_num(src, "owner_id"),
+                           allowed_units=allowed, unit_id=unit_id, heads=heads, is_head=not SC._is_admin(), parent_id=parent_id,
+                           parents=Objective.query.filter_by(org_id=g.org.id).order_by(Objective.id).all(), cycle=cur,
+                           selected_unit=next((u for u in all_units if u.id == unit_id), None))
+
+
+def _series_ctx(s) -> dict | None:
+    """What a measure looks like BEFORE any target is typed: now, a year ago, the one before, the best so far. Shown beside the target field."""
+    from datetime import timedelta
+
+    pairs = s.pairs()
+    if not pairs:
+        return None
+    d, v = pairs[-1]
+    out = {"now": v, "date": d.isoformat(), "year_ago": None, "prior": pairs[-2][1] if len(pairs) > 1 else None, "best": None, "unit": s.unit or "", "lower": s.direction == "lower_better"}
+    want = d - timedelta(days=365)
+    near = min(pairs[:-1], key=lambda p: abs((p[0] - want).days), default=None)
+    if near and abs((near[0] - want).days) <= 35:
+        out["year_ago"] = near[1]
+    if len(pairs) > 2:
+        out["best"] = (min if out["lower"] else max)(x for _, x in pairs)
+    return out
 
 
 def _numf(raw, default=None):
@@ -306,6 +346,20 @@ def _create_initial_krs(o: Objective) -> None:
         _modules().hook("key_result.saved", kr, form=request.form, index=i)
 
 
+@bp.get("/reality")
+def reality_page():
+    """"Is this target realistic for us?" — a goals page; the data module only supplies the check."""
+    from app.modules.data import service as DS
+    from app.modules.data.views import _ai_state, _check_from_args
+
+    result, err = _check_from_args()
+    all_series = DS.org_series(g.org.id)
+    sel = next((x for x in all_series if str(x.id) == request.args.get("series")), None)
+    start_default = request.args.get("start") or (f"{sel.latest[1]:.2f}".rstrip("0").rstrip(".") if sel and sel.latest else "")
+    return render_template("goals/reality.html", all_series=all_series, result=result, err=err, args=request.args, ai_state=_ai_state(), start_default=start_default,
+                           default_end=date(date.today().year, 12, 31))
+
+
 @bp.get("/<int:id>")
 def detail(id):
     o = F.get_scoped(Objective, id)
@@ -342,14 +396,96 @@ def detail(id):
         pc = PATH.build(actual, start_date=start, start_value=k.start_value, target=k.target_value, end_date=end, today=today,
                         proj=d["projected"] if d else None, unit=k.unit_label) if k.kr_type in ("increase", "decrease") and end else None
         branches = _modules().query("kr.branches", k) if d else None
-        infos[k.id] = {"data": d, "row": row, "path": pc, "branches": (branches[0] if branches else None),
+        infos[k.id] = {"hist": _kr_history(k, d), "data": d, "row": row, "path": pc, "branches": (branches[0] if branches else None),
                        "gap": gap, "coverage": cov, "needs_factors": gap > 0 or bool(k.factors),
                        "bar": H.range_bar(k.start_value, k.target_value, k.current_value, d["projected"] if d else None) if k.kr_type in ("increase", "decrease") else None}
     quality = coach.review(_objective_dict(o), [_kr_dict(kv.kr, infos[kv.kr.id]) for kv in v.krs], has_series=_has_series())
     events = GoalEvent.query.filter_by(org_id=g.org.id, objective_id=o.id).order_by(GoalEvent.created_at.desc(), GoalEvent.id.desc()).all()
-    return render_template("goals/detail.html", o=o, v=v, feed=feed, events=events, lever_states=LEVER_STATES, kr_titles=kr_titles, supporters=supporters, infos=infos, quality=quality,
+    # one story, newest first: updates, decisions and target changes together
+    timeline = sorted([{"kind": "update", "at": c.created_at, "c": c} for c in feed if c.comment or c.status or c.entity_type == "key_result"] +
+                      [{"kind": e.kind, "at": e.created_at, "e": e} for e in events], key=lambda x: x["at"], reverse=True)
+    return render_template("goals/detail.html", o=o, v=v, feed=feed, events=events, timeline=timeline, lever_states=LEVER_STATES, kr_titles=kr_titles, supporters=supporters, infos=infos, quality=quality,
                            parent_view=views.get(o.parent_id), chart=chart, statuses=P.LIVE_STATUSES, kr_types=KR_TYPES, measures=MEASURES,
-                           certainties=CERTAINTIES, factor_kinds=FACTOR_KINDS, commitments=COMMITMENTS, has_series=_has_series())
+                           certainties=CERTAINTIES, factor_kinds=FACTOR_KINDS, commitments=COMMITMENTS, has_series=_has_series(),
+                           split_n=len(_split_units(o)) if SC.can_add_goal() else 0)
+
+
+def _kr_history(k: KeyResult, d: dict | None) -> dict:
+    """What came BEFORE the target: the value a year ago and the period before, from the series (or the key result's own check-ins),
+    so a target is never read alone. Also what the target asks for, and the best the organization has ever reached."""
+    from datetime import timedelta
+
+    if d:
+        pairs = d["series"].pairs()
+    else:
+        pairs = [(c.created_at.date(), c.value) for c in reversed(checkins_for(g.org.id, "key_result", k.id)) if c.value is not None]
+    out = {"year_ago": None, "prior": None, "best": None, "yoy": None, "need": None, "need_pct": None}
+    if k.kr_type in ("increase", "decrease", "stay_above", "stay_below"):
+        out["need"] = k.target_value - k.current_value
+        out["need_pct"] = (out["need"] / abs(k.current_value)) if k.current_value else None
+    if not pairs:
+        return out
+    last_d, last_v = pairs[-1]
+    if len(pairs) > 1:
+        out["prior"] = pairs[-2]
+    want = last_d - timedelta(days=365)
+    near = min(pairs[:-1], key=lambda p: abs((p[0] - want).days), default=None)
+    if near and abs((near[0] - want).days) <= 35:
+        out["year_ago"] = near
+        out["yoy"] = (last_v - near[1]) / abs(near[1]) if near[1] else None
+    if len(pairs) > 2:
+        out["best"] = (min if k.kr_type in ("decrease", "stay_below") else max)(v for _, v in pairs)
+    return out
+
+
+# -- turn a goal into its departments' goals: the model PROPOSES drafts, a person approves and edits them -------------------------------
+def _split_units(o: Objective) -> list[OrgUnit]:
+    """Departments this person may put a goal in that have no goal under `o` yet (the company root and the goal's own department are left out)."""
+    taken = {c.unit_id for c in Objective.query.filter_by(org_id=g.org.id, parent_id=o.id).all()}
+    return [u for u in SC.allowed_units(units(g.org)) if u.kind != "company" and u.id != o.unit_id and u.id not in taken]
+
+
+@bp.post("/<int:id>/split")
+@require("goals.edit")
+def split_preview(id):
+    """HTML fragment: one drafted goal per department, each with its head, ready to tick, edit and approve. Never any figure."""
+    o = F.get_scoped(Objective, id)
+    if not SC.can_add_goal():
+        abort(403)
+    rows, advice = [], None
+    for u in _split_units(o)[:12]:
+        res = ai.run("draft_goal", {"intent": f"{u.name}: {o.title}"[:200]})
+        advice = advice or res
+        # the built-in rules match the goal's words, not the department, so they would hand every department the same text: only a model drafts here
+        opts = ((res.data or {}).get("options") or []) if res.is_model else []
+        title = opts[0]["title"] if opts else t("goals.split.fallback", unit=u.name, goal=o.title)
+        why = opts[0].get("rationale", "") if opts else ""
+        rows.append({"unit": u, "title": title, "why": why, "head": u.head.name if u.head else "", "drafted": bool(opts)})
+    return render_template("goals/_split.html", o=o, rows=rows, advice=advice)
+
+
+@bp.post("/<int:id>/split/save")
+@require("goals.edit")
+def split_save(id):
+    o = F.get_scoped(Objective, id)
+    if not SC.can_add_goal():
+        abort(403)
+    made = 0
+    allowed = {u.id: u for u in _split_units(o)}
+    for raw in request.form.getlist("unit"):
+        u = allowed.get(int(raw)) if raw.isdigit() else None
+        title = (request.form.get(f"title_{raw}") or "").strip()[:255]
+        if not u or not title or not SC.can_edit_unit(u.id):
+            continue
+        c = Objective(org_id=g.org.id, progress_driver="key_results", title=title, rationale=(request.form.get(f"why_{raw}") or "").strip()[:600] or None,
+                      cycle_id=o.cycle_id, end_date=o.end_date, parent_id=o.id, unit_id=u.id, owner_id=u.head_id or current_user.id, commitment=o.commitment)
+        db.session.add(c)
+        db.session.flush()
+        log_activity("created", "objective", c.id, c.title)
+        made += 1
+    db.session.commit()
+    flash(tn("goals.split.done", made) if made else t("goals.split.none"), "success" if made else "error")
+    return redirect(url_for("goals.detail", id=o.id))
 
 
 @bp.route("/<int:id>/edit", methods=["GET", "POST"])
@@ -623,7 +759,7 @@ def _kr_dict(k: KeyResult, info: dict | None = None) -> dict:
 
 
 def _end_from_form():
-    end = F.when("end_date")
+    end = F.when("end_date") or F.when("end")
     if end:
         return end
     cyc = db.session.get(Cycle, F.integer("cycle_id") or 0)
@@ -689,7 +825,7 @@ def _ai_badge() -> dict:
 @require("goals.edit")
 def draft():
     """HTML fragment: well-formed goals proposed from ONE typed line, so the manager picks and edits instead of writing from nothing."""
-    intent = F.s("intent", maxlen=200)
+    intent = F.s("intent", maxlen=200) or F.s("title", maxlen=200)
     if len(intent) < 3:
         return render_template("goals/_draft.html", options=[], empty="short", advice=None, intent=intent)
     res = ai.run("draft_goal", {"intent": intent})

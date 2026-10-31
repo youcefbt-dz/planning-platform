@@ -67,15 +67,6 @@ def create_app(config: dict | None = None) -> Flask:
     app.extensions["ai"] = Hub()
     registry.load(app)
 
-    # 2.5. Ensure the database schema exists on fresh/ephemeral deployments.
-    # Models are imported above and by Registry.load(), so create_all() sees the
-    # complete metadata (core, site, AI, and discovered modules). This is safe
-    # for existing databases: it creates missing tables without dropping data.
-    # Render's ephemeral filesystem may reset SQLite on a redeploy/restart; this
-    # initializes a fresh database automatically instead of failing at /register.
-    with app.app_context():
-        db.create_all()
-
     # 3. translations: core + site + every present module ----------------------
     app.extensions["catalogs"] = i18n.Catalogs(APP_DIR, list(registry.discovered))
     app.extensions["glossary"] = i18n.load_glossary(APP_DIR / "i18n" / "glossary.yaml")

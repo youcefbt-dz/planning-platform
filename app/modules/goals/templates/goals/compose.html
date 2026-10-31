@@ -1,78 +1,167 @@
 {% extends "layouts/app.html" %}
 {% from "components/ui.html" import csrf %}
 {% block title %}{{ t('goals.compose.title') }}{% endblock %}
-{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/goals.css') }}">{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/goals.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/compose.css') }}">{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/reality.js') }}" defer></script><script src="{{ url_for('static', filename='js/compose.js') }}" defer></script>{% endblock %}
+{% macro step(n, ic, ttl, sub='') %}
+<section class="cs" aria-labelledby="cs{{ n }}">
+  <header class="cs__head"><span class="cs__n" aria-hidden="true">{{ n }}</span><div><h2 id="cs{{ n }}">{{ ttl }}</h2>{% if sub %}<p>{{ sub }}</p>{% endif %}</div></header>
+  <div class="cs__body">{{ caller() }}</div>
+</section>
+{% endmacro %}
 {% block content %}
-<div class="page-head"><div><h1>{{ icon('target-arrow', 22) }}{{ t('goals.compose.title') }}</h1><p class="sub">{{ t('goals.compose.sub') }} <a href="{{ url_for('goals.new', classic=1) }}">{{ t('goals.compose.from_idea') }}</a></p></div></div>
-<div class="stack" style="width:100%;max-width:860px;margin-inline:auto">
-  <form class="box" method="get" action="{{ url_for('goals.compose') }}">
-    <div class="box-head"><h2>{{ icon('flag', 18) }}{{ t('goals.compose.s1') }}</h2></div>
-    <div class="box-body stack-sm">
-      {% if series_list %}
-      <div class="row-wrap" role="radiogroup" aria-label="{{ t('goals.compose.source') }}">
-        <label class="chip-type"><input type="radio" name="source" value="data" {% if source == 'data' %}checked{% endif %}> {{ t('goals.compose.src_data') }}</label>
-        <label class="chip-type"><input type="radio" name="source" value="manual" {% if source == 'manual' %}checked{% endif %}> {{ t('goals.compose.src_manual') }}</label>
-      </div>{% else %}<input type="hidden" name="source" value="manual">{% endif %}
-      {% if source == 'data' %}
-      <div class="field"><label for="c-series">{{ t('goals.compose.measure') }}</label>
-        <select class="select" id="c-series" name="series" required>
-          <option value="">{{ t('goals.compose.measure_pick') }}</option>
-          {% for s in series_list %}<option value="{{ s.id }}" {% if sel and sel.id == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
-        </select>
-        {% if sel and start is not none %}<p class="hint">{{ t('goals.compose.now') }}: <b class="num">{{ val(start, sel.unit) }}</b></p>{% endif %}</div>
-      {% else %}
-      <p class="hint">{{ t('goals.compose.manual_note') }}</p>
-      <div class="form-grid">
-        <div class="field span-2"><label for="c-name">{{ t('goals.compose.m_name') }}</label><input class="input" id="c-name" name="name" required maxlength="255" value="{{ man.name }}"></div>
-        <div class="field"><label for="c-unit">{{ t('goals.compose.m_unit') }}</label><input class="input" id="c-unit" name="unit" maxlength="24" placeholder="DZD, %, …" value="{{ man.unit }}"></div>
-        <div class="field"><label for="c-start">{{ t('goals.compose.m_start') }}</label><input class="input" id="c-start" name="start" inputmode="decimal" required value="{{ args.get('start', '') }}"></div>
-        <div class="field"><label for="c-dir">{{ t('goals.compose.m_dir') }}</label><select class="select" id="c-dir" name="direction">{% for dd in ('higher_better','lower_better') %}<option value="{{ dd }}" {% if man.direction == dd %}selected{% endif %}>{{ t('data.dir.' ~ dd) }}</option>{% endfor %}</select></div>
-      </div>
-      {% endif %}
-      <div class="form-grid">
-        <div class="field"><label for="c-target">{{ t('goals.compose.target') }}</label><input class="input" id="c-target" name="target" inputmode="decimal" required value="{{ args.get('target', '') }}"></div>
-        <div class="field"><label for="c-end">{{ t('goals.compose.end') }}</label><input class="input" id="c-end" name="end" type="date" required value="{{ end.isoformat() if end else '' }}"></div>
-      </div>
-      <div><button class="btn btn-primary" type="submit">{{ icon('target-arrow', 16) }}{{ t('goals.compose.check') if source == 'data' else t('goals.compose.continue') }}</button></div>
-    </div>
-  </form>
-
-  {% if source == 'data' %}
-  <div>
-    <h2 style="font-size:var(--fs-lg);margin-block:0 var(--sp-3)">{{ t('goals.compose.s2') }}</h2>
-    {% if result %}{% include "data/_panel.html" %}
-    {% else %}<div class="box"><div class="box-body muted">{{ t('goals.compose.s2_wait') }}</div></div>{% endif %}
-  </div>
-  {% elif ready %}
-  <div class="box"><div class="box-body"><p class="insight" style="margin:0">{{ icon('info-circle', 16) }}<span>{{ t('goals.compose.no_history') }}</span></p></div></div>
-  {% endif %}
-
-  {% if ready %}
-  <form class="box" method="post" action="{{ url_for('goals.compose') }}">{{ csrf() }}
-    <input type="hidden" name="source" value="{{ source }}">{% if sel %}<input type="hidden" name="series" value="{{ sel.id }}">{% else %}<input type="hidden" name="name" value="{{ man.name }}"><input type="hidden" name="unit" value="{{ man.unit }}"><input type="hidden" name="start" value="{{ man.start }}"><input type="hidden" name="direction" value="{{ man.direction }}">{% endif %}<input type="hidden" name="target" value="{{ target }}"><input type="hidden" name="end" value="{{ end.isoformat() }}">
-    <div class="box-head"><h2>{{ icon('rocket', 18) }}{{ t('goals.compose.s3') }}</h2></div>
-    <div class="box-body stack-sm">
-      <p class="muted">{% if sel and gap and gap > 0 %}{{ t('goals.compose.s3_gap', gap=val(gap, sel.unit), supported=val(supported, sel.unit)) }}{% elif not sel %}{{ t('goals.compose.s3_manual') }}{% else %}{{ t('goals.compose.s3_free') }}{% endif %}</p>
-      {% if lever_ideas %}<div class="chips" role="group" aria-label="{{ t('goals.compose.ideas') }}"><span class="hint">{{ t('goals.compose.ideas') }}</span>{% for x in lever_ideas %}<button class="chip-btn" type="button" data-fill="{{ x }}" data-target="input[name=lever_title]" data-mode="empty">{{ x }}</button>{% endfor %}</div>{% endif %}
-      {% for i in range(3) %}{% set lv = levers[i] if i < levers|length else none %}
-      <div class="form-grid" style="grid-template-columns:2fr 1fr 1fr">
-        <div class="field"><label>{{ t('goals.compose.lever') }}</label><input class="input" name="lever_title" maxlength="200" placeholder="{{ t('goals.compose.lever_ph') }}" value="{{ lv.title if lv else '' }}"></div>
-        <div class="field"><label>{{ t('goals.compose.effect') }}{% set u = sel.unit if sel else man.unit %}{% if u %} ({{ u }}){% endif %}</label><input class="input" name="lever_effect" inputmode="decimal" value="{{ lv.effect if lv else '' }}"></div>
-        <div class="field"><label>{{ t('goals.compose.certainty') }}</label><select class="select" name="lever_certainty">{% for c in certainties %}<option value="{{ c }}" {% if lv and lv.certainty == c %}selected{% endif %}>{{ t('goals.factors.certainty.' ~ c) }}</option>{% endfor %}</select></div>
-      </div>{% endfor %}
-    </div>
-    <div class="box-head"><h2>{{ icon('check', 18) }}{{ t('goals.compose.s4') }}</h2></div>
-    <div class="box-body stack-sm">
-      <div class="field"><label for="c-title">{{ t('goals.compose.goal_title') }}</label>
-        <input class="input" id="c-title" name="title" required maxlength="255" value="{{ title or t('goals.compose.auto_title', measure=sel.name, target=val(target, sel.unit), end=d(end)) }}">
-        <p class="hint">{{ t('goals.compose.goal_title_hint') }}</p></div>
-      <div class="form-grid">
-        <div class="field"><label for="c-owner">{{ t('goals.compose.owner') }}</label><select class="select" id="c-owner" name="owner_id">{% for m in members %}<option value="{{ m.user_id }}" {% if owner_id and owner_id|int == m.user_id %}selected{% endif %}>{{ m.user.name }}</option>{% endfor %}</select></div>
-        <div class="field"><label for="c-kind">{{ t('goals.compose.kind') }}</label><select class="select" id="c-kind" name="commitment">{% for c in commitments %}<option value="{{ c }}" {% if commitment == c %}selected{% endif %}>{{ t('goals.commitment.' ~ c) }}</option>{% endfor %}</select></div>
-      </div>
-      <div><button class="btn btn-primary" type="submit">{{ icon('check', 16) }}{{ t('goals.compose.save') }}</button></div>
-    </div>
-  </form>
-  {% endif %}
+<div class="page-head">
+  <div class="page-head__title"><h1>{{ t('goals.compose.title') }}</h1><p class="sub">{{ t('goals.compose.sub2') }}</p></div>
+  <dl class="hstats">
+    <div><dt>{{ t('goals.compose.h_cycle') }}</dt><dd>{{ cycle.name if cycle else t('common.none') }}</dd></div>
+    <div><dt>{{ t('goals.compose.h_scope') }}</dt><dd>{{ selected_unit.name if selected_unit else t('goals.compose.unit_org') }}</dd></div>
+    <div><dt>{{ t('goals.compose.h_path') }}</dt><dd>{{ t('goals.compose.path_data_t') if source == 'data' else t('goals.compose.path_manual_t') }}</dd></div>
+  </dl>
 </div>
+
+<form method="post" class="cmp" data-compose novalidate>
+  {{ csrf() }}
+  <input type="hidden" name="source" value="{{ source }}">
+  <button type="submit" name="do" value="check" class="sr-only" tabindex="-1" aria-hidden="true"></button>
+
+  <div class="cpath" role="group" aria-label="{{ t('goals.compose.path_h') }}">
+    {% if series_list %}
+    <button type="submit" name="path" value="data" class="cpath__c" formnovalidate {% if source == 'data' %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>
+      <span class="cpath__ic">{{ icon('table', 24) }}</span>
+      <span class="cpath__t"><b>{{ t('goals.compose.path_data_t') }}</b><small>{{ t('goals.compose.path_data_d') }}</small></span>
+      <em class="cpath__tag">{{ t('goals.compose.path_data_tag') }}</em><i class="cpath__ok">{{ icon('check', 15) }}</i>
+    </button>
+    {% else %}
+    <a class="cpath__c is-off" href="{{ url_for('data.index') }}">
+      <span class="cpath__ic">{{ icon('table', 24) }}</span>
+      <span class="cpath__t"><b>{{ t('goals.compose.path_data_t') }}</b><small>{{ t('goals.compose.path_nodata') }}</small></span>
+      <em class="cpath__tag">{{ t('goals.compose.path_upload') }}</em>
+    </a>
+    {% endif %}
+    <button type="submit" name="path" value="manual" class="cpath__c" formnovalidate aria-pressed="{{ 'true' if source == 'manual' else 'false' }}">
+      <span class="cpath__ic">{{ icon('pencil', 24) }}</span>
+      <span class="cpath__t"><b>{{ t('goals.compose.path_manual_t') }}</b><small>{{ t('goals.compose.path_manual_d') }}</small></span>
+      <i class="cpath__ok">{{ icon('check', 15) }}</i>
+    </button>
+  </div>
+
+  <div class="cmp__grid">
+    <div class="cmp__main">
+      {% call step(1, 'flag', t('goals.compose.st1_t'), t('goals.compose.st1_d')) %}
+        <div class="field"><label for="c-title">{{ t('goals.compose.goal_title') }}</label>
+          <input class="input input-lg" id="c-title" name="title" maxlength="255" dir="auto" autocomplete="off" value="{{ title }}" placeholder="{{ t('goals.compose.title_ph') }}"></div>
+        <div class="chips" role="group" aria-label="{{ t('goals.draft.examples') }}">{% for k in ('sales','costs','customers','team','delivery','cash') %}<button class="chip-btn" type="button" data-fill="{{ t('goals.draft.ex.' ~ k) }}" data-target="#c-title" data-mode="empty">{{ t('goals.draft.ex.' ~ k) }}</button>{% endfor %}</div>
+        <div class="field"><label for="c-why">{{ t('goals.compose.why') }}</label>
+          <textarea class="textarea" id="c-why" name="rationale" rows="2" maxlength="600" dir="auto" placeholder="{{ t('goals.compose.why_ph') }}">{{ rationale }}</textarea></div>
+      {% endcall %}
+
+      {% if source == 'data' %}
+      {% call step(2, 'table', t('goals.compose.st2_t_data'), t('goals.compose.st2_d_data')) %}
+        <div class="field"><label for="c-series">{{ t('goals.compose.measure') }}</label>
+          <select class="select" id="c-series" name="series" data-ctx-json='{{ ctxs | tojson | forceescape }}'><option value="">{{ t('goals.compose.measure_pick') }}</option>
+            {% for s in series_list %}<option value="{{ s.id }}" {% if sel and sel.id == s.id %}selected{% endif %}>{{ s.name }}{% if s.unit %} ({{ s.unit }}){% endif %}</option>{% endfor %}</select>
+          {% set cx = ctxs.get(sel.id) if sel else None %}
+          <div class="cctx" data-ctx data-l-year="{{ t('goals.compose.ctx_year') }}" data-l-prior="{{ t('goals.compose.ctx_prior') }}" data-l-now="{{ t('goals.compose.ctx_now') }}" data-l-best="{{ t('goals.compose.ctx_best') }}" data-l-none="{{ t('goals.compose.ctx_none') }}"
+               data-n-up="{{ t('goals.compose.need_up') }}" data-n-down="{{ t('goals.compose.need_down') }}" data-n-hit="{{ t('goals.compose.need_hit') }}" {% if not sel %}hidden{% endif %}>
+            {% if cx %}<ol class="cctx__row">
+              {% if cx.year_ago is not none %}<li><small>{{ t('goals.compose.ctx_year') }}</small><b class="num">{{ val(cx.year_ago, cx.unit) }}</b></li>{% endif %}
+              {% if cx.prior is not none %}<li><small>{{ t('goals.compose.ctx_prior') }}</small><b class="num">{{ val(cx.prior, cx.unit) }}</b></li>{% endif %}
+              <li class="is-now"><small>{{ t('goals.compose.ctx_now') }} · {{ cx.date }}</small><b class="num">{{ val(cx.now, cx.unit) }}</b></li>
+              {% if cx.best is not none %}<li><small>{{ t('goals.compose.ctx_best') }}</small><b class="num">{{ val(cx.best, cx.unit) }}</b></li>{% endif %}
+            </ol>{% elif sel %}<p class="cnow">{{ t('goals.compose.ctx_none') }}</p>{% endif %}
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label for="c-target">{{ t('goals.compose.target') }}{% if sel and sel.unit %} ({{ sel.unit }}){% endif %}</label><input class="input" id="c-target" name="target" inputmode="decimal" value="{{ args.get('target', '') }}"><p class="cneed" data-need aria-live="polite"></p></div>
+          <div class="field"><label for="c-end">{{ t('goals.compose.end') }}</label><input class="input" id="c-end" name="end_date" type="date" value="{{ end.isoformat() if end else '' }}"></div>
+        </div>
+        <div class="cact"><button class="btn btn-primary" type="submit" name="do" value="check">{{ icon('target-arrow', 16) }}{{ t('goals.compose.check') }}</button><span class="hint">{{ t('goals.compose.check_hint') }}</span></div>
+      {% endcall %}
+
+      {% call step(3, 'shield-check', t('goals.compose.st3_t'), t('goals.compose.st3_d')) %}
+        {% if result %}{% include "data/_panel.html" %}
+        {% else %}<div class="cwait">{{ icon('target-arrow', 22) }}<p>{% if asked and err %}{{ t('data.reality.err.' ~ err) }}{% else %}{{ t('goals.compose.s2_wait') }}{% endif %}</p></div>{% endif %}
+      {% endcall %}
+
+      {% else %}
+      {% call step(2, 'pencil', t('goals.compose.st2_t_manual'), t('goals.compose.st2_d_manual')) %}
+        <div class="form-grid">
+          <div class="field span-2"><label for="c-name">{{ t('goals.compose.m_name') }}</label><input class="input" id="c-name" name="name" maxlength="255" dir="auto" value="{{ man.name }}" placeholder="{{ t('goals.compose.m_name_ph') }}"></div>
+          <div class="field"><label for="c-unit">{{ t('goals.compose.m_unit') }}</label><input class="input" id="c-unit" name="unit" maxlength="24" placeholder="DZD, %, …" value="{{ man.unit }}"></div>
+          <div class="field"><label for="c-start">{{ t('goals.compose.m_start') }}</label><input class="input" id="c-start" name="start" inputmode="decimal" value="{{ args.get('start', '') }}"></div>
+          <div class="field"><label for="c-target">{{ t('goals.compose.target') }}</label><input class="input" id="c-target" name="target" inputmode="decimal" value="{{ args.get('target', '') }}"></div>
+          <div class="field"><label for="c-end">{{ t('goals.compose.end') }}</label><input class="input" id="c-end" name="end_date" type="date" value="{{ end.isoformat() if end else '' }}"></div>
+        </div>
+        <fieldset class="cdir"><legend>{{ t('goals.compose.m_dir') }}</legend>
+          {% for d_, ic_ in (('higher_better', 'trending-up'), ('lower_better', 'trending-down')) %}
+          <label class="cdir__c"><input type="radio" name="direction" value="{{ d_ }}" {% if man.direction == d_ %}checked{% endif %}>
+            <span>{{ icon(ic_, 18) }}<b>{{ t('goals.compose.dir_' ~ d_) }}</b><small>{{ t('goals.compose.dir_' ~ d_ ~ '_d') }}</small></span></label>
+          {% endfor %}
+        </fieldset>
+        <div class="cact"><button class="btn btn-primary" type="submit" name="do" value="check">{{ icon('arrow-right', 16, flip=True) }}{{ t('goals.compose.continue') }}</button></div>
+      {% endcall %}
+      {% if ready %}
+      {% call step(3, 'info-circle', t('goals.compose.st3_t_manual'), '') %}
+        <p class="insight" style="margin:0">{{ icon('info-circle', 16) }}<span>{{ t('goals.compose.no_history') }}</span></p>
+      {% endcall %}
+      {% endif %}
+      {% endif %}
+
+      {% if ready %}
+      {% call step(4, 'rocket', t('goals.compose.st4_t'), t('goals.compose.st4_d')) %}
+        <p class="muted" style="margin:0">{% if sel and gap and gap > 0 %}{{ t('goals.compose.s3_gap', gap=val(gap, sel.unit), supported=val(supported, sel.unit)) }}{% elif not sel %}{{ t('goals.compose.s3_manual') }}{% else %}{{ t('goals.compose.s3_free') }}{% endif %}</p>
+        {% if lever_ideas %}<div class="chips" role="group" aria-label="{{ t('goals.compose.ideas') }}"><span class="hint">{{ t('goals.compose.ideas') }}</span>{% for x in lever_ideas %}<button class="chip-btn" type="button" data-fill="{{ x }}" data-target="[name=lever_title]" data-mode="empty">{{ x }}</button>{% endfor %}</div>{% endif %}
+        <div class="clev">
+        {% for i in range(3) %}{% set lv = levers[i] if i < levers|length else none %}
+          <div class="clev__r">
+            <div class="field"><label>{{ t('goals.compose.lever') }} {{ i + 1 }}</label><input class="input" name="lever_title" maxlength="200" dir="auto" placeholder="{{ t('goals.compose.lever_ph') }}" value="{{ lv.title if lv else '' }}"></div>
+            <div class="field"><label>{{ t('goals.compose.effect') }}{% set u = sel.unit if sel else man.unit %}{% if u %} ({{ u }}){% endif %}</label><input class="input" name="lever_effect" inputmode="decimal" value="{{ lv.effect if lv else '' }}"></div>
+            <div class="field"><label>{{ t('goals.compose.certainty') }}</label><select class="select" name="lever_certainty">{% for c in certainties %}<option value="{{ c }}" {% if lv and lv.certainty == c %}selected{% endif %}>{{ t('goals.factors.certainty.' ~ c) }}</option>{% endfor %}</select></div>
+          </div>
+        {% endfor %}
+        </div>
+        {% if cov and gap and gap > 0 %}<p class="cov">{{ t('goals.compose.covered_of', s=pct(cov.share_likely)) }}</p>{% endif %}
+      {% endcall %}
+      {% endif %}
+
+      {% call step(5 if ready else (3 if source == 'manual' else 4), 'sitemap', t('goals.compose.st5_t'), t('goals.compose.st5_d')) %}
+        <div class="form-grid">
+          <div class="field"><label for="c-unit-sel">{{ t('goals.compose.unit') }}</label>
+            <select class="select" id="c-unit-sel" name="unit_id" data-heads='{{ heads|tojson }}'>
+              {% if not is_head %}<option value="">{{ t('goals.compose.unit_org') }}</option>{% endif %}
+              {% for u in allowed_units %}<option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
+            </select>
+            <p class="chead" data-head-line data-yes="{{ t('goals.compose.head_of', name='{name}') }}" data-no="{{ t('goals.compose.head_none') }}">{{ icon('user', 14) }}<span>{% if unit_id and heads.get(unit_id) %}{{ t('goals.compose.head_of', name=heads[unit_id]) }}{% elif unit_id %}{{ t('goals.compose.head_none') }}{% else %}{{ t('goals.compose.org_note') }}{% endif %}</span></p></div>
+          <div class="field"><label for="c-owner">{{ t('goals.compose.owner') }}</label>
+            <select class="select" id="c-owner" name="owner_id">{% for m in members %}<option value="{{ m.user_id }}" {% if (owner_id and owner_id|int == m.user_id) or (not owner_id and m.user_id == current_user.id) %}selected{% endif %}>{{ m.user.name }}</option>{% endfor %}</select></div>
+          <div class="field span-2"><label for="c-parent">{{ t('goals.compose.parent') }}</label>
+            <select class="select" id="c-parent" name="parent_id"><option value="">{{ t('goals.compose.parent_none') }}</option>{% for p in parents %}<option value="{{ p.id }}" {% if parent_id == p.id %}selected{% endif %}>{{ p.title }}</option>{% endfor %}</select>
+            <p class="hint">{{ t('goals.compose.parent_hint') }}</p></div>
+        </div>
+        <fieldset class="cdir"><legend>{{ t('goals.compose.kind') }}</legend>
+          {% for c in commitments %}
+          <label class="cdir__c"><input type="radio" name="commitment" value="{{ c }}" {% if commitment == c %}checked{% endif %}>
+            <span>{{ icon('flag-3' if c == 'committed' else 'mountain', 18) }}<b>{{ t('goals.commitment.' ~ c) }}</b><small>{{ t('goals.commitment_hint.' ~ c) }}</small></span></label>
+          {% endfor %}
+        </fieldset>
+        <div class="cact cact--save"><button class="btn btn-primary btn-lg" type="submit" name="do" value="save">{{ icon('check', 18) }}{{ t('goals.compose.save') }}</button>
+          {% if not ready %}<span class="hint">{{ t('goals.compose.save_need') }}</span>{% endif %}</div>
+      {% endcall %}
+    </div>
+
+    <aside class="cmp__aside">
+      <section class="cai" data-assist="{{ url_for('goals.suggest_krs') if source == 'data' else url_for('goals.draft') }}" data-assist-from="#c-title,#c-end,#c-why" data-assist-failed="{{ t('goals.draft.failed') }}">
+        <header class="cai__head"><span class="cai__ic">{{ icon('bulb', 22) }}</span><div><h2>{{ t('goals.compose.assist_t') }}</h2>
+          <p>{{ t('goals.compose.assist_d_data') if source == 'data' else t('goals.compose.assist_d_manual') }}</p></div></header>
+        <button class="btn btn-primary cai__run" type="button" data-assist-run>{{ icon('bulb', 16) }}{{ t('goals.compose.assist_run_data') if source == 'data' else t('goals.compose.assist_run_manual') }}</button>
+        <div class="sug-list" data-assist-out aria-live="polite"><p class="cai__idle">{{ t('goals.compose.assist_idle') }}</p></div>
+        <p class="cai__foot">{{ icon('shield-check', 14) }}<span>{% if ai_state.models %}{% if ai_state.consent %}{{ t('goals.ai.on', model=t('ai.provider.' ~ ai_state.models[0])) }}{% else %}{{ t('goals.ai.need_consent') }}{% endif %}{% else %}{{ t('goals.ai.none') }}{% endif %}</span></p>
+      </section>
+      <section class="cnote">
+        <span class="cnote__ic">{{ icon('sitemap', 18) }}</span>
+        <p>{% if is_head %}{{ t('goals.compose.scope_head', units=allowed_units|map(attribute='name')|join('، ')) }}{% else %}{{ t('goals.compose.scope_admin') }}{% endif %}</p>
+      </section>
+    </aside>
+  </div>
+</form>
 {% endblock %}

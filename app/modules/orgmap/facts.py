@@ -63,7 +63,7 @@ def collect(org, today: date | None = None) -> dict:
         gid = f"goal:{o.id}"
         goals.append(gid)
         end = o.end_date or (o.cycle.end_date if o.cycle else None)
-        nodes[gid] = {"id": gid, "type": "goal", "label": o.title, "status": gl["status"], "progress": _pct(view.progress), "expected": _pct(view.expected), "parent_id": o.parent_id,
+        nodes[gid] = {"id": gid, "type": "goal", "label": o.title, "status": gl["status"], "progress": _pct(view.progress), "expected": _pct(view.expected), "parent_id": o.parent_id, "unit_id": o.unit_id,
                       "owner": o.owner.name if o.owner else "", "end": end, "attention": gl["attention"], "url": url_for("goals.detail", org_slug=org.slug, id=o.id), "kr": []}
         edges.append(("vision" if "vision" in nodes else "org", gid, "goal"))
         progress_sum += view.progress * (o.weight or 1)
