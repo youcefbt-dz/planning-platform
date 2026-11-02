@@ -27,7 +27,14 @@
     <section class="rc" id="understood">
       <header class="rc__head"><h2><span class="rc__ic">{{ icon('bulb' if is_model else 'checklist', 20) }}</span>{{ t('data.rv.understood') }}</h2></header>
       <div class="rc__body">
+        <h3 class="rv__sumh">{{ t('data.rv.sum_title') }}</h3>
         <p class="rv__sum" dir="auto">{{ ds.summary }}</p>
+        {% if meta.highlights %}
+        <div class="rv__ins">
+          <h3>{{ icon('alert-circle', 16) }}{{ t('data.rv.highlights') }}</h3>
+          <ul>{% for h in meta.highlights %}<li dir="auto">{{ h }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
         <ul class="wells">
           {% for r in roles %}
           <li data-role="{{ r }}"><b class="num" data-count="{{ r }}">{{ n(counts[r]) }}</b><span>{{ icon(ricon[r], 15) }}{{ t('data.rv.wells.' ~ r) }}</span></li>

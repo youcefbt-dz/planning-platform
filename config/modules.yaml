@@ -32,6 +32,9 @@ modules:
   reports:
     enabled: true
     order: 40
+  agent:
+    enabled: true
+    order: 5            # launched from the floating dock instead of the main navigation
 
 # Default behaviour of the product (can be overridden per organization later).
 defaults:

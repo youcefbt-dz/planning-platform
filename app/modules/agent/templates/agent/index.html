@@ -1,0 +1,49 @@
+{% extends "layouts/app.html" %}
+{% block title %}{{ t('agent.module') }}{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/agent.css') }}">{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ icon('sparkles', 22) }}{{ t('agent.module') }}</h1><p class="sub">{{ t('agent.sub') }}</p></div></div>
+
+<div class="ag" data-agent data-endpoint="{{ url_for('agent.chat') }}" data-apply-url="{{ url_for('agent.apply') }}" data-live="{{ 1 if live else 0 }}"
+     data-l-open="{{ t('agent.open_goal') }}" data-l-error="{{ t('agent.err.failed') }}" data-l-unverified="{{ t('agent.unverified') }}" data-l-approving="{{ t('agent.approving') }}" data-l-off="{{ t('agent.off.' ~ (why or 'none') ~ '_t') }}">
+  {% if not live %}
+  <div class="ag__off">
+    <span class="ag__offic">{{ icon('lock' if why == 'consent' else 'key', 22) }}</span>
+    <div>
+      <h2>{{ t('agent.off.' ~ (why or 'none') ~ '_t') }}</h2>
+      <p>{{ t('agent.off.' ~ (why or 'none')) }}</p>
+      {% if why == 'consent' and can('settings.manage') %}<form method="post" action="{{ url_for('shell.settings_ai') }}">{{ csrf() }}<input type="hidden" name="ai_consent" value="on"><input type="hidden" name="next" value="{{ request.full_path }}"><button class="btn btn-primary btn-sm" type="submit">{{ t('agent.off.allow') }}</button></form>
+      {% elif why == 'none' and can('settings.manage') %}<a class="btn btn-sm" href="{{ url_for('shell.settings_ai') }}">{{ t('agent.off.go_settings') }}</a>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <section class="ag__main">
+    <div class="ag__thread" data-thread aria-live="polite">
+      <div class="ag__hello" data-hello>
+        <span class="ag__mark">{{ icon('sparkles', 26) }}</span>
+        <h2>{{ t('agent.hello_t') }}</h2>
+        <p>{{ t('agent.hello') }}</p>
+        <div class="ag__starters">
+          {% for k in starters %}<button class="chip-btn" type="button" data-ask="{{ t('agent.starter.' ~ k ~ '_q') }}">{{ icon({'health':'progress-alert','targets':'target-arrow','gaps':'sitemap','suggest':'bulb','data':'table'}[k], 16) }}<span>{{ t('agent.starter.' ~ k) }}</span></button>{% endfor %}
+        </div>
+      </div>
+    </div>
+    <form class="ag__composer" data-form autocomplete="off">
+      <textarea class="textarea" data-input rows="1" maxlength="1500" dir="auto" placeholder="{{ t('agent.ph') }}" aria-label="{{ t('agent.ph') }}"></textarea>
+      <button class="btn btn-primary ag__send" type="submit" data-send aria-label="{{ t('agent.send') }}">{{ icon('arrow-narrow-left', 24) }}</button>
+    </form>
+    <p class="ag__note">{{ icon('shield-check', 13) }}{{ t('agent.note') }}</p>
+  </section>
+
+  <aside class="ag__side">
+    <div class="box"><div class="box-body">
+      <h3>{{ icon('eye', 16) }}{{ t('agent.reads_t') }}</h3>
+      <ul class="ag__list">{% for k in ('goals','units','data','targets') %}<li>{{ icon('check', 14) }}{{ t('agent.reads.' ~ k) }}</li>{% endfor %}</ul>
+      <h3>{{ icon('lock', 16) }}{{ t('agent.never_t') }}</h3>
+      <ul class="ag__list">{% for k in ('write','numbers','share') %}<li>{{ icon('check', 14) }}{{ t('agent.never.' ~ k) }}</li>{% endfor %}</ul>
+    </div></div>
+  </aside>
+</div>
+{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/agent.js') }}" defer></script>{% endblock %}

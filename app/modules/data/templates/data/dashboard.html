@@ -1,37 +1,33 @@
 {% extends "layouts/app.html" %}
-{% from "components/ui.html" import csrf, empty %}
+{% from "components/ui.html" import empty %}
 {% from "data/_macros.html" import sec %}
 {% block title %}{{ t('data.dash.title') }}{% endblock %}
-{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dash.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css') }}">{% endblock %}
+{% block css_page %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css', v='2203') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dash.css', v='2203') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css', v='2203') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analysis.css', v='2203') }}">
+{% endblock %}
 {% block content %}
 {% if no_data %}
-<div class="page-head page-head--plain"><div class="page-head__title"><h1>{{ icon('layout-dashboard', 22) }}{{ t('data.dash.title') }}</h1><p class="sub">{{ t('data.dash.sub') }}</p></div></div>
+<div class="page-head page-head--plain"><div class="page-head__title"><h1>{{ icon('chart-line', 22) }}{{ t('data.dash.title') }}</h1><p class="sub">{{ t('data.dash.sub') }}</p></div></div>
 <div class="box dash-empty">{% call empty('chart-line', t('data.dash.empty_title'), t('data.dash.empty_text')) %}{% endcall %}</div>
 {% include "data/_upload.html" %}
 {% else %}
 <div class="page-head">
   <div class="page-head__title"><h1>{{ t('data.dash.title') }}</h1><p class="sub">{{ t('data.dash.sub') }}</p></div>
   <dl class="hstats">
-    <div><dt>{{ t('data.dash.hero_measure') }}</dt><dd style="font-size:var(--fs-base)">{{ sel.short }}</dd></div>
-    {% if sel_tab %}<div><dt>{{ sel_tab.period }}</dt><dd class="num"><bdi dir="ltr">{{ sel_tab.value }}</bdi></dd></div>
-    <div><dt>{{ sel_tab.ref }}</dt><dd style="font-size:var(--fs-base)">{{ sel_tab.chip }}</dd></div>{% endif %}
+    <div><dt>{{ t('data.dash.stat_measures') }}</dt><dd class="num">{{ n(ms|length) }}</dd></div>
+    {% if sel_tab %}<div><dt>{{ t('data.dash.hero_measure') }}</dt><dd style="font-size:var(--fs-base)">{{ sel.short }}</dd></div>
+    <div><dt>{{ sel_tab.period }}</dt><dd class="num"><bdi dir="ltr">{{ sel_tab.value }}</bdi></dd></div>{% endif %}
     <div><dt>{{ t('data.dash.hero_branches') }}</dt><dd class="num">{{ n(sel.branches|length) }}</dd></div>
   </dl>
 </div>
 
-<nav class="dnav" aria-label="{{ t('data.dash.on_page') }}">
-  <a href="#measure">{{ t('data.dash.s_measure') }}</a>
-  {% if found %}<a href="#found">{{ t('data.dash.found_title') }}</a>{% endif %}
-  {% if main %}<a href="#main">{{ t('data.dash.s_trend') }}</a>{% endif %}
-  {% if drivers %}<a href="#drivers">{{ t('data.dash.s_drivers') }}</a>{% endif %}
-  {% if branches %}<a href="#branches">{{ t('data.dash.s_branches') }}</a>{% endif %}
-  {% if season %}<a href="#season">{{ t('data.dash.s_season') }}</a>{% endif %}
-</nav>
-
 {% call sec('measure', 'target', t('data.dash.s_measure'), t('data.dash.s_measure_sub')) %}
 <nav class="mtabs" aria-label="{{ t('data.dash.pick_measure') }}">
   {% for k in tabs %}
-  <a class="mtab" href="{{ url_for('data.dashboard', m=k.m.id) }}" {% if k.m.id == sel.id %}aria-current="true"{% endif %} data-tone="{{ k.tone }}">
+  <a class="mtab" href="{{ url_for('data.dashboard', m=k.m.id, kind=kind) }}" {% if k.m.id == sel.id %}aria-current="true"{% endif %} data-tone="{{ k.tone }}">
     <span class="mtab__name">{{ k.m.short }}</span>
     <span class="mtab__value num"><bdi dir="ltr">{{ k.value }}</bdi></span>
     <span class="mtab__chip" data-tone="{{ k.tone }}">{{ icon(k.arrow, 13) }}{{ k.chip }} <small>{{ k.ref }}</small></span>
@@ -43,25 +39,51 @@
 {% call sec('found', 'bolt', t('data.dash.found_title'), t('data.dash.found_sub', name=sel.short)) %}
 <div class="box found"><ul class="found__list">
   {% for x in found %}
-  <li class="found__item" data-tone="{{ x.tone }}"><span class="found__ic">{{ icon(x.icon, 18) }}</span><span>{{ x.text }}</span><a class="found__go" href="#{{ x.anchor }}">{{ t('data.dash.found_show') }}{{ icon('chevron-left', 14) }}</a></li>{% endfor %}
+  <li class="found__item" data-tone="{{ x.tone }}"><span class="found__ic">{{ icon(x.icon, 18) }}</span><span>{{ x.text }}</span><a class="found__go" href="#analysis-chart">{{ t('data.dash.found_show') }}{{ icon('chevron-left', 14) }}</a></li>{% endfor %}
 </ul></div>
 {% endcall %}
 {% endif %}
 
-{% if main %}{% call sec('main', 'chart-line', t('data.dash.s_trend'), t('data.dash.s_trend_sub')) %}{% set c = main %}{% include "data/_chart.html" %}{% endcall %}{% endif %}
-
-{% if drivers %}{% call sec('drivers', 'chart-bar', t('data.dash.s_drivers'), t('data.dash.s_drivers_sub')) %}{% set c = drivers %}{% include "data/_chart.html" %}{% endcall %}{% endif %}
-{% if branches %}{% call sec('branches', 'layout-grid', t('data.dash.s_branches'), t('data.dash.s_branches_sub')) %}{% set c = branches %}{% include "data/_chart.html" %}{% endcall %}{% endif %}
-{% if season %}{% call sec('season', 'calendar', t('data.dash.s_season'), t('data.dash.s_season_sub')) %}{% set c = season %}{% include "data/_chart.html" %}{% endcall %}{% endif %}
-
-{% call sec('next', 'arrow-narrow-left', t('data.dash.s_next'), t('data.dash.s_next_sub')) %}
-<div class="nextgrid">
-  <a class="nextc" href="{{ url_for('data.charts', m=sel.id) }}"><span class="dsec__ic">{{ icon('chart-dots', 20) }}</span><b>{{ t('data.dash.next_charts') }}</b><span>{{ t('data.dash.next_charts_sub') }}</span></a>
-  <a class="nextc" href="{{ url_for('data.ask', m=sel.id) }}"><span class="dsec__ic">{{ icon('sparkles', 20) }}</span><b>{{ t('data.dash.next_ask') }}</b><span>{{ t('data.dash.next_ask_sub') }}</span></a>
-  <a class="nextc" href="{{ url_for('data.series', id=sel.total.id) }}"><span class="dsec__ic">{{ icon('table', 20) }}</span><b>{{ t('data.dash.open_series') }}</b><span>{{ t('data.dash.next_series_sub') }}</span></a>
-  {% if can_goal and can('goals.edit') %}<a class="nextc" href="{{ url_for('goals.new', series=sel.total.id) }}"><span class="dsec__ic">{{ icon('target-arrow', 20) }}</span><b>{{ t('data.dash.set_goal') }}</b><span>{{ t('data.dash.next_goal_sub') }}</span></a>{% endif %}
-</div>
+{% call sec('analysis-chart', 'chart-line', t('data.dash.visual_title'), t('data.dash.visual_sub')) %}
+<form class="analysis-controls" method="get" action="{{ url_for('data.dashboard') }}" aria-label="{{ t('data.dash.visual_controls') }}">
+  <input type="hidden" name="m" value="{{ sel.id }}">
+  <label class="analysis-control">
+    <span>{{ t('data.dash.visual_type') }}</span>
+    <select class="select" name="kind">
+      {% for k, ic, options in kinds %}<option value="{{ k }}" {{ 'selected' if kind == k }}>{{ t('data.charts.kind.' ~ k ~ '.name') }}</option>{% endfor %}
+    </select>
+  </label>
+  {% if 'months' in opts %}
+  <label class="analysis-control">
+    <span>{{ t('data.charts.o_months') }}</span>
+    <select class="select" name="months">
+      {% for v, label in [('', t('data.charts.o_auto')), ('12', t('data.dash.win_12')), ('24', t('data.dash.win_24')), ('36', t('data.charts.o_36'))] %}<option value="{{ v }}" {{ 'selected' if (args.months|string if args.months else '') == v }}>{{ label }}</option>{% endfor %}
+    </select>
+  </label>
+  {% endif %}
+  {% if 'branch' in opts and sel.branches %}
+  <label class="analysis-control">
+    <span>{{ t('data.charts.o_branch') }}</span>
+    <select class="select" name="branch"><option value="">{{ t('data.charts.o_all') }}</option>{% for b in sel.branches %}<option value="{{ b.dimension }}" {{ 'selected' if b.dimension == args.branch }}>{{ b.dimension }}</option>{% endfor %}</select>
+  </label>
+  {% endif %}
+  {% if 'by' in opts %}
+  <label class="analysis-control">
+    <span>{{ t('data.charts.o_by') }}</span>
+    <select class="select" name="by">{% for v in ['month','quarter','year'] %}<option value="{{ v }}" {{ 'selected' if args.by == v }}>{{ t('data.charts.by.' ~ v) }}</option>{% endfor %}</select>
+  </label>
+  {% endif %}
+  <button class="btn btn-primary analysis-apply" type="submit">{{ t('data.dash.apply_view') }}{{ icon('arrow-left', 15) }}</button>
+</form>
+{% if chart %}{% set c = chart %}{% include "data/_chart.html" %}
+{% else %}<div class="box analysis-empty">{{ icon('info', 18) }}<span>{{ t('data.dash.chart_unavailable') }}</span></div>{% endif %}
 {% endcall %}
+
+<div class="analysis-links">
+  <a class="golink" href="{{ url_for('data.ask', m=sel.id) }}">{{ icon('message-circle-question', 16) }}{{ t('data.dash.next_ask') }}</a>
+  <a class="golink" href="{{ url_for('data.series', id=sel.total.id) }}">{{ icon('table', 16) }}{{ t('data.dash.open_series') }}</a>
+  {% if can_goal and can('goals.edit') %}<a class="golink" href="{{ url_for('goals.new', series=sel.total.id) }}">{{ icon('target', 16) }}{{ t('data.dash.set_goal') }}</a>{% endif %}
+</div>
 {% endif %}
 {% endblock %}
-{% block js_page %}<script src="{{ url_for('static', filename='js/data.js') }}" defer></script><script src="{{ url_for('static', filename='js/dash.js') }}" defer></script>{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/dash.js', v='2203') }}" defer></script>{% endblock %}

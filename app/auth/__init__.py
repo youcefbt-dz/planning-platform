@@ -26,7 +26,7 @@ def home_for(user: User) -> str:
         return url_for("site.landing")
     from app.core import welcome
 
-    step = welcome.step_endpoint(m.org, m.role)  # first sign-in of a new organization: the welcome (model consent, logo) before the overview
+    step = welcome.step_endpoint(m.org, m.role)  # resume the new-organization setup until all five steps are complete
     return url_for(step or "shell.overview", org_slug=m.org.slug)
 
 

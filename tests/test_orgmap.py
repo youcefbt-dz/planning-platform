@@ -18,10 +18,18 @@ def test_map_page_and_svg(app, owner):
     assert r.status_code == 200 and r.mimetype == "image/svg+xml" and b"<svg" in r.data and "رفع المبيعات".encode() in r.data
 
 
-def test_briefing_report_starts_with_the_map(app, owner):
+def test_briefing_report_contains_the_executive_report_and_strategy_map(app, owner):
     c, slug = owner
+    sid = _ready(app, c, slug)
+    c.post(f"/app/{slug}/goals/compose", data={"series": sid, "target": "999999999", "end": END,
+            "title": "رفع المبيعات", "commitment": "committed", "do": "save"})
     r = c.get(f"/app/{slug}/reports/briefing")
-    assert r.status_code == 200 and "cover" in r.get_data(as_text=True) and "omap" in r.get_data(as_text=True)
+    html = r.get_data(as_text=True)
+    assert r.status_code == 200
+    assert "ir-cover" in html and "ir-executive" in html and "ir-method" in html
+    assert "نطاق التقرير ومصادر الأرقام" in html
+    assert "omap" in html and "التقرير المؤسسي" in html and "رفع المبيعات" in html
+    assert "خط الأساس" in html and "المخطط الاستراتيجي" in html
     assert c.get(f"/app/{slug}/reports/briefing.csv").status_code == 404
 
 

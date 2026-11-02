@@ -96,9 +96,9 @@
 .notes li{display:flex;gap:6px;align-items:flex-start}
 .notes li svg{flex:none;margin-block-start:2px}
 
-/* ---- intake: three ways in (Excel, CSV, a ready sample) ------------------------------------------------------------
-   One memorable thing: pressing a card turns its lavender well to the brand blue and plays what that kind of file *is*
-   (cells fill and a selection sweeps the columns / commas become column lines / sample sheets fan out).
+/* ---- intake: Excel, CSV and the illustrative ERP preview -----------------------------------------------------------
+   One memorable thing: pressing a file card turns its lavender well to the brand blue and plays what that kind of file *is*
+   (cells fill and a selection sweeps the columns / commas become column lines).
    Final states live in the static `.is-open` rules; keyframes only carry the transient bits, so reduced motion keeps the state. */
 .upload{padding:var(--sp-5)}
 .intake__head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px var(--sp-4);margin-block-end:var(--sp-4)}
@@ -437,7 +437,9 @@ html[dir=rtl] .pick__exts{justify-content:flex-end}
 }
 
 /* one plain explanation per column, above the question */
-.ccard__about{margin:0 0 var(--sp-3);color:var(--c-ink);font-size:var(--fs-sm);line-height:1.75}
+.ccard__about{margin:0 0 var(--sp-3);color:var(--c-muted);font-size:var(--fs-sm);line-height:1.75}
+.ccard__meaning{display:flex;gap:10px;align-items:flex-start;margin:0 0 var(--sp-3);padding:12px 14px;border-radius:12px;background:var(--c-primary-softer);color:var(--c-ink);font-size:var(--fs-sm);line-height:1.85}
+.ccard__meaning svg{flex:none;margin-top:.35em;color:var(--c-primary)}
 .about__text{margin:0;color:var(--c-ink);line-height:1.8}
 .disclosure-box>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:var(--sp-3)}
 .disclosure-box>summary::-webkit-details-marker{display:none}
@@ -460,3 +462,82 @@ html[dir=rtl] .pick__exts{justify-content:flex-end}
 .sheet__tabs .tabdone{color:var(--c-ok,#1a7f4b);display:inline-flex}
 .sheet__tabs .inline-form{display:inline-flex}
 .grid [data-colh].is-focus{box-shadow:inset 0 0 0 2px var(--c-primary)}
+
+
+/* ---- ERP integrations concept card (visual preview; no live connector) ---- */
+.pick--erp .erp-art{isolation:isolate}
+.erp-art__orbit{position:absolute;display:block;border:1px dashed rgba(66,105,157,.28);border-radius:50%;width:196px;height:88px;transform:rotate(-19deg)}
+.erp-art__orbit--two{width:145px;height:68px;transform:rotate(28deg);border-color:rgba(66,105,157,.22)}
+.pick--erp.is-open .erp-art__orbit{border-color:rgba(255,255,255,.28)}
+.erp-art__hub{position:absolute;z-index:2;display:grid;place-items:center;width:57px;height:57px;border-radius:17px;background:#fff;color:#315b91;box-shadow:0 8px 22px rgba(18,43,78,.13)}
+.erp-art__hub i{position:absolute;inset:-5px;border:1px solid rgba(49,91,145,.18);border-radius:21px}
+.erp-art__brand{position:absolute;z-index:3;display:flex;align-items:center;justify-content:center;gap:4px;height:30px;padding:0 9px;border:1px solid rgba(35,56,87,.08);border-radius:9px;background:#fff;box-shadow:0 5px 15px rgba(18,43,78,.12);font-family:Arial,sans-serif;line-height:1}
+.erp-art__brand--odoo{top:27px;left:calc(50% - 107px);color:#7145a5;font-weight:800;font-size:15px}
+.erp-art__brand--odoo i,.erp-logo--odoo i{width:13px;height:13px;border-radius:4px;background:conic-gradient(#f5a623 0 25%,#e85d75 0 50%,#7145a5 0 75%,#27a7a0 0);transform:rotate(45deg)}
+.erp-art__brand--sage{top:28px;right:calc(50% - 107px);color:#208b66;font-weight:800;font-size:14px}
+.erp-art__brand--sage i,.erp-logo--sage i{width:11px;height:11px;border-radius:50%;background:#54ad68;box-shadow:5px -4px 0 -1px #9ccf55}
+.erp-art__brand--sage small{font-size:9px;color:#637381}
+.erp-art__brand--sap{bottom:22px;left:calc(50% - 25px);height:27px;padding:0 10px;background:#0877b9;color:#fff;border:0;font-size:15px;font-weight:800;clip-path:polygon(0 0,100% 0,100% 67%,54% 100%,0 100%);border-radius:3px}
+.pick--erp.is-open .erp-art__brand{box-shadow:0 5px 15px rgba(0,0,0,.16)}
+.erp__exts{gap:5px}
+.erp-preview{display:grid;gap:12px;padding:0 12px 14px}
+.erp-preview__intro{display:grid;gap:3px;padding-top:3px}
+.erp-preview__eyebrow{font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--c-primary-text)}
+.erp-preview__intro>b{font-size:var(--fs-sm);color:var(--c-ink)}
+.erp-preview__intro>p{margin:0;font-size:11px;line-height:1.55;color:var(--c-muted)}
+.erp-preview__choose{margin:0;color:var(--c-body);font-size:11px;font-weight:700}
+.erp-systems{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.erp-system{appearance:none;min-width:0;width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:11px 10px;border:1px solid var(--c-line);border-radius:13px;background:#fff;color:var(--c-ink);font:inherit;text-align:start;cursor:pointer;transition:border-color .2s,background .2s,box-shadow .2s,transform .2s}
+.erp-system:hover{border-color:var(--c-line-strong);background:var(--c-subtle);transform:translateY(-1px)}
+.erp-system:focus-visible{outline:3px solid var(--c-primary);outline-offset:2px}
+.erp-system.is-selected,.erp-system[aria-pressed=true]{border-color:var(--c-primary);background:var(--c-primary-softer);box-shadow:inset 0 0 0 1px var(--c-primary)}
+.erp-logo{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:27px;margin-block-end:2px;font-family:Arial,sans-serif;font-weight:800;line-height:1}
+.erp-logo--odoo{color:#7145a5;font-size:20px;letter-spacing:-1px}
+.erp-logo--odoo i{width:14px;height:14px}
+.erp-logo--sage{color:#208b66;font-size:18px;letter-spacing:-.6px}
+.erp-logo--sage i{width:13px;height:13px}
+.erp-logo--sage small{align-self:flex-end;margin-bottom:2px;color:#697b85;font-size:9px}
+.erp-logo--sap{min-width:42px;padding:5px 8px;background:#0877b9;color:#fff;clip-path:polygon(0 0,100% 0,100% 67%,54% 100%,0 100%);font-size:17px}
+.erp-system__name{font-size:11px;color:var(--c-ink)}
+.erp-system__type{min-height:28px;font-size:10px;line-height:1.45;color:var(--c-muted)}
+.erp-system__tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.erp-system__tags i{padding:3px 6px;border-radius:5px;background:var(--c-subtle);color:var(--c-body);font-size:9px;line-height:1.4;font-style:normal;white-space:nowrap}
+.erp-flow{display:flex;align-items:center;justify-content:center;gap:9px;padding:9px 8px;border-radius:10px;background:var(--c-subtle);color:var(--c-body);font-size:10px;font-weight:700}
+.erp-flow__source,.erp-flow__target{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.erp-flow__line{display:inline-flex;align-items:center;gap:2px;color:var(--c-primary-text)}
+.erp-flow__line i{display:block;width:22px;border-top:1px solid currentColor;opacity:.55}
+.erp-preview__note{display:flex;align-items:flex-start;gap:5px;margin:0;color:var(--c-muted);font-size:9px;line-height:1.5}
+.erp-preview__note svg{flex:none;margin-top:1px;color:var(--c-primary-text)}
+.erp-config{display:grid;gap:13px;padding:14px;border:1px solid var(--c-line);border-radius:15px;background:var(--c-subtle)}
+.erp-config[hidden]{display:none}
+.erp-config__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.erp-config__eyebrow{display:block;margin-bottom:3px;color:var(--c-primary-text);font-size:10px;font-weight:800}
+.erp-config__head h3{margin:0;color:var(--c-ink);font-size:var(--fs-sm);font-weight:700}
+.erp-config__head h3 b{color:var(--c-primary-text)}
+.erp-config__head p{margin:4px 0 0;color:var(--c-muted);font-size:11px;line-height:1.5}
+.erp-config__change{flex:none;padding:6px 9px;border:1px solid var(--c-line);border-radius:8px;background:#fff;color:var(--c-body);font:inherit;font-size:10px;font-weight:700;cursor:pointer}
+.erp-config__change:hover{border-color:var(--c-primary);color:var(--c-primary-text)}
+.erp-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.erp-field{display:grid;gap:5px;min-width:0;color:var(--c-body);font-size:11px;font-weight:700}
+.erp-field input{width:100%;min-width:0;box-sizing:border-box;padding:9px 11px;border:1px solid var(--c-line-strong);border-radius:9px;background:#fff;color:var(--c-ink);font:inherit;font-size:12px;font-weight:400;direction:ltr;text-align:left;transition:border-color .2s,box-shadow .2s}
+.erp-field input::placeholder{color:#9aa3af;opacity:1}
+.erp-field input:focus{outline:0;border-color:var(--c-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-primary) 14%,transparent)}
+.erp-config__foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.erp-config__notice{display:flex;align-items:flex-start;gap:6px;max-width:50ch;margin:0;color:var(--c-muted);font-size:10px;line-height:1.5}
+.erp-config__notice svg{flex:none;margin-top:1px;color:var(--c-primary-text)}
+.erp-config__actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.erp-config__actions .btn{min-height:34px;padding:7px 11px;font-size:11px}
+.erp-config__result{padding:9px 11px;border:1px solid transparent;border-radius:9px;font-size:11px;line-height:1.55}
+.erp-config__result.is-success{border-color:#b7dfc5;background:#edf8f0;color:#17643a}
+.erp-config__result.is-error{border-color:#f0d0a7;background:#fff8ed;color:#895314}
+@media(max-width:760px){.erp-systems{grid-template-columns:1fr}.erp-system{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:9px}.erp-logo{grid-row:span 2}.erp-system__type{min-height:0}.erp-system__tags{grid-column:1/-1}.erp-fields{grid-template-columns:1fr}.erp-config__head{flex-direction:column}.erp-config__foot{align-items:stretch}.erp-config__actions{width:100%}.erp-config__actions .btn{flex:1}}
+
+/* what the AI noticed about the file, and indicators that can be computed from it */
+.rv__ins{margin:var(--sp-4) 0 0;padding:14px 16px;border-radius:14px;border:1px solid var(--c-line);background:#fff}
+.rv__ins h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:var(--fs-sm);color:var(--c-ink)}
+.rv__ins h3 svg{color:var(--c-accent-ink,var(--c-primary))}
+.rv__ins ul{margin:0;padding-inline-start:20px;display:grid;gap:6px;font-size:var(--fs-sm);line-height:1.8;color:var(--c-ink)}
+.rv__ins--derived li span{color:var(--c-muted)}
+
+.rv__sumh{margin:0 0 6px;font-size:var(--fs-sm);color:var(--c-muted);font-weight:600}
+.rv__sum{font-size:var(--fs-md);line-height:2;color:var(--c-ink);max-width:78ch}

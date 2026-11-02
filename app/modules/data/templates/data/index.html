@@ -1,7 +1,7 @@
 {% extends "layouts/app.html" %}
 {% from "components/ui.html" import csrf, empty %}
 {% block title %}{{ t('data.module') }}{% endblock %}
-{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css') }}">{% endblock %}
+{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/data.css', v='2186') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dataflow.css', v='2186') }}">{% endblock %}
 {% block content %}
 {% set ready = datasets|selectattr('status', 'equalto', 'ready')|list %}
 {% set drafts = datasets|selectattr('status', 'equalto', 'draft')|list %}
@@ -45,4 +45,4 @@
 </section>
 {% endif %}
 {% endblock %}
-{% block js_page %}<script src="{{ url_for('static', filename='js/data.js') }}" defer></script>{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/data.js', v='2186') }}" defer></script>{% endblock %}

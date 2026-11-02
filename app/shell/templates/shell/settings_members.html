@@ -76,7 +76,7 @@
 <div class="box" style="margin-block-start:var(--sp-5)">
   <div class="box-head"><h2>{{ t('settings.members.roles_title') }}</h2></div>
   <table class="table"><tbody>
-    {% for r in ('owner','admin','head','member','viewer') %}<tr><td style="width:140px"><b class="ink">{{ t('role.' ~ r) }}</b></td><td>{{ t('role.' ~ r ~ '_desc') }}</td></tr>{% endfor %}
+    {% for r in ('owner','admin','head','viewer') %}<tr><td style="width:140px"><b class="ink">{{ t('role.' ~ r) }}</b></td><td>{{ t('role.' ~ r ~ '_desc') }}</td></tr>{% endfor %}
   </tbody></table>
 </div>
 {% endblock %}

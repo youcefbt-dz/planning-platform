@@ -29,6 +29,7 @@ app/ai/i18n/{ar,en,fr}.yaml    texts of the fallbacks (prefix `ai.`)
 | name | what | data leaves the machine? |
 |---|---|---|
 | `openai_compat` | any OpenAI-compatible endpoint: Ollama, LM Studio, vLLM, llama.cpp. **The recommended option for companies.** | no (`local: true`) |
+| `gemini` | Google Gemini through the REST API: structured JSON, function calling for the agent, several models in `GEMINI_MODEL` (own quota each). **First cloud choice.** | yes (`local: false`) |
 | `groq` | Groq cloud, fast inference with a free tier (OpenAI wire format; own key and model) | yes (`local: false`) |
 | `xai` | Grok through the xAI API (OpenAI wire format; same code as `openai_compat`, own key and model) | yes (`local: false`) |
 | `anthropic` | Claude through the Messages API with a forced tool call, so the reply is always structured | yes (`local: false`) |
@@ -37,6 +38,7 @@ app/ai/i18n/{ar,en,fr}.yaml    texts of the fallbacks (prefix `ai.`)
 ### Configure (no code)
 
 ```
+GEMINI_API_KEY=...  GEMINI_MODEL=model-a,model-b           # Gemini (cloud): best first; a limited model is skipped at once
 GROQ_API_KEY=...  GROQ_MODEL=<model id from console.groq.com/docs/models>   # Groq (cloud)
 XAI_API_KEY=...  XAI_MODEL=<name from your xAI console>   # Grok (cloud)
 ANTHROPIC_API_KEY=...                      # Claude (cloud). Keys live in the environment, never in files or code
@@ -48,6 +50,9 @@ AI_LOCAL_API_KEY=                          # optional
 `config/ai.yaml → chain` is tried in order; the first provider that is **available** (key/URL present) and **allowed** (privacy gate) answers.
 If it fails, the next one is tried and the result is flagged `fell_back=True` so the interface can say so honestly.
 Models can differ per task (`models: {default: ..., explain_reality: ...}`).
+
+**Limits never reach the person.** A provider that answers 429/503 raises `RateLimited`; the hub parks it for the time the server asked (5 s to 15 min)
+and the same request, and the next ones, go straight to the next provider in the chain (Gemini → Grok → …). Inside Gemini the same happens per model.
 
 ### Add a provider (5 minutes)
 
@@ -150,3 +155,18 @@ The front-end half is `static/js/assist.js` (`data-fill`, `data-assist`), loaded
 
 ## draw_map (journey map)
 Output is a **map spec** (family, ordered steps of fact ids, line colours, emphasis) — never SVG. `app/modules/orgmap/spec.py` validates every id against the facts; layout and drawing are code (`families/*.py`). Add a family by writing `families/<name>.py` with `layout(facts, spec, reveal) -> Canvas` and registering it in `spec.families()`.
+
+
+## The assistant (`app/modules/agent`)
+
+A conversation with a model that can call tools. The tools (`agent/tools.py`) read the organization as the current user may see it and return small JSON;
+the model never computes a figure, it asks. `loop.py` runs the turns (max 8 steps) and enforces the rules in code:
+
+* every figure of the final answer must trace to a tool result (or simple arithmetic on them); otherwise the model is told once to fix it, and what remains is shown to the person as "unverified";
+* `propose_goal` only drafts: start and target come from the data (a level from the organization's own history), and a goal is created only when a person approves the card (`/assistant/apply`, which re-validates scope and figures);
+* without an allowed model the person gets a briefing computed by code and the reason (consent, no key, daily limit, demo) — never a fake answer.
+
+The assistant is presented as a small floating dock across workspace pages, rather than a top-level navigation section. The close (×) button only closes the chat panel; icon visibility is controlled separately from the member-accessible personal interface preferences page and stored in the current browser for each user/workspace. The former `/assistant/` page redirects to the workspace overview. Chat history is kept for the current browser session and shared by the dock across workspace pages.
+
+Providers that can hold a tool conversation set `supports_chat = True` and implement `chat()` (openai_compat and anthropic do). Add a tool = one function and one entry in `TOOLS`.
+Use a strong model: `models.agent` for Anthropic in `config/ai.yaml`; for Groq/Grok/local the model comes from the `*_MODEL` env var and must support tool calling (e.g. `openai/gpt-oss-120b`).

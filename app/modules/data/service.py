@@ -173,7 +173,7 @@ def column_cards(ds: Dataset) -> list[dict]:
         i = c["index"]
         n = store.get(str(i))
         note = n["t"] if isinstance(n, dict) and n.get("h") == str(c.get("header", "")) else ""
-        cards.append({"col": c, "idx": i, "letter": letter_of(ds, i), "q": qs.get(i), "note": note, "about": describe_column(c)})
+        cards.append({"col": c, "idx": i, "letter": letter_of(ds, i), "q": qs.get(i), "note": note, "about": describe_column(c), "meaning": c.get("meaning") or ""})
     cards.sort(key=lambda x: (0 if x["q"] else 1, x["idx"]))
     return cards
 
@@ -218,7 +218,9 @@ def analyze(ds: Dataset, sheets: list[Sheet] | None = None, runner=None, keep_us
     cols = []
     for c in out["columns"]:
         header = str(table.headers[c["index"]] if c["index"] < len(table.headers) else "")
-        new = {**c, "state": "ai", "type": by_idx[c["index"]]["type"], "examples": by_idx[c["index"]]["examples"][:3], "header": header}
+        pr = by_idx[c["index"]]
+        new = {**c, "state": "ai", "type": pr["type"], "examples": pr["examples"][:3], "header": header, "distinct": pr.get("distinct"),
+               **({"min": pr["min"], "max": pr["max"]} if pr.get("min") is not None and pr.get("max") is not None else {})}
         if c["index"] in notes:
             new["explained"] = True
         old = old_cols.get(c["index"])
@@ -236,6 +238,7 @@ def analyze(ds: Dataset, sheets: list[Sheet] | None = None, runner=None, keep_us
                "header_row": table.header_row, "assumed_year": table.assumed_year, "truncated": sh.truncated, "notes": tnotes,
                "title": table.title, "ai_ms": res.ms, "phys": table.phys,
                "col_notes": old_meta.get("col_notes") or {}, "file_note": file_note, "sheet_name": sh.name,
+               "highlights": out.get("highlights") or [],
                **({"group": old_meta["group"]} if old_meta.get("group") else {})}
 
 
@@ -250,6 +253,7 @@ def edit_column(ds: Dataset, idx: int, *, role: str | None = None, label: str | 
     c = next((c for c in cols if c["index"] == idx), None)
     if c is None:
         return None
+    before = c.get("role")
     if role in ROLES:
         c["role"] = role
     if label is not None and label.strip():
@@ -265,6 +269,11 @@ def edit_column(ds: Dataset, idx: int, *, role: str | None = None, label: str | 
     if c["role"] != "measure":
         c["aggregation"], c["unit"] = "none", ""
     c.update(confidence=1.0, state="user", reason="user")
+    if c["role"] != before or c.get("label") != (next((o for o in ds.columns or [] if o["index"] == idx), {}) or {}).get("label"):
+        from app.ai.tasks.map_columns import rule_meaning       # what the column was said to mean no longer holds: say it again from the new role
+
+        prof = {"type": c.get("type"), "min": c.get("min"), "max": c.get("max"), "distinct": c.get("distinct"), "examples": c.get("examples") or []}
+        c["meaning"] = rule_meaning(c.get("header", ""), c, prof, "ar")
     ds.columns = cols
     ds.questions = [q for q in ds.questions or [] if q["column"] != idx]
     return c

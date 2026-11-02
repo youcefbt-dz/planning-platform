@@ -73,7 +73,7 @@
     <section class="rc">
       <header class="rc__head"><h2><span class="rc__ic">{{ icon('list-details', 20) }}</span>{{ t('data.ask.s_what') }}</h2></header>
       <div class="rc__body"><ul class="askpg__list"><li>{{ t('data.ask.can1') }}</li><li>{{ t('data.ask.can2') }}</li><li>{{ t('data.ask.can3') }}</li></ul>
-        <a class="golink" href="{{ url_for('data.charts', m=sel.id) }}">{{ icon('chart-dots', 16) }}{{ t('data.ask.to_charts') }}</a></div>
+        <a class="golink" href="{{ url_for('data.dashboard', m=sel.id) }}">{{ icon('chart-dots', 16) }}{{ t('data.ask.to_analysis') }}</a></div>
     </section>
   </aside>
 </div>

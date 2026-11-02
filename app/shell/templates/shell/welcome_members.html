@@ -1,0 +1,90 @@
+{% extends "layouts/welcome.html" %}
+{% from "components/ui.html" import csrf %}
+{% block title %}{{ t('welcome.steps.team') }}{% endblock %}
+{% block step %}4{% endblock %}
+{% block main %}
+<div class="wo">
+  <header class="wd__head">
+    <p class="eyebrow">{{ t('welcome.step', n=4, total=5) }}</p>
+    <h1>{{ t('welcome.team.title') }}</h1>
+    <p class="lead">{{ t('welcome.team.sub') }}</p>
+  </header>
+
+  <div class="wo__grid">
+    <section class="sheet wo__people" aria-label="{{ t('welcome.team.current') }}">
+      <div class="wo__section-head">
+        <span class="wo__section-icon">{{ icon('users', 20) }}</span>
+        <div><h2>{{ t('welcome.team.current') }}</h2><p>{{ t('welcome.team.current_sub') }}</p></div>
+        <strong class="wo__count num">{{ n(rows|length) }}</strong>
+      </div>
+      <div class="wo__list">
+        {% for m in rows %}
+        <div class="wo__member">
+          <span class="wo__avatar">{{ m.user.initials }}</span>
+          <span class="wo__person"><b>{{ m.user.name }}</b><small dir="ltr">{{ m.user.email }}</small></span>
+          <span class="wo__role">{{ t('role.' ~ m.role) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% if invites %}
+      <div class="wo__invites">
+        <b>{{ t('settings.members.invite_open') }}</b>
+        {% for inv in invites %}
+          {% set link = url_for('auth.join', token=inv.token, _external=True) %}
+          <article class="wo__invite-card">
+            <div class="wo__invite-qr">
+              <img src="{{ url_for('shell.invite_qr', iid=inv.id) }}" width="144" height="144" alt="{{ t('settings.members.qr_title') }}" loading="lazy">
+              <span>{{ t('settings.members.qr') }}</span>
+            </div>
+            <div class="wo__invite-info">
+              <div class="wo__invite-meta">
+                <span class="wo__role">{{ t('role.' ~ inv.role) }}</span>
+                <small>{{ t('settings.members.invite_until', date=d(inv.expires_at.date(), 'day')) }}</small>
+              </div>
+              <label class="wo__invite-label">{{ t('settings.members.invite_copy') }}</label>
+              <input class="wf__in" readonly value="{{ link }}" dir="ltr" aria-label="{{ t('settings.members.invite_copy') }}" onclick="this.select()">
+              <p class="wo__invite-hint">{{ t('settings.members.qr_hint') }}</p>
+              <a class="wlink wo__qr-download" href="{{ url_for('shell.invite_qr', iid=inv.id, dl=1) }}">{{ icon('download', 14) }}{{ t('settings.members.qr_download') }}</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="sheet wo__add" aria-label="{{ t('welcome.team.add_title') }}">
+      <div class="wo__section-head">
+        <span class="wo__section-icon">{{ icon('user-plus', 20) }}</span>
+        <div><h2>{{ t('welcome.team.add_title') }}</h2><p>{{ t('welcome.team.add_sub') }}</p></div>
+      </div>
+      <form method="post" class="wo__form">
+        {{ csrf() }}<input type="hidden" name="action" value="add">
+        <div class="wf"><label for="team-name">{{ t('auth.name') }}</label><input class="wf__in" id="team-name" name="name" maxlength="120" autocomplete="name" required></div>
+        <div class="wf"><label for="team-email">{{ t('auth.email') }}</label><input class="wf__in" id="team-email" name="email" type="email" maxlength="200" dir="ltr" autocomplete="email" required></div>
+        <div class="wf"><label for="team-title">{{ t('settings.members.th_title') }}</label><input class="wf__in" id="team-title" name="title" maxlength="120" placeholder="{{ t('welcome.team.title_optional') }}"></div>
+        <div class="wf"><label for="team-role">{{ t('settings.members.role') }}</label>
+          <select class="wf__in" id="team-role" name="role"><option value="member">{{ t('role.member') }}</option><option value="viewer">{{ t('role.viewer') }}</option><option value="admin">{{ t('role.admin') }}</option></select>
+        </div>
+        <button class="wbtn wbtn--sm" type="submit">{{ icon('user-plus', 16) }}<span>{{ t('welcome.team.add_button') }}</span></button>
+        <p class="wo__hint">{{ t('settings.members.add_hint') }}</p>
+      </form>
+
+      <div class="wo__invite-create">
+        <div><b>{{ t('settings.members.invite_h') }}</b><small>{{ t('settings.members.invite_sub') }}</small></div>
+        <form method="post" class="wo__invite-form">
+          {{ csrf() }}<input type="hidden" name="action" value="invite">
+          <select class="wf__in" name="role" aria-label="{{ t('settings.members.role') }}"><option value="member">{{ t('role.member') }}</option><option value="viewer">{{ t('role.viewer') }}</option><option value="admin">{{ t('role.admin') }}</option></select>
+          <button class="wbtn wbtn--sm" type="submit">{{ icon('link', 15) }}<span>{{ t('settings.members.invite_make') }}</span></button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <form method="post" class="wo__act">
+    {{ csrf() }}<input type="hidden" name="action" value="continue">
+    <span>{{ t('welcome.team.footer') }}</span>
+    <div><button class="wbtn" type="submit"><span>{{ t('welcome.team.next') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
+      <button class="wlink" type="submit" name="action" value="continue">{{ t('welcome.team.skip') }}</button></div>
+  </form>
+</div>
+{% endblock %}

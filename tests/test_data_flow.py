@@ -29,6 +29,16 @@ def upload(c, slug, name):
     return c.post(f"/app/{slug}/data/upload", data={"file": sample(name)}, content_type="multipart/form-data")
 
 
+def test_data_intake_shows_illustrative_erp_systems_instead_of_sample_card(app, owner):
+    c, slug = owner
+    page = c.get(f"/app/{slug}/data/").get_data(as_text=True)
+    assert 'data-kind="integrations"' in page
+    assert "Odoo" in page and "Sage 100" in page and "SAP" in page
+    assert "المبيعات" in page and "المخزون" in page and "المحاسبة" in page
+    assert "لا يوجد اتصال فعلي" in page
+    assert "نموذج جاهز" not in page
+
+
 def test_long_file_upload_map_confirm(app, owner):
     c, slug = owner
     r = upload(c, slug, "sales_by_branch.xlsx")

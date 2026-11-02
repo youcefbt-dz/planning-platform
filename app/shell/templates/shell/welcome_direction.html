@@ -5,7 +5,7 @@
 {% block main %}
 <div class="wd" data-wd>
   <div class="wd__head">
-    <p class="eyebrow">{{ t('welcome.step', n=3, total=3) }}</p>
+    <p class="eyebrow">{{ t('welcome.step', n=3, total=5) }}</p>
     <h1>{{ t('welcome.direction.title') }}</h1>
     <p class="lead">{{ t('welcome.direction.sub') }}</p>
   </div>
@@ -35,7 +35,7 @@
     </section>
 
     <div class="wd__act">
-      <button class="wbtn" type="submit"><span>{{ t('welcome.direction.go') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
+      <button class="wbtn" type="submit"><span>{{ t('welcome.continue') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
       <button class="wlink" type="submit" name="skip" value="1" formnovalidate>{{ t('welcome.direction.skip') }}</button>
     </div>
   </form>

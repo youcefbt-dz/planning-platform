@@ -1,0 +1,63 @@
+{% extends "layouts/welcome.html" %}
+{% from "components/ui.html" import csrf %}
+{% block title %}{{ t('welcome.steps.units') }}{% endblock %}
+{% block step %}5{% endblock %}
+{% macro unit_node(unit, depth) %}
+<div class="wu__node" style="--depth:{{ depth }}">
+  <span class="wu__node-icon" data-kind="{{ unit.kind }}">{{ icon('building' if unit.kind == 'company' else 'users-group' if unit.kind == 'team' else 'sitemap', 18) }}</span>
+  <span class="wu__node-name"><b>{{ unit.name }}</b><small>{{ t('settings.units.kind.' ~ unit.kind) }}</small></span>
+  {% if unit.head %}<span class="wu__head">{{ icon('user-round', 13) }}{{ unit.head.name }}</span>{% else %}<span class="wu__empty">{{ t('welcome.units.no_head') }}</span>{% endif %}
+</div>
+{% for child in by_parent.get(unit.id, []) %}{{ unit_node(child, depth + 1) }}{% endfor %}
+{% endmacro %}
+{% block main %}
+<div class="wo">
+  <header class="wd__head">
+    <p class="eyebrow">{{ t('welcome.step', n=5, total=5) }}</p>
+    <h1>{{ t('welcome.units.title') }}</h1>
+    <p class="lead">{{ t('welcome.units.sub') }}</p>
+  </header>
+
+  <div class="wu__grid">
+    <section class="sheet wu__structure" aria-label="{{ t('settings.units.s_structure') }}">
+      <div class="wo__section-head">
+        <span class="wo__section-icon">{{ icon('network', 20) }}</span>
+        <div><h2>{{ t('settings.units.s_structure') }}</h2><p>{{ t('welcome.units.structure_sub') }}</p></div>
+        <strong class="wo__count num">{{ n(all_units|length - (1 if root else 0)) }}</strong>
+      </div>
+      <div class="wu__tree">
+        {% if root %}{{ unit_node(root, 0) }}{% else %}<p class="wo__empty">{{ t('welcome.units.empty') }}</p>{% endif %}
+      </div>
+    </section>
+
+    <section class="sheet wu__add" aria-label="{{ t('welcome.units.add_title') }}">
+      <div class="wo__section-head">
+        <span class="wo__section-icon">{{ icon('plus', 20) }}</span>
+        <div><h2>{{ t('welcome.units.add_title') }}</h2><p>{{ t('welcome.units.add_sub') }}</p></div>
+      </div>
+      <form method="post" class="wo__form">
+        {{ csrf() }}<input type="hidden" name="action" value="add">
+        <div class="wf"><label for="unit-name">{{ t('settings.units.name') }}</label><input class="wf__in" id="unit-name" name="name" maxlength="160" required></div>
+        <div class="wf"><label for="unit-kind">{{ t('settings.units.kind_label') }}</label>
+          <select class="wf__in" id="unit-kind" name="kind"><option value="department">{{ t('settings.units.kind.department') }}</option><option value="team">{{ t('settings.units.kind.team') }}</option></select>
+        </div>
+        <div class="wf"><label for="unit-parent">{{ t('settings.units.parent') }}</label>
+          <select class="wf__in" id="unit-parent" name="parent_id">{% for u in all_units %}<option value="{{ u.id }}" {% if root and u.id == root.id %}selected{% endif %}>{{ '— ' * (depths.get(u.id, 0)) }}{{ u.name }}</option>{% endfor %}</select>
+        </div>
+        <div class="wf"><label for="unit-head">{{ t('settings.units.head') }}</label>
+          <select class="wf__in" id="unit-head" name="head_id"><option value="">{{ t('settings.units.head_none') }}</option>{% for m in members %}<option value="{{ m.user_id }}">{{ m.user.name }}</option>{% endfor %}</select>
+        </div>
+        <button class="wbtn wbtn--sm" type="submit">{{ icon('plus', 16) }}<span>{{ t('welcome.units.add_button') }}</span></button>
+      </form>
+      <p class="wo__hint">{{ t('welcome.units.hint') }}</p>
+    </section>
+  </div>
+
+  <form method="post" class="wo__act">
+    {{ csrf() }}<input type="hidden" name="action" value="finish">
+    <span>{{ t('welcome.units.footer') }}</span>
+    <div><button class="wbtn" type="submit"><span>{{ t('welcome.units.finish') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
+      <button class="wlink" type="submit" name="action" value="finish">{{ t('welcome.units.skip') }}</button></div>
+  </form>
+</div>
+{% endblock %}

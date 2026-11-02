@@ -48,6 +48,13 @@ def settings():
     return redirect(url_for("shell.settings_general"))
 
 
+@bp.get("/settings/preferences")
+@require("view")
+def settings_preferences():
+    """Personal, browser-local display preferences; separate from organization-wide settings."""
+    return render_template("shell/settings_preferences.html")
+
+
 @bp.route("/settings/general", methods=["GET", "POST"])
 @require("settings.view")
 def settings_general():
@@ -153,7 +160,7 @@ def settings_ai():
                            cloud=hub.external_available())
 
 
-# -- welcome (first sign-in): the model's consent, then the logo, then the profile page for the vision ------------------
+# -- first-run organization setup: model consent, logo, direction, team and units -------------------------------
 @bp.route("/welcome", methods=["GET", "POST"])
 @require("settings.manage")
 def welcome():
@@ -175,7 +182,7 @@ def welcome():
         return redirect(url_for("shell.welcome_logo"))
     mode = "cloud" if cloud else "local" if local else "none"
     # one tile per model the app can talk to, with the maker's mark; the ones that are set up light up
-    marks = {"anthropic": ("Claude", "claude.svg"), "xai": ("Grok", "grok.svg"), "groq": ("Groq", "groq.svg"), "openai_compat": ("Ollama", "ollama.svg")}
+    marks = {"gemini": ("Gemini", "gemini.svg"), "anthropic": ("Claude", "claude.svg"), "xai": ("Grok", "grok.svg"), "groq": ("Groq", "groq.svg"), "openai_compat": ("Ollama", "ollama.svg")}
     models = [{"key": s["name"], "name": marks[s["name"]][0], "logo": marks[s["name"]][1], "local": s["local"], "on": s["available"]}
               for s in sorted(status, key=lambda s: (not s["local"], s["name"])) if s["name"] in marks]
     return render_template("shell/welcome_model.html", mode=mode, rows=hub.privacy["sample_rows"], models=models, consent=ai.org_consent(g.org))
@@ -203,7 +210,7 @@ def welcome_logo():
 @bp.route("/welcome/direction", methods=["GET", "POST"])
 @require("settings.manage")
 def welcome_direction():
-    """Step 3: sector, size, vision, mission, values — the model proposes wording (same fragment as the profile page), then the overview."""
+    """Step 3: sector, size, vision, mission and values; then continue to the team setup."""
     from app.core import profile as P
     from app.core import welcome as W
 
@@ -211,10 +218,121 @@ def welcome_direction():
         if not request.form.get("skip"):
             P.save_profile(g.org, sector=F.choice("sector", P.SECTORS, ""), size=F.choice("size", P.SIZES, ""),
                            vision=F.s("vision", maxlen=600), mission=F.s("mission", maxlen=600), values=F.s("values", maxlen=400))
-        W.mark(g.org, logo_done=True, welcomed=True)
+        W.mark(g.org, direction_done=True)
         db.session.commit()
-        return redirect(url_for("shell.overview"))
+        return redirect(url_for("shell.welcome_members"))
     return render_template("shell/welcome_direction.html", prof=P.profile(g.org), sectors=P.SECTORS, sizes=P.SIZES)
+
+
+@bp.route("/welcome/members", methods=["GET", "POST"])
+@require("settings.manage")
+def welcome_members():
+    """Step 4: assemble the first team before the organization builds its unit structure."""
+    from datetime import datetime, timedelta
+
+    from app.core import welcome as W
+
+    if request.method == "POST":
+        if request.form.get("action") == "add":
+            email, name = F.s("email").lower(), F.s("name", maxlen=120)
+            title = F.s("title", maxlen=120)
+            role = F.choice("role", ("viewer", "member", "admin"), "member")
+            if not email or "@" not in email or not name:
+                flash(t("auth.errors.required"), "error")
+            else:
+                user = User.query.filter_by(email=email).first()
+                temp = None
+                if user is None:
+                    temp = secrets.token_urlsafe(9)
+                    user = User(email=email, name=name, lang=g.lang)
+                    user.set_password(temp)
+                    db.session.add(user)
+                    db.session.flush()
+                if Membership.query.filter_by(org_id=g.org.id, user_id=user.id).first():
+                    flash(t("settings.members.exists"), "error")
+                else:
+                    root = OrgUnit.query.filter_by(org_id=g.org.id, kind="company").first()
+                    db.session.add(Membership(org_id=g.org.id, user_id=user.id, role=role, unit_id=root.id if root else None, title=title or None))
+                    db.session.commit()
+                    flash(t("settings.members.added_temp", password=temp) if temp else t("settings.members.added"), "success")
+            return redirect(url_for("shell.welcome_members"))
+
+        if request.form.get("action") == "invite":
+            role = F.choice("role", ("viewer", "member", "admin"), "member")
+            db.session.add(Invite(org_id=g.org.id, token=secrets.token_urlsafe(24), role=role,
+                                  created_by=current_user.id, expires_at=datetime.utcnow() + timedelta(days=7)))
+            db.session.commit()
+            flash(t("settings.members.invite_made"), "success")
+            return redirect(url_for("shell.welcome_members"))
+
+        W.mark(g.org, team_done=True)
+        db.session.commit()
+        return redirect(url_for("shell.welcome_units"))
+
+    rows = Membership.query.filter_by(org_id=g.org.id).order_by(Membership.id).all()
+    invites = Invite.query.filter(Invite.org_id == g.org.id, Invite.used_at.is_(None), Invite.expires_at > datetime.utcnow()).order_by(Invite.id.desc()).all()
+    return render_template("shell/welcome_members.html", rows=rows, invites=invites)
+
+
+@bp.route("/welcome/units", methods=["GET", "POST"])
+@require("settings.manage")
+def welcome_units():
+    """Step 5: create the first departments/teams and optionally assign their heads."""
+    from app.core import welcome as W
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "add":
+            name = F.s("name", maxlen=160)
+            kind = F.choice("kind", ("department", "team"), "department")
+            parent = db.session.get(OrgUnit, F.integer("parent_id") or 0)
+            if not name:
+                flash(t("auth.errors.required"), "error")
+            else:
+                root = OrgUnit.query.filter_by(org_id=g.org.id, kind="company").first()
+                parent_id = parent.id if parent and parent.org_id == g.org.id else (root.id if root else None)
+                unit = OrgUnit(org_id=g.org.id, name=name, kind=kind, parent_id=parent_id)
+                db.session.add(unit)
+                db.session.flush()
+                head_id = F.integer("head_id")
+                member = Membership.query.filter_by(org_id=g.org.id, user_id=head_id).first() if head_id else None
+                if member:
+                    OrgUnit.query.filter(OrgUnit.org_id == g.org.id, OrgUnit.head_id == member.user_id).update({"head_id": None})
+                    member.unit_id = unit.id
+                    unit.head_id = member.user_id
+                db.session.commit()
+                flash(t("settings.flash.saved"), "success")
+            return redirect(url_for("shell.welcome_units"))
+
+        W.mark(g.org, team_done=True, units_done=True, welcomed=True)
+        db.session.commit()
+        return redirect(url_for("shell.welcome_ready"))
+
+    all_units = units(g.org)
+    by_parent: dict = {}
+    depths: dict = {}
+    for unit in all_units:
+        by_parent.setdefault(unit.parent_id, []).append(unit)
+    def set_depth(parent_id, depth):
+        for child in by_parent.get(parent_id, []):
+            depths[child.id] = depth
+            set_depth(child.id, depth + 1)
+    set_depth(None, 0)
+    members = Membership.query.filter_by(org_id=g.org.id).order_by(Membership.id).all()
+    root = OrgUnit.query.filter_by(org_id=g.org.id, kind="company").first()
+    return render_template("shell/welcome_units.html", all_units=all_units, by_parent=by_parent, depths=depths, members=members, root=root)
+
+
+@bp.get("/welcome/ready")
+@require("settings.manage")
+def welcome_ready():
+    """A short, visual hand-off after the first-run setup has been saved."""
+    if not (g.org.settings or {}).get("welcomed"):
+        from app.core import welcome as W
+        membership = Membership.query.filter_by(org_id=g.org.id, user_id=current_user.id).first()
+        step = W.step_endpoint(g.org, membership.role if membership else None)
+        return redirect(url_for(step, org_slug=g.org.slug) if step else url_for("shell.overview"))
+    return render_template("shell/welcome_ready.html")
 
 
 @bp.post("/welcome/skip")
@@ -222,7 +340,7 @@ def welcome_direction():
 def welcome_skip():
     from app.core import welcome as W
 
-    W.mark(g.org, ai_asked=True, welcomed=True)
+    W.mark(g.org, ai_asked=True, logo_done=True, direction_done=True, team_done=True, units_done=True, welcomed=True)
     db.session.commit()
     return redirect(url_for("shell.overview"))
 

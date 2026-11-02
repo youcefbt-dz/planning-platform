@@ -5,7 +5,7 @@
 {% block main %}
 <div class="wm" data-wm data-mode="{{ mode }}" data-choice="{{ 'allow' if (mode == 'cloud' and consent) or mode == 'local' else 'deny' if mode == 'none' else '' }}">
   <div class="wm__head">
-    <p class="eyebrow">{{ t('welcome.step', n=1, total=3) }}</p>
+    <p class="eyebrow">{{ t('welcome.step', n=1, total=5) }}</p>
     <h1>{{ t('welcome.model.title') }}</h1>
     <p class="lead">{{ t('welcome.model.sub') }}</p>
   </div>

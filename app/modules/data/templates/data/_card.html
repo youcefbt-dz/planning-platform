@@ -17,6 +17,7 @@
     {{ icon('chevron-down', 16, cls='ccard__chev') }}
   </summary>
   <div class="ccard__body">
+    {% if card.meaning %}<p class="ccard__meaning" dir="auto" data-f="meaning">{{ icon('bulb', 15) }}<span>{{ card.meaning }}</span></p>{% endif %}
     <p class="ccard__about" data-f="about">{{ card.about }}</p>
     {% if q %}
     <div class="ccard__ask" data-q="{{ c.index }}">

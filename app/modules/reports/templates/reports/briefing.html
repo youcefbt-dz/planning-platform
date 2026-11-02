@@ -1,18 +1,135 @@
 {% extends "layouts/app.html" %}
-{% from "components/ui.html" import org_tile %}
+{% from "components/ui.html" import org_tile, badge, meter, stackbar, legend %}
 {% block title %}{{ t('reports.briefing.title') }}{% endblock %}
-{% block css_page %}<link rel="stylesheet" href="{{ url_for('static', filename='css/orgmap.css') }}">{% endblock %}
+{% block css_page %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/reports.css', v='2188') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/orgmap.css', v='2188') }}">
+{% endblock %}
 {% block content %}
 {% include "reports/_head.html" %}
-{% set m = data.m %}
-<section class="cover">
-  {{ org_tile(g.org, 'lg') }}
-  <h2>{{ g.org.name }}</h2>
-  <p class="cover__sub">{{ t('reports.briefing.cover', date=d(generated, 'long')) }}</p>
-  {% if m.profile.vision %}<p class="cover__vision" dir="auto"><b>{{ t('profile.vision') }}:</b> {{ m.profile.vision }}</p>{% endif %}
-  {% if m.profile.mission %}<p class="cover__vision" dir="auto"><b>{{ t('profile.mission') }}:</b> {{ m.profile.mission }}</p>{% endif %}
-</section>
-<p class="insight" style="margin:var(--sp-5) 0"><span class="icon-wrap">{{ icon('bulb', 16) }}</span><span><b>{{ t('orgmap.read.title') }}:</b> {{ data.reading }}</span></p>
-<h2 class="rep-h">{{ t('orgmap.title') }}</h2>
-{% include "orgmap/_map.html" %}
+{% set p = data.profile %}
+{% set total_risks = data.kr_stats.at_risk + data.kr_stats.off_track %}
+
+<div class="institution-report" dir="rtl">
+  <section class="ir-cover">
+    <div class="ir-cover__top">
+      <div class="ir-brand">{{ org_tile(g.org, 'lg') }}<div><span>{{ t('reports.briefing.eyebrow') }}</span><b>{{ g.org.name }}</b></div></div>
+      <span class="ir-confidential">{{ t('reports.briefing.internal') }}</span>
+    </div>
+    <div class="ir-cover__main">
+      <p class="ir-kicker">{{ t('reports.briefing.kicker') }}</p>
+      <h2>{{ t('reports.briefing.title') }}</h2>
+      <p class="ir-cover__desc">{{ t('reports.briefing.cover', date=d(generated, 'long')) }}</p>
+      <div class="ir-cover__rule"></div>
+      <div class="ir-cover__meta">
+        <div><span>{{ t('reports.briefing.period') }}</span><b>{{ data.cycle.name if data.cycle else t('common.all_cycles') }}</b></div>
+        <div><span>{{ t('reports.briefing.sector') }}</span><b>{{ t('profile.sectors.' ~ p.sector) if p.sector else '—' }}</b></div>
+        <div><span>{{ t('reports.briefing.generated') }}</span><b>{{ d(generated, 'long') }}</b></div>
+      </div>
+    </div>
+    <div class="ir-cover__bottom"><span>{{ t('reports.briefing.footer') }}</span><span>{{ brand_name }}</span></div>
+  </section>
+
+  <section class="ir-section ir-executive">
+    <div class="ir-section__head"><div><span class="ir-overline">01 / {{ t('reports.briefing.executive') }}</span><h2>{{ t('reports.briefing.executive_title') }}</h2></div><p>{{ t('reports.briefing.executive_sub') }}</p></div>
+    <div class="ir-lead">
+      <span class="ir-lead__label">{{ t('reports.briefing.readout') }}</span>
+      {% if data.count %}<p>{{ t('reports.briefing.summary_line', goals=n(data.count), results=n(data.total_results), progress=pct(data.goal_avg), expected=pct(data.expected_avg)) }}</p>
+      {% else %}<p>{{ t('reports.briefing.summary_line_empty') }}</p>{% endif %}
+      {% if total_risks %}<p>{{ t('reports.briefing.risk_line', risks=n(total_risks), initiatives=n(data.initiatives|length), indicators=n(data.indicators|length)) }}</p>
+      {% else %}<p>{{ t('reports.briefing.risk_line_clear', initiatives=n(data.initiatives|length), indicators=n(data.indicators|length)) }}</p>{% endif %}
+    </div>
+    <div class="ir-metrics">
+      <article class="ir-metric ir-metric--primary"><span>{{ t('reports.briefing.avg_progress') }}</span><b>{{ pct(data.goal_avg) }}</b><small>{{ t('reports.briefing.expected') }} {{ pct(data.expected_avg) }}</small></article>
+      <article class="ir-metric"><span>{{ t('goals.widget.objectives') }}</span><b>{{ n(data.count) }}</b><small>{{ t('reports.briefing.active_scope') }}</small></article>
+      <article class="ir-metric"><span>{{ t('reports.briefing.key_results') }}</span><b>{{ n(data.total_results) }}</b><small>{{ n(data.linked_results) }} · {{ t('reports.briefing.data_linked') }}</small></article>
+      <article class="ir-metric"><span>{{ t('reports.briefing.indicators') }}</span><b>{{ n(data.indicators|length) }}</b><small>{{ n(data.indicator_stats.on_track + data.indicator_stats.completed) }} · {{ t('reports.briefing.meeting_target') }}</small></article>
+      <article class="ir-metric"><span>{{ t('initiatives.module') }}</span><b>{{ n(data.initiatives|length) }}</b><small>{{ n(data.initiative_stats.completed) }} · {{ t('status.completed') }}</small></article>
+      <article class="ir-metric"><span>{{ t('reports.briefing.organization_capacity') }}</span><b>{{ n(data.units_count) }}</b><small>{{ n(data.members_count) }} · {{ t('reports.briefing.members') }}</small></article>
+    </div>
+    <div class="ir-status-block">
+      <div class="ir-status-head"><b>{{ t('reports.briefing.goal_status') }}</b><span>{{ t('reports.briefing.status_basis') }}</span></div>
+      {{ stackbar(data.goal_stats) }}
+      {{ legend(data.goal_stats) }}
+    </div>
+    {% if data.reading %}<div class="ir-reading"><span class="ir-reading__mark">!</span><div><b>{{ t('reports.briefing.management_reading') }}</b><p>{{ data.reading }}</p></div></div>{% endif %}
+  </section>
+
+  <section class="ir-section ir-strategy">
+    <div class="ir-section__head"><div><span class="ir-overline">02 / {{ t('reports.briefing.strategy') }}</span><h2>{{ t('reports.briefing.strategy_title') }}</h2></div><p>{{ t('reports.briefing.strategy_sub') }}</p></div>
+    {% if p.vision or p.mission or p['values'] %}
+    <div class="ir-profile-grid">
+      {% if p.vision %}<article><span>{{ t('profile.vision') }}</span><p>{{ p.vision }}</p></article>{% endif %}
+      {% if p.mission %}<article><span>{{ t('profile.mission') }}</span><p>{{ p.mission }}</p></article>{% endif %}
+      {% if p['values'] %}<article><span>{{ t('profile.values') }}</span><p>{{ p['values'] }}</p></article>{% endif %}
+    </div>
+    {% else %}<p class="ir-note">{{ t('reports.briefing.profile_missing') }}</p>{% endif %}
+    {% if data.goals %}
+    <div class="ir-table-wrap">
+      <table class="ir-table">
+        <thead><tr><th>{{ t('reports.cols.title') }}</th><th>{{ t('reports.cols.owner') }}</th><th>{{ t('goals.perspective') }}</th><th>{{ t('reports.cols.progress') }}</th><th>{{ t('common.status') }}</th><th>{{ t('reports.briefing.result_count') }}</th></tr></thead>
+        <tbody>{% for goal in data.goals %}
+          <tr><td><b>{{ goal.title }}</b>{% if goal.parent %}<small>{{ t('reports.briefing.under_objective', parent=goal.parent) }}</small>{% endif %}</td><td>{{ goal.owner }}</td><td>{{ t('goals.perspectives.' ~ goal.perspective) if goal.perspective else '—' }}</td><td><div class="ir-progress-cell">{{ meter(goal.progress, goal.status, goal.expected) }}</div></td><td>{{ badge(goal.status) }}</td><td>{{ n(goal.key_results|length) }}</td></tr>
+        {% endfor %}</tbody>
+      </table>
+    </div>
+    {% else %}<p class="ir-note">{{ t('reports.empty') }}</p>{% endif %}
+  </section>
+
+  <section class="ir-section ir-results">
+    <div class="ir-section__head"><div><span class="ir-overline">03 / {{ t('reports.briefing.key_results') }}</span><h2>{{ t('reports.briefing.results_title') }}</h2></div><p>{{ t('reports.briefing.results_sub') }}</p></div>
+    {% if data.key_results %}
+    <div class="ir-status-inline">{{ stackbar(data.kr_stats) }}{{ legend(data.kr_stats) }}</div>
+    <div class="ir-table-wrap"><table class="ir-table ir-table--wide">
+      <thead><tr><th>{{ t('reports.cols.title') }}</th><th>{{ t('reports.briefing.parent_goal') }}</th><th>{{ t('reports.briefing.baseline') }}</th><th>{{ t('reports.cols.current') }}</th><th>{{ t('reports.cols.target') }}</th><th>{{ t('reports.cols.progress') }}</th><th>{{ t('reports.briefing.updated') }}</th><th>{{ t('common.status') }}</th></tr></thead>
+      <tbody>{% for r in data.key_results %}<tr><td><b>{{ r.title }}</b>{% if r.justification %}<small>{{ r.justification }}</small>{% endif %}</td><td>{{ r.goal }}</td><td class="num">{{ r.start }}</td><td class="num">{{ r.current }}</td><td class="num">{{ r.target }}</td><td><div class="ir-progress-cell">{{ meter(r.progress, r.status) }}</div></td><td>{{ d(r.data_period or r.last_update, 'month') }}</td><td>{{ badge(r.status) }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="ir-note">{{ t('reports.empty') }}</p>{% endif %}
+  </section>
+
+  <section class="ir-section ir-indicators">
+    <div class="ir-section__head"><div><span class="ir-overline">04 / {{ t('reports.briefing.indicators') }}</span><h2>{{ t('reports.briefing.indicators_title') }}</h2></div><p>{{ t('reports.briefing.indicators_sub') }}</p></div>
+    {% if data.indicators %}
+    <div class="ir-table-wrap"><table class="ir-table">
+      <thead><tr><th>{{ t('reports.cols.title') }}</th><th>{{ t('reports.cols.owner') }}</th><th>{{ t('reports.cols.latest') }}</th><th>{{ t('reports.cols.target') }}</th><th>{{ t('reports.cols.attainment') }}</th><th>{{ t('reports.cols.as_of') }}</th><th>{{ t('common.status') }}</th></tr></thead>
+      <tbody>{% for r in data.indicators %}<tr><td><b>{{ r.title }}</b></td><td>{{ r.owner }}</td><td class="num">{{ r.latest }}</td><td class="num">{{ r.target }}</td><td class="num">{{ pct(r.attainment) }}</td><td>{{ d(r.date, 'month') }}</td><td>{{ badge(r.status) }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="ir-note">{{ t('reports.briefing.no_indicators') }}</p>{% endif %}
+  </section>
+
+  {% if data.initiatives_enabled %}<section class="ir-section ir-initiatives">
+    <div class="ir-section__head"><div><span class="ir-overline">05 / {{ t('initiatives.module') }}</span><h2>{{ t('reports.briefing.initiatives_title') }}</h2></div><p>{{ t('reports.briefing.initiatives_sub') }}</p></div>
+    {% if data.initiatives %}
+    <div class="ir-table-wrap"><table class="ir-table">
+      <thead><tr><th>{{ t('reports.cols.title') }}</th><th>{{ t('reports.cols.owner') }}</th><th>{{ t('reports.cols.progress') }}</th><th>{{ t('reports.briefing.milestones') }}</th><th>{{ t('reports.cols.end') }}</th><th>{{ t('common.status') }}</th></tr></thead>
+      <tbody>{% for r in data.initiatives %}<tr><td><b>{{ r.title }}</b><small>{{ r.unit }} · {{ t('initiatives.state.' ~ r.state) }}</small></td><td>{{ r.owner }}</td><td><div class="ir-progress-cell">{{ meter(r.progress, r.status) }}</div></td><td>{{ n(r.done) }} / {{ n(r.total) }}</td><td>{{ d(r.end) }}</td><td>{{ badge(r.status) }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="ir-note">{{ t('reports.briefing.no_initiatives') }}</p>{% endif %}
+  </section>{% endif %}
+
+  <section class="ir-section ir-attention">
+    <div class="ir-section__head"><div><span class="ir-overline">06 / {{ t('reports.briefing.management_attention') }}</span><h2>{{ t('reports.briefing.attention_title') }}</h2></div><p>{{ t('reports.briefing.attention_sub') }}</p></div>
+    {% if data.risks %}
+    <div class="ir-risk-list">{% for r in data.risks %}<article class="ir-risk" data-status="{{ r.status }}"><div class="ir-risk__status">{{ badge(r.status) }}</div><div class="ir-risk__main"><b>{{ r.result }}</b><span>{{ r.goal }} · {{ t('reports.cols.owner') }}: {{ r.owner }}</span></div><div class="ir-risk__values"><small>{{ t('reports.cols.current') }}</small><b>{{ r.current }}</b><small>{{ t('reports.cols.target') }}</small><b>{{ r.target }}</b><small>{{ t('reports.briefing.projected') }}</small><b>{{ r.projected }}</b></div></article>{% endfor %}</div>
+    {% else %}<div class="ir-positive">{{ icon('check-circle', 18) }}<span>{{ t('reports.briefing.no_open_risks') }}</span></div>{% endif %}
+    {% if data.factor_rows %}<h3 class="ir-subhead">{{ t('reports.briefing.support_factors') }}</h3><div class="ir-factor-grid">{% for f in data.factor_rows[:8] %}<article><b>{{ f.title }}</b><span>{{ f.goal }} · {{ f.result }}</span><div><small>{{ f.effect }}</small><small>{{ t('goals.factors.state.' ~ f.status) }}</small></div></article>{% endfor %}</div>{% endif %}
+  </section>
+
+  <section class="ir-section ir-map">
+    <div class="ir-section__head"><div><span class="ir-overline">07 / {{ t('reports.briefing.map') }}</span><h2>{{ t('reports.briefing.map_title') }}</h2></div><p>{{ t('reports.briefing.map_sub') }}</p></div>
+    {% set m = data.m %}
+    {% include "orgmap/_map.html" %}
+  </section>
+
+  <section class="ir-section ir-method">
+    <div class="ir-section__head"><div><span class="ir-overline">08 / {{ t('reports.briefing.method') }}</span><h2>{{ t('reports.briefing.method_title') }}</h2></div><p>{{ t('reports.briefing.method_sub') }}</p></div>
+    <div class="ir-method-grid">
+      <article><b>{{ t('reports.briefing.method_progress') }}</b><p>{{ t('reports.briefing.method_progress_text') }}</p></article>
+      <article><b>{{ t('reports.briefing.method_indicators') }}</b><p>{{ t('reports.briefing.method_indicators_text') }}</p></article>
+      <article><b>{{ t('reports.briefing.method_sources') }}</b><p>{% if data.total_results %}{{ t('reports.briefing.method_sources_text', linked=n(data.linked_results), total=n(data.total_results)) }}{% else %}{{ t('reports.briefing.method_sources_empty') }}{% endif %}</p></article>
+      <article><b>{{ t('reports.briefing.method_limits') }}</b><p>{{ t('reports.briefing.method_limits_text') }}</p></article>
+    </div>
+    <div class="ir-endmark"><span></span><b>{{ g.org.name }}</b><small>{{ t('reports.briefing.endmark') }}</small></div>
+  </section>
+</div>
 {% endblock %}

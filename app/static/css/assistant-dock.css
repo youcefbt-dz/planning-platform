@@ -1,0 +1,415 @@
+/* Floating planning assistant: a small launcher that stays out of the workspace until opened. */
+.assistant-dock[hidden],
+.assistant-dock [hidden] { display: none !important; }
+
+.assistant-dock.ag--floating {
+  position: fixed !important;
+  inset-inline-end: 22px;
+  inset-inline-start: auto;
+  right: 22px;
+  left: auto;
+  bottom: 22px;
+  z-index: 2147483000 !important;
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-dock__launcher {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--c-primary) 24%, #fff);
+  border-radius: 50%;
+  background: var(--c-primary);
+  color: #fff;
+  box-shadow: 0 5px 18px rgba(16, 35, 63, .18), 0 1px 3px rgba(16, 35, 63, .12);
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.assistant-dock__launcher:hover {
+  transform: translateY(-2px);
+  background: var(--c-primary-text);
+  box-shadow: 0 8px 22px rgba(16, 35, 63, .22), 0 2px 4px rgba(16, 35, 63, .12);
+}
+.assistant-dock__launcher:focus-visible,
+.assistant-dock__head-actions button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--c-primary) 35%, #fff);
+  outline-offset: 3px;
+}
+
+.assistant-dock__panel {
+  position: absolute;
+  /* Anchor to the physical right edge. In RTL, inset-inline-end maps to left
+     and would push this 392px panel beyond the viewport. */
+  inset-inline: auto;
+  right: 0;
+  left: auto;
+  bottom: 72px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(392px, calc(100vw - 36px));
+  height: min(590px, calc(100dvh - 116px));
+  max-height: calc(100dvh - 100px);
+  min-height: min(330px, calc(100dvh - 100px));
+  overflow: hidden;
+  border: 1px solid var(--c-line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 18px 54px rgba(16, 35, 63, .20), 0 3px 10px rgba(16, 35, 63, .08);
+  animation: assistant-dock-in .16s ease-out;
+}
+@keyframes assistant-dock-in {
+  from { opacity: 0; transform: translateY(7px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.assistant-dock__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  min-height: 66px;
+  padding: 10px 14px;
+  border-block-end: 1px solid var(--c-line);
+  background: #fff;
+}
+.assistant-dock__mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--c-primary-softer);
+  color: var(--c-primary-text);
+}
+.assistant-dock__heading {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.assistant-dock__heading b {
+  color: var(--c-ink);
+  font-size: var(--fs-sm);
+}
+.assistant-dock__heading small {
+  color: var(--c-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.assistant-dock__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+.assistant-dock__head-actions button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--c-muted);
+  cursor: pointer;
+}
+.assistant-dock__head-actions button:hover {
+  background: var(--c-primary-softer);
+  color: var(--c-primary-text);
+}
+
+.assistant-dock__notice {
+  flex: none;
+  margin: 10px 12px 0;
+  padding: 9px 11px;
+  border: 1px solid var(--c-line);
+  border-radius: 10px;
+  background: var(--c-subtle);
+  color: var(--c-body);
+  font-size: 11px;
+  line-height: 1.65;
+}
+.assistant-dock__notice b { color: var(--c-ink); }
+.assistant-dock__notice p { margin: 2px 0 0; }
+.assistant-dock__notice a { display: inline-block; margin-block-start: 4px; color: var(--c-primary-text); font-weight: 700; }
+.assistant-dock__notice form { margin-block-start: 6px; }
+.assistant-dock__notice .btn { min-height: 27px; }
+
+.assistant-dock__thread.ag__thread {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  height: auto;
+  padding: 15px 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+  scroll-behavior: smooth;
+}
+.assistant-dock__hello.ag__hello {
+  gap: 7px;
+  max-width: 310px;
+  padding: 14px 2px;
+}
+.assistant-dock__hello .ag__mark {
+  width: 48px;
+  height: 48px;
+}
+.assistant-dock__hello h2 {
+  margin-block-start: 3px;
+  font-size: var(--fs-md);
+}
+.assistant-dock__hello p {
+  font-size: 12px;
+  line-height: 1.75;
+}
+.assistant-dock__starters {
+  gap: 6px;
+  margin-block-start: 6px;
+}
+.assistant-dock__starters .chip-btn {
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+.assistant-dock__thread .ag__msg {
+  max-width: 100%;
+  font-size: 13px;
+}
+.assistant-dock__thread .ag__msg--user {
+  max-width: 90%;
+  padding: 9px 12px;
+  border-radius: 14px 14px 14px 5px;
+}
+.assistant-dock__thread .ag__text { font-size: 13px; line-height: 1.75; }
+.assistant-dock__thread .apr { padding: 12px; border-radius: 12px; }
+.assistant-dock__thread .apr__head h3 { font-size: var(--fs-sm); }
+.assistant-dock__thread .apr__krs li { padding: 8px 10px; }
+
+.assistant-dock__composer.ag__composer {
+  flex: none;
+  align-items: flex-end;
+  gap: 7px;
+  margin: 0 12px;
+  padding: 7px;
+  border: 1px solid var(--c-line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: none;
+}
+.assistant-dock__composer textarea {
+  min-height: 40px;
+  max-height: 120px;
+  padding: 9px 10px;
+  font-size: 13px;
+  border: 0;
+  border-radius: 8px;
+}
+.assistant-dock__composer textarea:focus {
+  border: 0;
+  box-shadow: none;
+}
+.assistant-dock__composer .ag__send {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+.assistant-dock__note {
+  flex: none;
+  justify-content: center;
+  padding: 8px 12px 10px;
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .assistant-dock.ag--floating { inset-inline-end: 14px; right: 14px; left: auto; bottom: 14px; }
+  .assistant-dock__launcher { width: 54px; height: 54px; }
+  .assistant-dock__panel {
+    position: fixed;
+    inset-inline: auto;
+    right: 10px;
+    left: 10px;
+    bottom: 78px;
+    width: auto;
+    height: min(620px, calc(100dvh - 100px));
+    max-height: calc(100dvh - 90px);
+    min-height: min(300px, calc(100dvh - 90px));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .assistant-dock__launcher { transition: none; }
+  .assistant-dock__panel { animation: none; }
+}
+/* Hidden account-menu restoration action; menu button rules otherwise set display:flex. */
+.topbar .menu__panel [hidden] { display: none !important; }
+
+
+/* Personal assistant visibility preference on the AI settings page. */
+.assistant-pref__control{display:flex;align-items:flex-start;gap:11px;cursor:pointer}
+.assistant-pref__control>input{width:18px;height:18px;flex:none;margin:3px 0 0;accent-color:var(--c-primary)}
+.assistant-pref__copy{display:grid;gap:3px}
+.assistant-pref__copy b{color:var(--c-ink);font-size:var(--fs-sm)}
+.assistant-pref__copy small{color:var(--c-muted);font-size:var(--fs-xs);line-height:1.65}
+
+/* PlanWise assistant identity — compact, geometric, and native to the workspace. */
+.assistant-dock__panel {
+  bottom: 22px;
+  height: min(590px, calc(100dvh - 44px));
+  max-height: calc(100dvh - 44px);
+  min-height: min(330px, calc(100dvh - 44px));
+}
+.assistant-dock__launcher {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  overflow: visible;
+  padding: 0;
+  border: 1px solid var(--c-line-strong, var(--c-line));
+  border-radius: 17px;
+  background: #fff;
+  color: var(--c-primary-text);
+  box-shadow: 0 5px 18px rgba(16, 35, 63, .14), 0 1px 3px rgba(16, 35, 63, .08);
+  isolation: isolate;
+  transition: transform .16s ease, box-shadow .16s ease, opacity .16s ease, visibility .16s ease;
+}
+.assistant-dock__launcher:hover {
+  transform: translateY(-2px);
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(16, 35, 63, .17), 0 2px 4px rgba(16, 35, 63, .08);
+}
+.assistant-dock.is-open .assistant-dock__launcher {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(5px) scale(.96);
+}
+.assistant-mark-svg {
+  display: block;
+  width: 37px;
+  height: 37px;
+  color: var(--c-primary-text);
+  overflow: visible;
+}
+.assistant-mark-antenna { stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.assistant-mark-tip { fill: var(--c-primary); }
+.assistant-mark-ear { fill: var(--c-primary-text); opacity: .82; }
+.assistant-mark-shell { fill: #fff; stroke: currentColor; stroke-width: 1.7; }
+.assistant-mark-screen { fill: var(--c-primary-text); }
+.assistant-mark-eye { fill: #cfe3ff; transform-box: fill-box; transform-origin: center; }
+.assistant-mark-mouth { fill: none; stroke: #cfe3ff; stroke-width: 1.35; stroke-linecap: round; }
+.assistant-dock__robot-status {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #56a879;
+  box-shadow: none;
+}
+.assistant-dock__mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  overflow: visible;
+  border: 1px solid var(--c-line);
+  border-radius: 11px;
+  background: var(--c-primary-softer);
+  color: var(--c-primary-text);
+}
+.assistant-dock__mark .assistant-mark-svg { width: 30px; height: 30px; }
+.assistant-dock__hello.ag__hello { max-width: 310px; padding: 18px 2px; }
+.assistant-dock__hello h2 { margin-top: 0; }
+.assistant-dock__head-actions button.assistant-dock__voice-toggle {
+  color: var(--c-primary-text);
+  background: var(--c-primary-softer);
+}
+.assistant-dock__head-actions button.assistant-dock__voice-toggle:disabled { opacity: .48; cursor: not-allowed; }
+.assistant-dock__voice-toggle svg,
+.assistant-dock__reply-audio svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.assistant-dock__reply-tools { display: flex; justify-content: flex-start; margin-top: 8px; }
+.assistant-dock__reply-audio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid var(--c-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--c-primary-text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .16s ease, border-color .16s ease;
+}
+.assistant-dock__reply-audio:hover,
+.assistant-dock__reply-audio.is-playing {
+  border-color: color-mix(in srgb, var(--c-primary) 35%, #fff);
+  background: var(--c-primary-softer);
+}
+.assistant-dock__reply-audio.is-playing svg { animation: assistant-audio-icon .8s ease-in-out infinite; }
+.assistant-dock.is-speaking .assistant-dock__mark .assistant-mark-eye {
+  animation: assistant-mark-speaking .55s ease-in-out infinite alternate;
+}
+.assistant-dock.is-thinking .assistant-dock__mark .assistant-mark-screen {
+  animation: assistant-mark-thinking 1s ease-in-out infinite alternate;
+}
+.assistant-dock__wait-orb { margin: 3px 0 0 6px; }
+@keyframes assistant-mark-speaking {
+  from { transform: scaleY(.9); }
+  to { transform: scaleY(1.18); }
+}
+@keyframes assistant-mark-thinking { from { opacity: .84; } to { opacity: 1; } }
+@keyframes assistant-audio-icon {
+  0%, 100% { transform: scaleY(.82); }
+  50% { transform: scaleY(1.12); }
+}
+@media (max-width: 600px) {
+  .assistant-dock__launcher { width: 54px; height: 54px; border-radius: 15px; }
+  .assistant-dock__panel {
+    bottom: 14px;
+    height: min(620px, calc(100dvh - 28px));
+    max-height: calc(100dvh - 28px);
+    min-height: min(300px, calc(100dvh - 28px));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .assistant-dock__launcher,
+  .assistant-dock.is-speaking .assistant-mark-eye,
+  .assistant-dock.is-thinking .assistant-mark-screen,
+  .assistant-dock__reply-audio.is-playing svg { animation: none !important; transition: none !important; }
+}

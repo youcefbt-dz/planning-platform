@@ -1,0 +1,23 @@
+{% extends "layouts/app.html" %}
+{% block title %}{{ t('shell.preferences_title') }}{% endblock %}
+{% block content %}
+<div class="page-head" style="max-width:860px;margin-inline:auto">
+  <div class="page-head__title">
+    <h1>{{ icon('settings', 22) }}{{ t('shell.preferences_title') }}</h1>
+    <p class="sub">{{ t('shell.preferences_sub') }}</p>
+  </div>
+</div>
+<div class="stack" style="max-width:860px;margin-inline:auto">
+  {% if modules.is_enabled('agent') %}
+  <section class="box assistant-pref" aria-labelledby="assistant-pref-title">
+    <div class="box-head"><h2 id="assistant-pref-title">{{ icon('sparkles', 18) }}{{ t('agent.settings.widget_title') }}</h2></div>
+    <div class="box-body">
+      <label class="assistant-pref__control">
+        <input type="checkbox" data-assistant-visibility checked>
+        <span class="assistant-pref__copy"><b>{{ t('agent.settings.widget_show') }}</b><small>{{ t('agent.settings.widget_hint') }}</small></span>
+      </label>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

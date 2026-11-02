@@ -10,9 +10,15 @@
 # always last, so every AI feature keeps working (with simpler answers) without AI.
 # ============================================================================
 enabled: true
-chain: [openai_compat, groq, xai, anthropic, offline]   # a local model, when configured, is preferred over the cloud
+chain: [openai_compat, gemini, xai, groq, anthropic, offline]   # a local model, when configured, is preferred over the cloud; then Gemini, and Grok the moment Gemini is limited or down
 
 providers:
+  gemini:                          # Google Gemini (cloud, free tier on the Flash family). Set GEMINI_API_KEY and GEMINI_MODEL in .env
+    base_url: https://generativelanguage.googleapis.com/v1beta
+    api_key_env: GEMINI_API_KEY
+    model_env: GEMINI_MODEL             # one or several model ids, best first: "model-a,model-b". Each model has its own quota, so a limited one is skipped
+                                        # at once. A Flash model one step behind the newest has looser limits than the newest. No default on purpose.
+    local: false                   # data leaves the machine → needs the organization's consent
   anthropic:                       # cloud API (Claude). Set ANTHROPIC_API_KEY in .env
     api_key_env: ANTHROPIC_API_KEY
     base_url: https://api.anthropic.com
@@ -21,6 +27,7 @@ providers:
     models:
       default: claude-haiku-5-5    # cheap and fast: reading headers
       explain_reality: claude-sonnet-5-5
+      agent: claude-sonnet-5-5       # the assistant needs a strong model: it plans, calls tools and checks its own figures
   groq:                            # Groq cloud (OpenAI-compatible, free tier). Set GROQ_API_KEY and GROQ_MODEL in .env
     base_url: https://api.groq.com/openai/v1
     api_key_env: GROQ_API_KEY
@@ -49,11 +56,12 @@ tasks:
   draft_justification: {enabled: true, max_tokens: 900, temperature: 0.2}  # writes the justification of an ambitious target
   summarize_health: {enabled: true, max_tokens: 900, temperature: 0.2}     # the weekly brief on goal health
   draft_goal:      {enabled: true, max_tokens: 1100, temperature: 0.5}     # from one typed line to objective + why + key results (no figures)
+  agent:           {enabled: true, max_tokens: 2200, temperature: 0.2}     # the assistant: a conversation with tools (app/modules/agent)
   draft_direction: {enabled: true, max_tokens: 900,  temperature: 0.6}     # vision / mission / values options from the sector (nothing is saved)
 
 privacy:
   sample_rows: 8                   # how many example rows may be sent (headers + these only, never the whole file)
   max_cell_chars: 60               # longer cells are cut before sending
   require_consent: true            # external (cloud) providers need the organization's explicit consent
-  external_calls_per_org_per_day: 100
+  external_calls_per_org_per_day: 400   # one assistant turn makes several calls
   timeout_seconds: 45

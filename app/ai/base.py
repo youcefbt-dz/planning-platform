@@ -10,6 +10,15 @@ class ProviderError(RuntimeError):
     """A provider could not answer (network, auth, bad status, unparsable reply)."""
 
 
+class RateLimited(ProviderError):
+    """The provider is out of quota or overloaded right now (HTTP 429/503). The hub parks it for `retry_after` seconds and goes straight to the next
+    provider, so a limit never makes the person wait or the page stumble."""
+
+    def __init__(self, message: str, retry_after: float = 60.0):
+        super().__init__(message)
+        self.retry_after = max(5.0, min(float(retry_after or 60.0), 900.0))
+
+
 @dataclass
 class AIRequest:
     task: "Task"
@@ -43,6 +52,22 @@ class Provider:
     def model_for(self, req: AIRequest, cfg: dict) -> str:
         models = cfg.get("models") or {}
         return models.get(req.task.name) or models.get("default") or ""
+
+    # -- conversation with tools (the agent). A provider that can do it sets supports_chat and implements `chat`. -----------------------
+    supports_chat = False
+
+    def model_for_name(self, task_name: str, cfg: dict) -> str:
+        models = cfg.get("models") or {}
+        return models.get(task_name) or models.get("default") or ""
+
+    def chat(self, messages: list[dict], tools: list[dict], system: str, cfg: dict, *, task: str = "agent", max_tokens: int = 2000,
+             temperature: float = 0.2, timeout: int = 60) -> dict:  # pragma: no cover - interface
+        """One model turn. `messages` use one neutral shape:
+             {"role": "user", "content": str}
+             {"role": "assistant", "content": str, "tool_calls": [{"id", "name", "args": dict}]}
+             {"role": "tool", "tool_call_id": str, "name": str, "content": str(JSON)}
+           `tools` are {"name", "description", "parameters": JSON schema}. Returns {"text": str, "tool_calls": [...], "model": str}."""
+        raise NotImplementedError
 
 
 class Task:

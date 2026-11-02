@@ -22,7 +22,7 @@ def test_draft_endpoint_answers_from_the_library_without_a_model(client):
     assert r.status_code == 200 and "data-pick-goal" in html and "الإيراد الشهري" in html and "القواعد المدمجة" in html
     assert "data-krs=" in html and "حلّله" not in html
     assert "اكتب كلمتين" in client.post(f"/app/{slug}/goals/draft", data={"intent": "x"}).get_data(as_text=True)
-    assert "لم نجد صياغة" in client.post(f"/app/{slug}/goals/draft", data={"intent": "شيء غير مفهوم تمامًا"}).get_data(as_text=True)
+    assert "لم نعثر على اقتراح" in client.post(f"/app/{slug}/goals/draft", data={"intent": "شيء غير مفهوم تمامًا"}).get_data(as_text=True)
 
 
 def test_direction_draft_proposes_wording_for_the_chosen_sector_and_saves_nothing(client):

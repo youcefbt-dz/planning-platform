@@ -242,6 +242,24 @@ def _register_template_api(app: Flask) -> None:
             ctx["setup"] = _setup.state(g.org) if (current_user.is_authenticated and not g.get("read_only") and can("settings.manage")) else None
             ctx["nav"] = _nav()
             ctx["create_actions"] = [a for a in app.extensions["modules"].create_actions() if not a.permission or can(a.permission)]
+            # The floating assistant is a per-user workspace affordance, available on every app page.
+            registry = app.extensions["modules"]
+            # The assistant is also useful in a read-only demo workspace. Access to
+            # the workspace itself is checked before this context is built, so do not
+            # suppress the launcher just because the visitor is not signed in.
+            if registry.is_enabled("agent"):
+                from app import ai
+
+                try:
+                    candidates, why = ai.get_hub().chat_providers(
+                        g.org, consent=ai.org_consent(g.org), read_only=bool(g.get("read_only"))
+                    )
+                except Exception:
+                    # A problem checking model availability must never take down an ordinary workspace page.
+                    app.logger.exception("could not determine assistant availability")
+                    candidates, why = [], "error"
+                ctx["assistant_widget"] = {"live": bool(candidates), "why": why}
+                ctx["assistant_starters"] = ["health", "targets", "gaps"] if registry.is_enabled("goals") else ["data"]
         return ctx
 
     @app.template_filter("ago")

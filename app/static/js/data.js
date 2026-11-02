@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  // intake cards (the upload card of the data pages): choose a kind of file -> the card plays and opens its drop area.
+  // intake cards: Excel and CSV open the shared file picker; the ERP card opens an illustrative integrations preview.
   // One file input serves both file cards; a file of the other kind switches the card by itself; dropping anywhere on the card works.
   var root = document.querySelector('[data-intake]');
   if (root) {
@@ -106,6 +106,83 @@
 
     // a sending card shows it is busy (the global spinner on the button)
     form.addEventListener('submit', function (e) { if (e.submitter) e.submitter.setAttribute('aria-busy', 'true'); });
+
+    // ERP connection setup is a front-end demonstration only: values are never sent or stored.
+    var erpConfig = root.querySelector('[data-erp-config]');
+    if (erpConfig) {
+      var erpSystems = Array.prototype.slice.call(root.querySelectorAll('[data-erp-system]'));
+      var erpResult = erpConfig.querySelector('[data-erp-result]');
+      var erpFields = Array.prototype.slice.call(erpConfig.querySelectorAll('[data-erp-field]'));
+      var erpSelected = erpConfig.querySelector('[data-erp-selected-name]');
+      var erpLabels = {
+        endpoint: erpConfig.querySelector('[data-erp-label="endpoint"]'),
+        org: erpConfig.querySelector('[data-erp-label="org"]'),
+        identity: erpConfig.querySelector('[data-erp-label="identity"]'),
+        secret: erpConfig.querySelector('[data-erp-label="secret"]')
+      };
+      var erpPlaceholders = {
+        odoo: { endpoint: 'https://your-company.odoo.com', org: 'company_database', identity: 'admin@example.com', secret: '••••••••••••••••' },
+        sage: { endpoint: 'https://erp.example.com/sage100/api', org: 'COMP-001', identity: 'api-user', secret: '••••••••••••••••' },
+        sap: { endpoint: 'https://sap.example.com/b1s/v1', org: '100', identity: 'CLIENT_ID', secret: '••••••••••••••••' }
+      };
+      function clearErpResult() {
+        if (!erpResult) return;
+        erpResult.hidden = true;
+        erpResult.classList.remove('is-success', 'is-error');
+        erpResult.textContent = '';
+      }
+      function clearErpFields() {
+        erpFields.forEach(function (field) { field.value = ''; });
+        clearErpResult();
+      }
+      erpSystems.forEach(function (button) {
+        button.addEventListener('click', function () {
+          var provider = button.getAttribute('data-erp-system');
+          var placeholders = erpPlaceholders[provider] || erpPlaceholders.odoo;
+          erpSystems.forEach(function (item) {
+            var selected = item === button;
+            item.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            item.classList.toggle('is-selected', selected);
+          });
+          if (erpSelected) erpSelected.textContent = button.getAttribute('data-system-name') || '';
+          Object.keys(erpLabels).forEach(function (key) {
+            if (erpLabels[key]) erpLabels[key].textContent = button.getAttribute('data-' + key + '-label') || '';
+          });
+          erpFields.forEach(function (field) {
+            var key = field.getAttribute('data-erp-field');
+            field.placeholder = placeholders[key] || '';
+          });
+          clearErpFields();
+          erpConfig.hidden = false;
+          if (window.matchMedia('(max-width: 760px)').matches) {
+            window.setTimeout(function () { erpConfig.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 80);
+          }
+        });
+      });
+      var erpChange = erpConfig.querySelector('[data-erp-reset]');
+      if (erpChange) erpChange.addEventListener('click', function () {
+        erpConfig.hidden = true;
+        erpSystems.forEach(function (item) { item.setAttribute('aria-pressed', 'false'); item.classList.remove('is-selected'); });
+        clearErpFields();
+      });
+      var erpClear = erpConfig.querySelector('[data-erp-clear]');
+      if (erpClear) erpClear.addEventListener('click', clearErpFields);
+      var erpTest = erpConfig.querySelector('[data-erp-test]');
+      if (erpTest) erpTest.addEventListener('click', function () {
+        clearErpResult();
+        var complete = erpFields.every(function (field) { return field.value.trim().length > 0; });
+        erpResult.hidden = false;
+        if (!complete) {
+          erpResult.classList.add('is-error');
+          erpResult.textContent = erpConfig.getAttribute('data-msg-required') || '';
+          var missing = erpFields.filter(function (field) { return !field.value.trim(); })[0];
+          if (missing) missing.focus();
+          return;
+        }
+        erpResult.classList.add('is-success');
+        erpResult.textContent = (erpConfig.getAttribute('data-msg-success') || '') + ' — ' + (erpConfig.getAttribute('data-msg-success-detail') || '');
+      });
+    }
   }
 })();
 
@@ -216,6 +293,7 @@
       var chip = $('[data-f=chip]', card);
       if (chip) { chip.setAttribute('data-role', col.role); var rn = $('[data-f=rolename]', chip); if (rn) rn.textContent = roles[col.role]; }
       var nm = $('[data-f=label2]', card); if (nm) nm.textContent = col.label;
+      var mn = $('[data-f=meaning] span', card); if (mn && col.meaning) mn.textContent = col.meaning;
       var meta = $('[data-f=meta]', card);
       if (meta) meta.textContent = col.role === 'measure' ? ((col.unit ? col.unit + ' · ' : '') + (aggLabel || '')) : '';
       var qm = $('[data-f=qmark]', card); if (qm) qm.hidden = true;

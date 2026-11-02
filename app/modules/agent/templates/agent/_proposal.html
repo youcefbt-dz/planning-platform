@@ -1,0 +1,28 @@
+{# One draft goal the assistant proposes. The figures were set by code; the person approves (or ignores). #}
+{% from "components/ui.html" import ring %}
+<article class="apr" data-proposal='{{ p | tojson | forceescape }}'>
+  <header class="apr__head">
+    <span class="apr__tag">{{ icon('sparkles', 14) }}{{ t('agent.draft') }}</span>
+    <h3 dir="auto">{{ p.title }}</h3>
+    <p class="apr__meta">{{ icon('sitemap', 14) }}{{ p.unit_name }}{% if p.parent_title %} · {{ icon('git-branch', 14) }}{{ t('agent.serves') }} <span dir="auto">{{ p.parent_title }}</span>{% endif %} · {{ icon('calendar', 14) }}{{ p.end_label }}</p>
+    {% if p.rationale %}<p class="apr__why" dir="auto">{{ p.rationale }}</p>{% endif %}
+  </header>
+  <ul class="apr__krs">
+    {% for k in p.key_results %}
+    <li>
+      <b dir="auto">{{ k.title }}</b>
+      <span class="apr__nums num"><bdi dir="ltr">{{ val(k.start, k.unit) }}</bdi> <span class="muted">←</span> <bdi dir="ltr">{{ val(k.target, k.unit) }}</bdi></span>
+      <span class="apr__src">
+        {% if k.series_id %}{{ icon('table', 13) }}{{ t('agent.from_data') }}{% else %}{{ icon('pencil', 13) }}{{ t('agent.manual') }}{% endif %}
+        {% if k.level %} · {{ t('goals.level.' ~ k.level) }}{% endif %}
+        {% if k.verdict %} · <span class="apr__v" data-l="{{ k.verdict }}">{{ t('data.level.' ~ k.verdict) }}</span>{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if p.warnings %}<p class="apr__warn">{{ icon('alert-triangle', 14) }}{{ t('agent.warn') }}</p>{% endif %}
+  <footer class="apr__foot">
+    {% if can_apply %}<button class="btn btn-primary" type="button" data-apply>{{ icon('check', 16) }}{{ t('agent.approve') }}</button>{% endif %}
+    <span class="hint">{{ t('agent.approve_hint') }}</span>
+  </footer>
+</article>

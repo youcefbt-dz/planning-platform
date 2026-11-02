@@ -46,7 +46,8 @@ def test_spec_validation_rejects_unknown_things(app, demo):
 def test_dashboard_page_and_typed_request(app, demo):
     c = app.test_client()
     page = c.get("/app/demo/data/dashboard").get_data(as_text=True)
-    assert 'class="mtab"' in page and "heat__cell" in page and "chart--trend" in page and "found__item" in page and "bridge__bar" in page and "smult__row" in page
+    assert 'class="mtab"' in page and "chart--trend" in page and "found__item" in page and "analysis-controls" in page
+    assert "الأشكال البيانية" not in page and "/data/charts" not in page
     asked = c.get("/app/demo/data/ask?q=قارن الفروع بالمبيعات").get_data(as_text=True)
     assert "smult__row" in asked and "answer__head" in asked
     why = c.get("/app/demo/data/ask?q=لماذا تغير رقم الأعمال").get_data(as_text=True)
@@ -160,14 +161,17 @@ def test_free_requests_pick_the_right_drawing():
     assert r["charts"] and r["charts"][0]["kind"] == "trend" and r["note"]             # no branch split: say so, draw the total
 
 
-def test_data_tabs_order_and_new_pages(app, demo):
+def test_data_tabs_are_unified_and_old_chart_links_redirect(app, demo):
     c = app.test_client()
     page = c.get("/app/demo/data/dashboard").get_data(as_text=True)
-    assert page.index("/data/\"") < page.index("/data/dashboard\"") < page.index("/data/charts\"") < page.index("/data/ask\"")   # files first
-    assert 'class="dsec"' in page and "dnav" in page
-    assert c.get("/app/demo/data/dashboard?q=x").status_code == 302                                                       # old links go to the ask page
-    for kind in ("trend", "share", "contribution", "heatmap", "compare", "scatter", "kpi", "table"):
-        r = c.get(f"/app/demo/data/charts?kind={kind}")
+    assert page.index("/data/\"") < page.index("/data/dashboard\"") < page.index("/data/ask\"")   # files, analysis, ask
+    assert 'class="dsec"' in page and "analysis-controls" in page
+    assert "/data/charts" not in page
+    assert c.get("/app/demo/data/dashboard?q=x").status_code == 302  # question links remain routed to Ask your data
+    for kind in ("trend", "bars", "heatmap", "branches"):
+        r = c.get(f"/app/demo/data/dashboard?kind={kind}")
         assert r.status_code == 200 and "chartbox" in r.get_data(as_text=True), kind
+    legacy = c.get("/app/demo/data/charts?kind=bars", follow_redirects=False)
+    assert legacy.status_code == 302 and "/data/dashboard?" in legacy.headers["Location"]
     ask = c.get("/app/demo/data/ask").get_data(as_text=True)
     assert "askpg" in ask and "form class=\"ask\"" in ask

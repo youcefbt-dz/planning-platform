@@ -1,0 +1,71 @@
+/* ==========================================================================
+   ASSISTANT — a conversation on the lavender canvas: white thread card, pill composer, drafts as white cards with a lavender head.
+   ========================================================================== */
+.ag{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:var(--sp-5);align-items:start}
+.ag__off{grid-column:1/-1;display:flex;gap:16px;align-items:center;padding:18px 22px;border-radius:24px;background:#fff;border:2px dashed var(--c-line-strong)}
+.ag__off h2{margin:0 0 2px;font:700 var(--fs-md) var(--font-heading);color:var(--c-ink)}
+.ag__off p{margin:0 0 10px;color:var(--c-body);font-size:var(--fs-sm);line-height:1.7;max-width:62ch}
+.ag__off form{margin:0}
+.ag__offic{display:grid;place-items:center;flex:none;width:52px;height:52px;border-radius:50%;background:var(--c-accent);color:var(--c-ink)}
+
+.ag__main{display:grid;gap:var(--sp-3);min-width:0}
+.ag__thread{display:flex;flex-direction:column;gap:var(--sp-4);min-height:420px;padding:22px;border-radius:26px;background:#fff;box-shadow:0 14px 34px -22px color-mix(in srgb,var(--brand-ink) 38%,transparent)}
+.ag__hello{display:grid;justify-items:center;text-align:center;gap:8px;margin:auto;padding:26px 8px;max-width:560px}
+.ag__mark{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--c-primary-softer);color:var(--c-primary-text)}
+.ag__hello h2{margin:6px 0 0;font:700 var(--fs-lg) var(--font-heading);color:var(--c-ink)}
+.ag__hello p{margin:0;color:var(--c-body);line-height:1.8}
+.ag__starters{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-block-start:12px}
+.ag__starters .chip-btn{display:inline-flex;gap:8px;align-items:center;padding:10px 16px;font-size:var(--fs-sm)}
+
+.ag__msg{display:grid;gap:10px;max-width:92%;min-width:0}
+.ag__msg--user{align-self:flex-start;padding:12px 18px;border-radius:22px 22px 22px 6px;background:var(--c-primary);color:#fff}
+.ag__msg--user p{margin:0}
+.ag__msg--user .ag__text{color:#fff}
+.ag__msg--bot{align-self:flex-end;width:100%;padding:4px 2px}
+.ag__text{line-height:1.9;color:var(--c-body);overflow-wrap:anywhere}
+.ag__text p{margin:0 0 .6em}
+.ag__text ul{margin:0 0 .6em;padding-inline-start:1.2em;display:grid;gap:4px}
+.ag__text b{color:var(--c-ink)}
+.ag__steps{display:flex;flex-wrap:wrap;gap:6px}
+.ag__step{font-size:var(--fs-xs);padding:3px 12px;border-radius:var(--r-pill);background:var(--c-primary-softer);color:var(--c-primary-text);font-weight:600}
+.ag__step.is-bad{background:var(--c-accent);color:var(--c-ink)}
+.ag__by{justify-self:start;font-size:var(--fs-xs);color:var(--c-muted)}
+.ag__warn{margin:0;padding:8px 14px;border-radius:14px;background:color-mix(in srgb,var(--c-accent) 35%,#fff);color:var(--c-ink);font-size:var(--fs-sm)}
+.ag__rules{margin:0;padding:10px 14px;border-radius:14px;background:var(--c-primary-softer);color:var(--c-primary-text);font-size:var(--fs-sm)}
+/* the assistant is working: the same analysis orbit as everywhere else (see .orb in shell.css) */
+.ag__think{display:flex;padding:8px 4px}
+@keyframes agdot{0%,80%,100%{opacity:.25;transform:scale(.8)}40%{opacity:1;transform:scale(1.15)}}
+
+
+.ag__composer{display:flex;gap:10px;align-items:flex-end;padding:10px 12px 10px 10px;border-radius:30px;background:#fff;box-shadow:0 14px 34px -22px color-mix(in srgb,var(--brand-ink) 38%,transparent)}
+.ag__composer textarea{flex:1;border:0;box-shadow:none;background:transparent;resize:none;min-height:44px;max-height:160px;padding:10px 14px;font-size:var(--fs-md)}
+.ag__composer textarea:focus{outline:0}
+.ag__send{flex:none;width:48px;height:48px;padding:0;border-radius:50%;display:grid;place-items:center}
+.ag__note{display:flex;gap:6px;align-items:center;margin:0;color:var(--c-muted);font-size:var(--fs-xs)}
+
+.ag__side .box h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font:700 var(--fs-sm) var(--font-heading);color:var(--c-ink)}
+.ag__side .box h3:not(:first-child){margin-block-start:16px}
+.ag__list{list-style:none;margin:0;padding:0;display:grid;gap:7px;color:var(--c-body);font-size:var(--fs-sm)}
+.ag__list li{display:flex;gap:8px;align-items:flex-start;line-height:1.6}
+.ag__list .icon{flex:none;margin-block-start:4px;color:var(--c-primary-text)}
+
+/* a drafted goal */
+.apr{display:grid;gap:12px;padding:16px 18px;border-radius:22px;border:1.5px solid var(--c-line);background:#fff}
+.apr.is-done{border-color:var(--c-primary);background:var(--c-primary-softer)}
+.apr__tag{display:inline-flex;gap:6px;align-items:center;justify-self:start;font-size:var(--fs-xs);font-weight:700;padding:3px 12px;border-radius:var(--r-pill);background:var(--c-accent);color:var(--c-ink)}
+.apr__head{display:grid;gap:6px}
+.apr__head h3{margin:0;font:700 var(--fs-md) var(--font-heading);color:var(--c-ink)}
+.apr__meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0;color:var(--c-muted);font-size:var(--fs-sm)}
+.apr__why{margin:0;color:var(--c-body);line-height:1.7;font-size:var(--fs-sm)}
+.apr__krs{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.apr__krs li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;align-items:baseline;padding:10px 14px;border-radius:16px;background:var(--c-primary-softer)}
+.apr__krs b{color:var(--c-ink)}
+.apr__nums{color:var(--c-ink);font-weight:700}
+.apr__src{grid-column:1/-1;display:flex;gap:6px;align-items:center;color:var(--c-muted);font-size:var(--fs-xs)}
+.apr__v{font-weight:700;color:var(--c-primary-text)}
+.apr__v[data-l=stretch],.apr__v[data-l=unrealistic]{color:#b4540a}
+.apr__warn{display:flex;gap:6px;align-items:center;margin:0;color:#b4540a;font-size:var(--fs-sm)}
+.apr__foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.apr__foot .hint{margin:0}
+
+@media (max-width:980px){.ag{grid-template-columns:minmax(0,1fr)}.ag__side{order:2}.ag__msg{max-width:100%}}

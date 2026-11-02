@@ -1,0 +1,5 @@
+{# The two ways of looking at the same goals: as a list, or as the map of who serves whom. Shown on both pages. #}
+<nav class="gx-seg" aria-label="{{ t('goals.home.views') }}">
+  <a href="{{ url_for('goals.index', cycle=request.args.get('cycle')) }}" {% if request.endpoint == 'goals.index' %}aria-current="true"{% endif %}>{{ icon('list-details', 16) }}{{ t('goals.home.v_list') }}</a>
+  <a href="{{ url_for('goals.tree', cycle=request.args.get('cycle')) }}" {% if request.endpoint == 'goals.tree' %}aria-current="true"{% endif %}>{{ icon('sitemap', 16) }}{{ t('goals.home.v_map') }}</a>
+</nav>

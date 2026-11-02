@@ -44,10 +44,18 @@ def _ai_state() -> dict:
             "names": [s["name"] for s in (local or external)]}
 
 
-# -- the visual page ------------------------------------------------------------------------------------------------------------------
+# -- unified analysis page: one selected measure, one useful chart, and computed findings -------------------------------
+ANALYSIS_KINDS = (
+    ("trend", "chart-line", ("branch", "months")),
+    ("bars", "chart-bar", ("branch", "months", "by")),
+    ("heatmap", "calendar", ()),
+    ("branches", "layout-grid", ("months",)),
+)
+
+
 @bp.get("/dashboard")
 def dashboard():
-    """Measure tabs, what deserves attention, the main chart, then drivers / branches / season. (Typed requests live on their own page: /data/ask.)"""
+    """One concise analysis workspace. Visual requests in natural language stay on /data/ask."""
     if request.args.get("q"):
         return redirect(url_for("data.ask", q=request.args["q"], m=request.args.get("m")))
     series = service.org_series(g.org.id)
@@ -55,54 +63,55 @@ def dashboard():
     ctx = {"ms": ms, "ai_state": _ai_state(), "samples": sorted(p.name for p in SAMPLES.glob("*.xlsx")), "max_mb": MAX_BYTES // (1024 * 1024), "exts": EXTENSIONS}
     if not ms:
         return render_template("data/dashboard.html", no_data=True, **ctx)
+
     tabs = dash.tabs(ms)
     sel = next((m for m in ms if m.id == request.args.get("m")), ms[0])
-    layout = {k: dash.build(sp, ms, g.org.id) for k, sp in dash.default_specs(sel).items()}
-    layout = {k: v for k, v in layout.items() if v}
-    return render_template("data/dashboard.html", no_data=False, tabs=tabs, sel=sel, sel_tab=next((x for x in tabs if x["m"].id == sel.id), None), found=dash.attention(sel),
-                           main=layout.get("main"), drivers=layout.get("drivers"), branches=layout.get("branches"), season=layout.get("season"),
-                           can_goal=current_app.extensions["modules"].is_enabled("goals"), **ctx)
-
-
-# -- the chart page: pick a measure, pick a shape, adjust -----------------------------------------------------------------------------------
-CHART_KINDS = (  # (kind, icon, needs branches, needs a second measure, which options apply)
-    ("trend", "chart-line", False, False, ("branch", "months")),
-    ("bars", "chart-bar", False, False, ("branch", "months", "by")),
-    ("growth", "trending-up", False, False, ("branch", "months", "by")),
-    ("cumulative", "chart-area", False, False, ("branch", "months")),
-    ("branches", "layout-grid", True, False, ("months",)),
-    ("contribution", "chart-dots", True, False, ("months",)),
-    ("share", "chart-donut", True, False, ()),
-    ("ranking", "list-numbers", True, False, ()),
-    ("stacked", "chart-area", True, False, ("months",)),
-    ("heatmap", "calendar", False, False, ()),
-    ("compare", "arrows-diff", False, True, ("months",)),
-    ("scatter", "chart-dots", False, True, ()),
-    ("table", "table", False, False, ("branch", "months")),
-    ("kpi", "target", False, False, ("branch",)),
-)
-
-
-@bp.get("/charts")
-def charts():
-    ms = dash.measures(service.org_series(g.org.id))
-    if not ms:
-        return render_template("data/charts.html", no_data=True, ms=ms)
-    sel = next((m for m in ms if m.id == request.args.get("m")), ms[0])
-    kind = request.args.get("kind") if request.args.get("kind") in dash.KINDS else "trend"
-    others = [m for m in ms if m.id != sel.id]
-    info = {k: (i, nb, n2, opts) for k, i, nb, n2, opts in CHART_KINDS}
-    def usable(k):
-        _, nb, n2, _o = info[k]
-        return not (nb and len(sel.branches) < 2) and not (n2 and not others)
-    if not usable(kind):
-        kind = "trend"
-    raw = {"kind": kind, "measure": sel.id, "branch": request.args.get("branch") or None, "months": request.args.get("months", type=int),
-           "by": request.args.get("by") or None, "measure2": request.args.get("m2") or (others[0].id if others else None)}
+    available_kinds = [x for x in ANALYSIS_KINDS if x[0] != "branches" or len(sel.branches) >= 2]
+    available = {x[0] for x in available_kinds}
+    kind = request.args.get("kind") if request.args.get("kind") in available else "trend"
+    opts = next((x[2] for x in available_kinds if x[0] == kind), ())
+    raw = {
+        "kind": kind,
+        "measure": sel.id,
+        "branch": request.args.get("branch") or None,
+        "months": request.args.get("months", type=int),
+        "by": request.args.get("by") or None,
+    }
     spec = dash.validate_spec(raw, ms)
     chart = dash.build(spec, ms, g.org.id) if spec else None
-    return render_template("data/charts.html", no_data=False, ms=ms, sel=sel, kind=kind, kinds=CHART_KINDS, usable={k: usable(k) for k in info}, others=others,
-                           opts=info[kind][3], chart=chart, spec=spec or {}, args=raw)
+    found = dash.attention(sel)
+    # Findings may point to several kinds of evidence. This page has one visual area, so every shortcut
+    # leads to that area; the finding itself still names the relevant branch or period.
+    for item in found:
+        item["anchor"] = "analysis-chart"
+
+    return render_template(
+        "data/dashboard.html",
+        no_data=False,
+        tabs=tabs,
+        sel=sel,
+        sel_tab=next((x for x in tabs if x["m"].id == sel.id), None),
+        found=found,
+        chart=chart,
+        kind=kind,
+        kinds=available_kinds,
+        opts=opts,
+        args=raw,
+        can_goal=current_app.extensions["modules"].is_enabled("goals"),
+        **ctx,
+    )
+
+
+# -- legacy chart URL: keep old bookmarks working, but route everyone to the single analysis workspace -----------------
+@bp.get("/charts")
+def charts():
+    """Compatibility redirect. The chart studio and dashboard are now one analysis page."""
+    params = {}
+    for key in ("m", "kind", "branch", "months", "by"):
+        value = request.args.get(key)
+        if value:
+            params[key] = value
+    return redirect(url_for("data.dashboard", **params), code=302)
 
 
 # -- the assistant: its own page ---------------------------------------------------------------------------------------------------------------

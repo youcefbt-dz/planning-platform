@@ -11,7 +11,7 @@ from pathlib import Path
 import yaml
 
 from app.ai import voice
-from app.ai.base import AIRequest, AIResult, Provider, ProviderError, Task
+from app.ai.base import AIRequest, AIResult, Provider, ProviderError, RateLimited, Task
 from app.ai.models import AICall
 from app.extensions import db
 
@@ -40,6 +40,14 @@ class Hub:
         self.cfg = yaml.safe_load(path.read_text(encoding="utf-8")) or {} if path.is_file() else {}
         self.providers: dict[str, Provider] = _discover("app.ai.providers", "provider")
         self.tasks: dict[str, Task] = _discover("app.ai.tasks", "task")
+        self._cool: dict[str, float] = {}   # provider -> monotonic time until which it is skipped (it just said "rate limited")
+
+    # -- a provider that answered "rate limited" is parked, so the next calls go straight to the next one instead of waiting for it again ----
+    def cool(self, name: str, seconds: float) -> None:
+        self._cool[name] = time.monotonic() + max(5.0, float(seconds))
+
+    def cooling(self, name: str) -> bool:
+        return self._cool.get(name, 0) > time.monotonic()
 
     # -- configuration ----------------------------------------------------------
     @property
@@ -96,6 +104,10 @@ class Hub:
             prov, cfg = self.providers[name], self.provider_cfg(name)
             if not prov.available(cfg):
                 continue
+            if name != "offline" and self.cooling(name):
+                errors.append(f"{name}: skipped (rate limited a moment ago)")
+                wanted_model = True
+                continue
             local = self.is_local(name)
             if not local and not allowed:
                 errors.append(f"{name}: skipped ({why})")
@@ -105,6 +117,7 @@ class Hub:
             # it is told exactly why and asked once more, instead of silently dropping to the plain rule-based text.
             feedback, done, last_err = "", None, None
             for attempt in range(1 if name == "offline" else 2):
+                inputs["_attempt"] = attempt          # a task may be strict on the first answer and lenient on the second
                 req = AIRequest(task=task, inputs=inputs, lang=lang, system=system, user=user_msg + feedback, schema=task.schema,
                                 max_tokens=int(tcfg.get("max_tokens", 1500)), temperature=float(tcfg.get("temperature", 0)),
                                 timeout=int(self.privacy["timeout_seconds"]))
@@ -116,6 +129,8 @@ class Hub:
                     last_err = e
                     ms = int((time.monotonic() - t0) * 1000)
                     errors.append(f"{name}: {e}")
+                    if isinstance(e, RateLimited):
+                        self.cool(name, e.retry_after)
                     log.warning("AI task %s failed on provider %s: %s", task_name, name, e)
                     self._log(org, user, task_name, name, "", not local, False, str(e), ms, req)
                     break
@@ -139,6 +154,33 @@ class Hub:
                 self._log(org, user, task_name, name, model, not local, True, "", ms, req)
             return AIResult(data=data, provider=name, model=model, external=not local, fell_back=wanted_model and name == "offline", errors=errors, ms=ms)
         raise RuntimeError("the offline provider must always answer")  # pragma: no cover
+
+    # -- the agent: the first provider that can hold a conversation with tools, through the same privacy gate ----------------------------
+    def chat_providers(self, org, *, consent: bool, read_only: bool):
+        """-> (candidates, why_not). Candidates are (name, provider, cfg, local) in chain order that can hold a conversation with tools AND
+        are allowed; `why_not` explains an empty list: demo | consent | quota | none."""
+        allowed, why = self.external_allowed(org, consent=consent, read_only=read_only)
+        blocked, out = "", []
+        for name in self.chain():
+            prov, cfg = self.providers[name], self.provider_cfg(name)
+            if not prov.supports_chat or not prov.available(cfg) or self.cooling(name):
+                continue
+            local = self.is_local(name)
+            if not local and not allowed:
+                blocked = why
+                continue
+            out.append((name, prov, cfg, local))
+        return out, ("" if out else (blocked or "none"))
+
+    def log_round(self, org, user, task, provider, model, external, ok, error, ms, sent_chars, preview):
+        try:
+            db.session.add(AICall(org_id=org.id if org else None, user_id=user.id if user is not None and getattr(user, "is_authenticated", False) else None,
+                                  task=task, provider=provider, model=model, external=external, ok=ok, error=(error or "")[:300], ms=ms,
+                                  sent_chars=sent_chars, sent_preview=preview[:8000] if external else ""))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            log.exception("could not record AI call")
 
     def _log(self, org, user, task, provider, model, external, ok, error, ms, req: AIRequest):
         try:

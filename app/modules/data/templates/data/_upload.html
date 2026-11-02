@@ -1,5 +1,4 @@
-{# The intake: three ways in (Excel, CSV, a ready sample). One <form>, one file input; the cards only decide which kind of file is being picked.
-   Expects ai_state, samples, max_mb, exts. Behaviour lives in js/data.js ("intake"). #}
+{# The intake: Excel, CSV, and an illustrative ERP integrations preview. The third card is a concept display only, not a live connector. #}
 {% from "components/ui.html" import csrf %}
 {% macro drop(kind) %}
 <div class="pick__pad">
@@ -19,7 +18,7 @@
     <div class="intake__head"><h2 id="up-h">{{ t('data.intake.title') }}</h2><p>{{ t('data.intake.sub', mb=max_mb) }}</p></div>
     <input class="intake__input" id="f-file" name="file" type="file" accept="{{ exts|join(',') }}" tabindex="-1" aria-label="{{ t('data.intake.input') }}">
 
-    <div class="intake__grid{% if not samples %} intake__grid--2{% endif %}" data-grid role="group" aria-labelledby="up-h">
+    <div class="intake__grid" data-grid role="group" aria-labelledby="up-h">
 
       {# ---- Excel: cells fill in, a selection sweeps the columns (Arabic Excel runs right to left, so the sweep does too) ---- #}
       <div class="pick" data-kind="excel">
@@ -56,32 +55,119 @@
         <div class="pick__body" id="pk-csv" inert><div class="pick__inner">{{ drop('csv') }}</div></div>
       </div>
 
-      {# ---- a ready sample: the sheets fan out ---- #}
-      {% if samples %}
-      <div class="pick" data-kind="sample">
-        <button type="button" class="pick__top" aria-expanded="false" aria-controls="pk-sample">
-          <span class="pick__art" aria-hidden="true"><span class="pick__tog"></span>
-            <span class="fstack">
-              <i style="--k:0"></i><i style="--k:1"></i>
-              <i style="--k:2"><u style="--w:70%"></u><u style="--w:92%"></u><u style="--w:54%"></u><u style="--w:80%"></u></i>
-              <em class="fstack__ok"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></em>
-            </span>
+      {# ---- ERP systems preview: illustrative only, not a real integration ---- #}
+      <div class="pick pick--erp" data-kind="integrations">
+        <button type="button" class="pick__top" aria-expanded="false" aria-controls="pk-integrations">
+          <span class="pick__art erp-art" aria-hidden="true">
+            <span class="pick__tog"></span>
+            <span class="erp-art__orbit erp-art__orbit--one"></span>
+            <span class="erp-art__orbit erp-art__orbit--two"></span>
+            <span class="erp-art__hub"><span>{{ icon('table', 25) }}</span><i></i></span>
+            <span class="erp-art__brand erp-art__brand--odoo"><i></i><b>odoo</b></span>
+            <span class="erp-art__brand erp-art__brand--sage"><i></i><b>Sage</b><small>100</small></span>
+            <span class="erp-art__brand erp-art__brand--sap"><b>SAP</b></span>
           </span>
-          <span class="pick__name">{{ t('data.intake.sample.name') }}</span>
-          <span class="pick__desc">{{ t('data.intake.sample.desc') }}</span>
-          <span class="pick__exts" dir="ltr"><span class="chip chip-primary">.xlsx</span></span>
+          <span class="pick__name">{{ t('data.intake.erp.name') }}</span>
+          <span class="pick__desc">{{ t('data.intake.erp.desc') }}</span>
+          <span class="pick__exts erp__exts"><span class="chip">Odoo</span><span class="chip">Sage 100</span><span class="chip">SAP</span></span>
         </button>
-        <div class="pick__body" id="pk-sample" inert><div class="pick__inner"><div class="pick__pad">
-          <ul class="samples">
-            {% for s in samples %}<li style="--n:{{ loop.index0 }}">
-              <span class="samples__name">{{ icon('table', 15) }}<bdi>{{ s }}</bdi></span>
-              <a class="samples__dl" href="{{ url_for('data.sample', name=s) }}" title="{{ t('data.sample_download') }}" aria-label="{{ t('data.sample_download') }} — {{ s }}">{{ icon('download', 15) }}</a>
-              <button class="btn btn-sm btn-primary" type="submit" formaction="{{ url_for('data.upload_sample', name=s) }}" formnovalidate title="{{ t('data.sample_try') }}">{{ t('data.intake.sample_go') }}</button>
-            </li>{% endfor %}
-          </ul>
-        </div></div></div>
+        <div class="pick__body" id="pk-integrations" inert><div class="pick__inner">
+          <div class="erp-preview">
+            <div class="erp-preview__intro">
+              <span class="erp-preview__eyebrow">{{ t('data.intake.erp.eyebrow') }}</span>
+              <b>{{ t('data.intake.erp.preview_title') }}</b>
+              <p>{{ t('data.intake.erp.preview_desc') }}</p>
+            </div>
+            <p class="erp-preview__choose">{{ t('data.intake.erp.choose_system') }}</p>
+            <div class="erp-systems" role="group" aria-label="{{ t('data.intake.erp.choose_system') }}">
+              <button class="erp-system" type="button" data-erp-system="odoo"
+                      data-system-name="Odoo"
+                      data-endpoint-label="{{ t('data.intake.erp.odoo_endpoint') }}"
+                      data-org-label="{{ t('data.intake.erp.odoo_org') }}"
+                      data-identity-label="{{ t('data.intake.erp.odoo_identity') }}"
+                      data-secret-label="{{ t('data.intake.erp.odoo_secret') }}"
+                      aria-pressed="false">
+                <span class="erp-logo erp-logo--odoo"><i aria-hidden="true"></i><b>odoo</b></span>
+                <b class="erp-system__name">Odoo</b>
+                <span class="erp-system__type">{{ t('data.intake.erp.odoo_type') }}</span>
+                <span class="erp-system__tags"><i>{{ t('data.intake.erp.sales') }}</i><i>{{ t('data.intake.erp.inventory') }}</i><i>{{ t('data.intake.erp.accounting') }}</i><i>{{ t('data.intake.erp.purchases') }}</i></span>
+              </button>
+              <button class="erp-system" type="button" data-erp-system="sage"
+                      data-system-name="Sage 100"
+                      data-endpoint-label="{{ t('data.intake.erp.sage_endpoint') }}"
+                      data-org-label="{{ t('data.intake.erp.sage_org') }}"
+                      data-identity-label="{{ t('data.intake.erp.sage_identity') }}"
+                      data-secret-label="{{ t('data.intake.erp.sage_secret') }}"
+                      aria-pressed="false">
+                <span class="erp-logo erp-logo--sage"><i aria-hidden="true"></i><b>Sage</b><small>100</small></span>
+                <b class="erp-system__name">Sage 100</b>
+                <span class="erp-system__type">{{ t('data.intake.erp.sage_type') }}</span>
+                <span class="erp-system__tags"><i>{{ t('data.intake.erp.accounting') }}</i><i>{{ t('data.intake.erp.revenue') }}</i><i>{{ t('data.intake.erp.expenses') }}</i></span>
+              </button>
+              <button class="erp-system" type="button" data-erp-system="sap"
+                      data-system-name="SAP"
+                      data-endpoint-label="{{ t('data.intake.erp.sap_endpoint') }}"
+                      data-org-label="{{ t('data.intake.erp.sap_org') }}"
+                      data-identity-label="{{ t('data.intake.erp.sap_identity') }}"
+                      data-secret-label="{{ t('data.intake.erp.sap_secret') }}"
+                      aria-pressed="false">
+                <span class="erp-logo erp-logo--sap"><b>SAP</b></span>
+                <b class="erp-system__name">SAP</b>
+                <span class="erp-system__type">{{ t('data.intake.erp.sap_type') }}</span>
+                <span class="erp-system__tags"><i>{{ t('data.intake.erp.production') }}</i><i>{{ t('data.intake.erp.finance') }}</i><i>{{ t('data.intake.erp.hr') }}</i><i>{{ t('data.intake.erp.sales') }}</i></span>
+              </button>
+            </div>
+
+            <section class="erp-config" data-erp-config
+                       data-msg-required="{{ t('data.intake.erp.test_required') }}"
+                       data-msg-success="{{ t('data.intake.erp.test_success') }}"
+                       data-msg-success-detail="{{ t('data.intake.erp.test_success_detail') }}"
+                       hidden aria-labelledby="erp-config-title">
+              <div class="erp-config__head">
+                <div>
+                  <span class="erp-config__eyebrow">{{ t('data.intake.erp.config_eyebrow') }}</span>
+                  <h3 id="erp-config-title">{{ t('data.intake.erp.config_title') }} <b data-erp-selected-name>Odoo</b></h3>
+                  <p>{{ t('data.intake.erp.config_desc') }}</p>
+                </div>
+                <button class="erp-config__change" type="button" data-erp-reset>{{ t('data.intake.erp.change_system') }}</button>
+              </div>
+              <div class="erp-fields">
+                <label class="erp-field">
+                  <span data-erp-label="endpoint">{{ t('data.intake.erp.odoo_endpoint') }}</span>
+                  <input type="url" inputmode="url" autocomplete="off" spellcheck="false" data-erp-field="endpoint" placeholder="https://your-company.example.com">
+                </label>
+                <label class="erp-field">
+                  <span data-erp-label="org">{{ t('data.intake.erp.odoo_org') }}</span>
+                  <input type="text" autocomplete="off" data-erp-field="org" placeholder="company_database">
+                </label>
+                <label class="erp-field">
+                  <span data-erp-label="identity">{{ t('data.intake.erp.odoo_identity') }}</span>
+                  <input type="text" autocomplete="off" data-erp-field="identity" placeholder="api_user">
+                </label>
+                <label class="erp-field">
+                  <span data-erp-label="secret">{{ t('data.intake.erp.odoo_secret') }}</span>
+                  <input type="password" autocomplete="new-password" data-erp-field="secret" placeholder="••••••••••••••••">
+                </label>
+              </div>
+              <div class="erp-config__foot">
+                <p class="erp-config__notice">{{ icon('info-circle', 15) }}{{ t('data.intake.erp.credentials_notice') }}</p>
+                <div class="erp-config__actions">
+                  <button class="btn btn-primary" type="button" data-erp-test>{{ icon('link', 15) }}{{ t('data.intake.erp.test_connection') }}</button>
+                  <button class="btn btn-quiet" type="button" data-erp-clear>{{ t('data.intake.erp.clear_fields') }}</button>
+                </div>
+              </div>
+              <div class="erp-config__result" data-erp-result hidden role="status" aria-live="polite"></div>
+            </section>
+
+            <div class="erp-flow" aria-label="{{ t('data.intake.erp.flow_label') }}">
+              <span class="erp-flow__source">{{ icon('apps', 15) }}{{ t('data.intake.erp.source') }}</span>
+              <span class="erp-flow__line"><i></i>{{ icon('arrows-diff', 15) }}</span>
+              <span class="erp-flow__target">{{ icon('table', 16) }}{{ t('data.intake.erp.target') }}</span>
+            </div>
+            <p class="erp-preview__note">{{ icon('info-circle', 14) }}{{ t('data.intake.erp.demo_note') }}</p>
+          </div>
+        </div></div>
       </div>
-      {% endif %}
     </div>
     <p class="intake__error" data-intake-error role="alert" hidden></p>
   </form>

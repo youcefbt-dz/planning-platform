@@ -1,0 +1,48 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ t('welcome.ready.title') }}{% endblock %}
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/welcome-ready.css') }}">{% endblock %}
+{% block body_class %}welcome-ready-body{% endblock %}
+{% block body %}
+<main class="ready-stage" data-ready data-overview="{{ url_for('shell.overview') }}"
+      data-done="{{ t('welcome.ready.done') }}" data-active="{{ t('welcome.ready.active') }}"
+      data-pending="{{ t('welcome.ready.pending') }}" data-opening="{{ t('welcome.ready.opening') }}"
+      data-complete-title="{{ t('welcome.ready.complete_title') }}" data-complete-sub="{{ t('welcome.ready.complete_sub') }}">
+  <div class="ready-brand">{{ logo('full', 'on_dark') }}</div>
+  <section class="ready-card" aria-labelledby="ready-title">
+    <div class="ready-mark" aria-hidden="true"><span></span></div>
+    <p class="ready-eyebrow">{{ t('welcome.ready.eyebrow') }}</p>
+    <h1 id="ready-title" data-ready-title>{{ t('welcome.ready.title') }}</h1>
+    <p class="ready-lead" data-ready-description>{{ t('welcome.ready.sub') }}</p>
+
+    <div class="ready-progress" aria-hidden="true"><span data-ready-progress></span></div>
+    <ol class="ready-list" aria-label="{{ t('welcome.ready.title') }}">
+      <li class="is-done" data-ready-step>
+        <span class="ready-dot" aria-hidden="true"></span>
+        <span class="ready-name">{{ t('welcome.ready.item_profile') }}</span>
+        <small data-ready-status>{{ t('welcome.ready.done') }}</small>
+      </li>
+      <li class="is-done" data-ready-step>
+        <span class="ready-dot" aria-hidden="true"></span>
+        <span class="ready-name">{{ t('welcome.ready.item_team') }}</span>
+        <small data-ready-status>{{ t('welcome.ready.done') }}</small>
+      </li>
+      <li class="is-active" data-ready-step aria-current="step">
+        <span class="ready-dot" aria-hidden="true"></span>
+        <span class="ready-name">{{ t('welcome.ready.item_workspace') }}</span>
+        <small data-ready-status>{{ t('welcome.ready.active') }}</small>
+      </li>
+      <li class="is-pending" data-ready-step>
+        <span class="ready-dot" aria-hidden="true"></span>
+        <span class="ready-name">{{ t('welcome.ready.item_open') }}</span>
+        <small data-ready-status>{{ t('welcome.ready.pending') }}</small>
+      </li>
+    </ol>
+
+    <div class="ready-foot">
+      <span class="ready-auto" data-ready-auto>{{ t('welcome.ready.auto') }}</span>
+      <a class="ready-enter" href="{{ url_for('shell.overview') }}">{{ t('welcome.ready.enter') }} <span aria-hidden="true">↗</span></a>
+    </div>
+  </section>
+</main>
+{% endblock %}
+{% block js %}<script src="{{ url_for('static', filename='js/welcome-ready.js') }}" defer></script>{% endblock %}

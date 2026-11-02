@@ -32,7 +32,16 @@ def test_welcome_flow_runs_once(full_modules, client):
     page = client.get(f"{base}/welcome/direction").get_data(as_text=True)
     assert "data-assist" in page and 'id="f-vision"' in page
     r = client.post(f"{base}/welcome/direction", data={"sector": "trade", "vision": "أن نكون الأوائل", "mission": "نخدم عملاءنا", "values": "الجودة، الأمانة"})
-    assert r.status_code == 302 and r.headers["Location"].endswith(f"{base}/")       # straight to the overview
+    assert r.status_code == 302 and r.headers["Location"].endswith("/welcome/members")
+    assert client.get(f"{base}/welcome/members").status_code == 200
+    r = client.post(f"{base}/welcome/members", data={"action": "continue"})
+    assert r.status_code == 302 and r.headers["Location"].endswith("/welcome/units")
+    assert client.get(f"{base}/welcome/units").status_code == 200
+    r = client.post(f"{base}/welcome/units", data={"action": "finish"})
+    assert r.status_code == 302 and r.headers["Location"].endswith("/welcome/ready")
+    ready = client.get(f"{base}/welcome/ready").get_data(as_text=True)
+    assert "data-ready" in ready and "نجهّز مساحة العمل" in ready and "فتح لوحة التحكم" in ready
+    assert f'href="{base}/"' in ready
     with client.application.app_context():
         from app.core import profile as P
         from app.core.models import Organization
@@ -62,3 +71,53 @@ def test_a_half_finished_welcome_resumes_where_it_stopped(full_modules, client):
     client.post("/logout")
     r = client.post("/login", data={"email": "a@example.com", "password": "correct-horse"})
     assert r.headers["Location"].endswith("/welcome/direction")
+
+
+def test_welcome_adds_team_and_units_before_workspace(full_modules, client):
+    from app.core.models import Membership, Organization, OrgUnit, User
+
+    r = register(client, email="owner@example.com", org="North Star")
+    slug = _slug(r)
+    base = f"/app/{slug}"
+    client.post(f"{base}/welcome", data={"choice": "deny"})
+    client.post(f"{base}/welcome/logo", data={"skip": "1"})
+    client.post(f"{base}/welcome/direction", data={"sector": "services", "vision": "نمو مستدام"})
+
+    page = client.get(f"{base}/welcome/members")
+    assert page.status_code == 200 and "owner@example.com" in page.get_data(as_text=True)
+    r = client.post(f"{base}/welcome/members", data={"action": "invite", "role": "member"})
+    assert r.status_code == 302 and r.headers["Location"].endswith("/welcome/members")
+    page = client.get(f"{base}/welcome/members")
+    html = page.get_data(as_text=True)
+    assert "رمز QR" in html and "/settings/members/invite/" in html and "qr.svg" in html
+    with client.application.app_context():
+        from app.core.models import Invite
+        invite = Invite.query.order_by(Invite.id.desc()).first()
+        invite_id = invite.id
+    qr = client.get(f"{base}/settings/members/invite/{invite_id}/qr.svg")
+    assert qr.status_code == 200 and b"<svg" in qr.data
+    r = client.post(f"{base}/welcome/members", data={"action": "add", "name": "Mona Saleh", "email": "mona@example.com", "title": "مديرة المبيعات", "role": "member"})
+    assert r.status_code == 302 and r.headers["Location"].endswith("/welcome/members")
+    r = client.post(f"{base}/welcome/members", data={"action": "continue"})
+    assert r.headers["Location"].endswith("/welcome/units")
+
+    with client.application.app_context():
+        org = Organization.query.filter_by(slug=slug).first()
+        member = Membership.query.filter_by(org_id=org.id).join(User).filter(User.email == "mona@example.com").first()
+        assert member is not None and member.title == "مديرة المبيعات"
+        member_id = member.user_id
+
+    r = client.post(f"{base}/welcome/units", data={"action": "add", "name": "المبيعات", "kind": "department", "head_id": str(member_id)})
+    assert r.status_code == 302
+    with client.application.app_context():
+        org = Organization.query.filter_by(slug=slug).first()
+        unit = OrgUnit.query.filter_by(org_id=org.id, name="المبيعات").first()
+        member = Membership.query.filter_by(org_id=org.id, user_id=member_id).first()
+        assert unit is not None and unit.head_id == member_id and member.unit_id == unit.id
+
+    r = client.post(f"{base}/welcome/units", data={"action": "finish"})
+    assert r.status_code == 302 and r.headers["Location"].endswith("/welcome/ready")
+    assert client.get(f"{base}/welcome/ready").status_code == 200
+    r = client.post("/logout")
+    r = client.post("/login", data={"email": "owner@example.com", "password": "correct-horse"})
+    assert r.status_code == 302 and r.headers["Location"].endswith(f"{base}/")

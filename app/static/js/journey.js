@@ -60,7 +60,7 @@
   var attention = D.goals.filter(function (g) { return BAD[g.status]; }).map(function (g) { return g.id; });
 
   // ---------- layout (world coordinates) ----------
-  var AX = 1.75, AY = 0.66, islands = [], cap = { x: 0, y: 0, R: 190, goals: [] }, bounds = { x1: -400, y1: -400, x2: 400, y2: 400 };
+  var AX = 2.0, AY = 0.58, islands = [], cap = { x: 0, y: 0, R: 190, goals: [] }, bounds = { x1: -400, y1: -400, x2: 400, y2: 400 };
   function relax(pts, dmin, rc) {
     for (var it = 0; it < 90; it++) {
       for (var i = 0; i < pts.length; i++) for (var j = i + 1; j < pts.length; j++) {
@@ -70,10 +70,10 @@
       pts.forEach(function (p) { var d = Math.sqrt(p.x * p.x + p.y * p.y) || 0.01; if (d < rc) { p.x *= rc / d; p.y *= rc / d; } });
     }
   }
-  function localPts(n, seed) {
-    var pts = [], off = (seed % 7) * 0.9;
-    for (var i = 0; i < n; i++) { var a = i * 2.39996323 + off, r = 132 + 72 * Math.sqrt(i); pts.push({ x: r * Math.cos(a), y: r * Math.sin(a) }); }
-    relax(pts, 118, 126);
+  function localPts(n, seed) {                              // a department's goals sit evenly on a circle around its head, never in a heap
+    var pts = [], Rg = n <= 1 ? 120 : Math.max(126, 60 / Math.sin(Math.PI / n)), a0 = n === 2 ? 0 : -Math.PI / 2 + (n === 1 ? 0.6 : 0);
+    for (var i = 0; i < n; i++) { var a = a0 + i * 2 * Math.PI / Math.max(n, 1); pts.push({ x: Rg * Math.cos(a), y: Rg * Math.sin(a) }); }
+    pts.Rg = Rg;
     return pts;
   }
   function layout() {
@@ -81,19 +81,19 @@
     var map = {};
     D.units.forEach(function (u) {
       if (u === rootU) return;
-      var pts = localPts(u.goals.length, u.id), far = 0;
-      pts.forEach(function (p) { far = Math.max(far, Math.sqrt(p.x * p.x + p.y * p.y)); });
-      var isl = { u: u, x: 0, y: 0, R: Math.max(190, far + 100), pts: pts, kids: [] };
+      var pts = localPts(u.goals.length, u.id), far = u.goals.length ? pts.Rg : 100;
+      var isl = { u: u, x: 0, y: 0, R: Math.max(196, far + 98), pts: pts, kids: [] };
       islands.push(isl); map[u.id] = isl;
     });
     var tops = islands.filter(function (i) { return !i.u.parent || i.u.parent === (rootU && rootU.id) || !map[i.u.parent]; });
     islands.forEach(function (i) { if (i.u.parent && map[i.u.parent]) map[i.u.parent].kids.push(i); });
 
-    // the capital: identity block, with the organization's own goals on a ring around it
-    var n = capGoals.length, ringR = Math.max(236, 90 * n / (2 * Math.PI));
-    cap.R = n ? ringR + 66 : 188;
-    cap.goals = capGoals.map(function (id, i) {              // the organization's own goals sit on the upper arc, the identity keeps the lower half
-      var a = n === 1 ? -Math.PI / 2 : n <= 5 ? -3.49 + i * 3.84 / (n - 1) : -Math.PI / 2 + i * 2 * Math.PI / n;
+    // the capital: a clean disc with the identity; the organization's own goals travel on an orbit around it, evenly spaced from the top
+    var n = capGoals.length, ringR = n ? Math.max(250, 62 / Math.sin(Math.PI / Math.max(n, 2))) : 0;
+    cap.disc = 150; cap.ringR = ringR;
+    cap.R = n ? ringR + 64 : cap.disc + 40;
+    cap.goals = capGoals.map(function (id, i) {
+      var a = -Math.PI / 2 + i * 2 * Math.PI / n;
       return { id: id, x: ringR * Math.cos(a), y: ringR * Math.sin(a) };
     });
 
@@ -102,17 +102,17 @@
     var ringNeed = sumD / (2 * Math.PI), start = -Math.PI / 2, acc = 0;
     tops.forEach(function (i) {
       var th = start + (acc + (2 * i.R + 90) / 2) / sumD * 2 * Math.PI; acc += 2 * i.R + 90;
-      var dist = Math.max(cap.R + i.R + 84, ringNeed);
+      var dist = Math.max(cap.R + i.R + 36, ringNeed);
       i.x = dist * Math.cos(th) * AX; i.y = dist * Math.sin(th) * AY; i.th = th;
     });
     tops.forEach(function (i) { (function walk(p) { var m = p.kids.length; p.kids.forEach(function (c, idx) { var th = (p.th || 0) + (idx - (m - 1) / 2) * 0.95, d = p.R + c.R + 56; c.x = p.x + d * Math.cos(th); c.y = p.y + d * Math.sin(th); c.th = th; walk(c); }); })(i); });
     // relax overlaps (capital is fixed)
     for (var it = 0; it < 160; it++) {
       for (var a = 0; a < islands.length; a++) {
-        var A = islands[a], dc = Math.sqrt(A.x * A.x + A.y * A.y) || 0.01, minc = cap.R + A.R + 56;
+        var A = islands[a], dc = Math.sqrt(A.x * A.x + A.y * A.y) || 0.01, minc = cap.R + A.R + 36;
         if (dc < minc) { A.x *= minc / dc; A.y *= minc / dc; }
         for (var b = a + 1; b < islands.length; b++) {
-          var B = islands[b], dx = B.x - A.x, dy = B.y - A.y, d = Math.sqrt(dx * dx + dy * dy) || 0.01, need = A.R + B.R + 52;
+          var B = islands[b], dx = B.x - A.x, dy = B.y - A.y, d = Math.sqrt(dx * dx + dy * dy) || 0.01, need = A.R + B.R + 36;
           if (d < need) { var m2 = (need - d) / 2, ux = dx / d, uy = dy / d; A.x -= ux * m2; A.y -= uy * m2; B.x += ux * m2; B.y += uy * m2; }
         }
       }
@@ -166,6 +166,13 @@
     });
   }
 
+  (function legendColours() {                                // the legend says what the colours mean, in the words of the status labels
+    var lg = root.querySelector('.jx__legend'); if (!lg) return;
+    ['on_track', 'at_risk', 'off_track', 'completed'].slice().reverse().forEach(function (s) {
+      var li = h('li', 'lg-st'); h('i', 'lg-dot', null, li).setAttribute('data-s', s); h('span', null, I.status[s] || s, li); lg.insertBefore(li, lg.firstChild);
+    });
+  })();
+
   function render() {
     if (svg) svg.remove();
     svg = el('svg', { class: 'jx-svg', role: 'group', 'aria-label': D.org.name }); stage.appendChild(svg);
@@ -206,20 +213,32 @@
     apply();
   }
 
+  function pill(parent, y, text, pct, st) {                 // the department's name on a tag that straddles the top of its disc
+    var w = Math.max(190, text.length * 17 + 118), g = el('g', { class: 'jx-pill', 'data-s': st, transform: 'translate(0 ' + f1(y) + ')' }, parent);
+    el('rect', { x: f1(-w / 2), y: -29, width: f1(w), height: 58, rx: 29, class: 'jx-pillbg' }, g);
+    el('circle', { cx: f1(RTL ? w / 2 - 30 : -w / 2 + 30), r: 8.5, class: 'jx-pilldot' }, g);
+    el('text', { y: 9, class: 'jx-uname', 'text-anchor': 'middle', x: RTL ? -10 : 10 }, g, text);
+    var pc = el('text', { y: 8, class: 'jx-upct', 'text-anchor': RTL ? 'start' : 'end', x: f1(RTL ? -w / 2 + 24 : w / 2 - 24), style: 'direction:ltr' }, g, pct + '%');
+    return pc;
+  }
+
   function island(gLand, gGoals, i, k) {
-    var u = i.u, ids = goalsOf(u.id), st = standing(ids), g = el('g', { class: 'jx-island', transform: 'translate(' + f1(i.x) + ' ' + f1(i.y) + ')', 'data-unit': u.id, 'data-s': st }, gLand);
+    var u = i.u, ids = goalsOf(u.id), st = standing(ids), pr = avg(ids), g = el('g', { class: 'jx-island', transform: 'translate(' + f1(i.x) + ' ' + f1(i.y) + ')', 'data-unit': u.id, 'data-s': st }, gLand);
     var pop = el('g', { class: 'jx-pop', style: '--i:' + (k + 1) }, g);
-    el('path', { d: blob(i.R, u.id, 1), class: 'jx-shadow2', transform: 'translate(0 16)' }, pop);
-    el('path', { d: blob(i.R, u.id, 1), class: 'jx-shadow', transform: 'translate(0 7)' }, pop);
-    var land = el('path', { d: blob(i.R, u.id, 1), class: 'jx-land' }, pop);
-    el('path', { d: blob(i.R, u.id, 0.9), class: 'jx-shore' }, pop);
-    el('path', { d: blob(i.R, u.id, 0.9), class: 'jx-stipple' }, pop);
+    el('circle', { r: i.R + 18, class: 'jx-aura' }, pop);
+    var land = el('circle', { r: i.R, class: 'jx-disc' }, pop);
+    el('circle', { r: i.R - 26, class: 'jx-inner' }, pop);
+    el('circle', { r: i.R - 26, class: 'jx-stipple' }, pop);
+    if (u.goals.length) el('circle', { r: i.pts.Rg, class: 'jx-orbit' }, pop);
+    var rr = i.R - 11;                                        // the perimeter is the department's progress: filled clockwise from the top
+    el('circle', { r: rr, class: 'jx-ptrack' }, pop);
+    if (pr > 0) el('circle', { r: rr, class: 'jx-parc', transform: 'rotate(-90)', pathLength: 100, 'stroke-dasharray': pr + ' ' + (100 - pr + 0.01) }, pop);
+    pill(pop, -i.R, clip(u.name, 24), pr, st);
     land.addEventListener('click', function (e) { if (drag.moved) return; e.stopPropagation(); selectUnit(u.id); });
 
-    // the head, standing in the middle of the island
+    // the head, in the middle of the disc, the goals around them
     var hd = el('g', { class: 'jx-node jx-head' + (u.head ? '' : ' is-empty'), tabindex: 0, role: 'button', 'aria-label': u.name + (u.head ? ' — ' + u.head.name : ' — ' + I.no_head) }, pop);
-    el('text', { y: f1(-i.R - 16), class: 'jx-uname', 'text-anchor': 'middle' }, pop, clip(u.name, 22));
-    el('circle', { r: 46, class: 'jx-hhalo' }, hd);
+    el('circle', { r: 50, class: 'jx-hhalo' }, hd);
     el('circle', { r: 38, class: 'jx-hbase' }, hd);
     el('circle', { r: 38, class: 'jx-hring' }, hd);
     if (u.head) el('text', { y: 7, class: 'jx-hini', 'text-anchor': 'middle' }, hd, u.head.initials);
@@ -233,24 +252,29 @@
   }
 
   function capital(gCap, gGoals) {
-    var o = D.org, g = el('g', { class: 'jx-node jx-cap', tabindex: 0, role: 'button', 'aria-label': o.name }, gCap), pop = el('g', { class: 'jx-pop', style: '--i:0' }, g);
-    el('circle', { r: cap.R + 26, class: 'jx-caphalo' }, pop);
-    el('circle', { r: cap.R, class: 'jx-capland' }, pop);
-    el('circle', { r: cap.R - 22, class: 'jx-capshore' }, pop);
-    el('circle', { r: cap.R - 22, class: 'jx-stipple' }, pop);
+    var o = D.org, g = el('g', { class: 'jx-node jx-cap', tabindex: 0, role: 'button', 'aria-label': o.name }, gCap), pop = el('g', { class: 'jx-pop', style: '--i:0' }, g), r = cap.disc;
+    el('circle', { r: cap.R, class: 'jx-capfield' }, pop);                                   // the whole orbit: a soft field the goals travel in
+    if (cap.ringR) el('circle', { r: cap.ringR, class: 'jx-caporbit' }, pop);
+    el('circle', { r: r + 22, class: 'jx-caphalo' }, pop);
+    el('circle', { r: r, class: 'jx-capland' }, pop);
+    el('circle', { r: r - 16, class: 'jx-capshore' }, pop);
     var ident = el('g', { class: 'jx-hs' }, pop);
-    el('circle', { cy: -30, r: 62, class: 'jx-ohalo' }, ident);
-    el('circle', { cy: -30, r: 52, class: 'jx-oring' }, ident);
-    el('circle', { cy: -30, r: 46, class: 'jx-obg' }, ident);
-    if (o.logo) { var cp = el('clipPath', { id: 'jx-oclip' }, ident); el('circle', { cy: -30, r: 40 }, cp); el('image', { href: o.logo, x: -40, y: -70, width: 80, height: 80, 'clip-path': 'url(#jx-oclip)', preserveAspectRatio: 'xMidYMid slice' }, ident); }
-    else el('text', { y: -21, class: 'jx-oini', 'text-anchor': 'middle' }, ident, o.initials);
-    el('text', { y: 52, class: 'jx-oname', 'text-anchor': 'middle' }, ident, clip(o.name, 24));
-    el('text', { y: 71, class: 'jx-ocap', 'text-anchor': 'middle' }, ident, I.origin);
-    // the vision: a star on the identity, and its words beneath
-    var v = el('g', { transform: 'translate(' + 44 * (RTL ? -1 : 1) + ' -62)', class: 'jx-vis' }, ident);
-    el('circle', { r: 22, class: 'jx-vripple' }, v); el('circle', { r: 16, class: 'jx-vcore' }, v);
-    el('path', { d: 'M0 -9L2.8 -2.9L9.4 -2.3L4.4 2.1L5.9 8.7L0 5.2L-5.9 8.7L-4.4 2.1L-9.4 -2.3L-2.8 -2.9Z', class: 'jx-vstar' }, v);
-    if (D.vision.text) lines(D.vision.text, 26, 3).forEach(function (ln, n) { el('text', { y: 98 + n * 17, class: 'jx-vtx', 'text-anchor': 'middle' }, ident, ln); });
+    el('circle', { cy: -62, r: 50, class: 'jx-ohalo' }, ident);
+    el('circle', { cy: -62, r: 43, class: 'jx-oring' }, ident);
+    el('circle', { cy: -62, r: 38, class: 'jx-obg' }, ident);
+    if (o.logo) { var cp = el('clipPath', { id: 'jx-oclip' }, ident); el('circle', { cy: -62, r: 34 }, cp); el('image', { href: o.logo, x: -34, y: -96, width: 68, height: 68, 'clip-path': 'url(#jx-oclip)', preserveAspectRatio: 'xMidYMid slice' }, ident); }
+    else el('text', { y: -53, class: 'jx-oini', 'text-anchor': 'middle' }, ident, o.initials);
+    var nm = lines(o.name, 17, 2), y0 = 14;
+    nm.forEach(function (ln, n) { el('text', { y: y0 + n * 25, class: 'jx-oname', 'text-anchor': 'middle' }, ident, ln); });
+    var y1 = y0 + (nm.length - 1) * 25 + 24;
+    el('text', { y: y1, class: 'jx-ocap', 'text-anchor': 'middle' }, ident, I.origin);
+    if (D.vision.text) {                                      // the vision: a small star, then its words
+      var vy = y1 + 26, vl = lines(D.vision.text, 30, 2);
+      var v = el('g', { transform: 'translate(0 ' + f1(vy) + ')', class: 'jx-vis' }, ident);
+      el('circle', { r: 10, class: 'jx-vripple' }, v); el('circle', { r: 8, class: 'jx-vcore' }, v);
+      el('path', { d: 'M0 -4.6L1.4 -1.5L4.7 -1.1L2.2 1.1L2.9 4.4L0 2.6L-2.9 4.4L-2.2 1.1L-4.7 -1.1L-1.4 -1.5Z', class: 'jx-vstar' }, v);
+      vl.forEach(function (ln, n) { el('text', { y: vy + 26 + n * 17, class: 'jx-vtx', 'text-anchor': 'middle' }, ident, ln); });
+    }
     g.addEventListener('click', function (e) { if (drag.moved) return; e.stopPropagation(); selectOrg(); });
     g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectOrg(); } });
     cap.goals.forEach(function (p, n) { goal(gGoals, p, 1 + n); });
@@ -261,21 +285,21 @@
     var g = el('g', { class: 'jx-node jx-goal', 'data-id': gl.id, 'data-s': s, 'data-bad': BAD[s] ? 1 : 0, transform: 'translate(' + f1(p.x) + ' ' + f1(p.y) + ')', tabindex: 0, role: 'button',
                       'aria-label': gl.title + ' — ' + pr + '% — ' + (I.status[s] || s) }, layer);
     var pop = el('g', { class: 'jx-pop', style: '--i:' + order }, el('g', { class: 'jx-gs' }, g));
-    el('circle', { r: 46, class: 'jx-ghit' }, pop);
-    if (BAD[s]) el('circle', { r: 40, class: 'jx-ghalo' }, pop);
-    el('circle', { r: 31, class: 'jx-gbase' }, pop);
-    el('circle', { r: 23, class: 'jx-gtrack' }, pop);
-    if (pr < ex) el('path', { d: arc(23, pr * 3.6, ex * 3.6), class: 'jx-ggap' }, pop);
-    if (pr > 0) el('circle', { r: 23, class: 'jx-garc', transform: 'rotate(-90)', pathLength: 100, 'stroke-dasharray': pr + ' ' + (100 - pr + 0.01) }, pop);
+    el('circle', { r: 50, class: 'jx-ghit' }, pop);
+    if (BAD[s]) el('circle', { r: 44, class: 'jx-ghalo' }, pop);
+    el('circle', { r: 36, class: 'jx-gbase' }, pop);
+    el('circle', { r: 27, class: 'jx-gtrack' }, pop);
+    if (pr < ex) el('path', { d: arc(27, pr * 3.6, ex * 3.6), class: 'jx-ggap' }, pop);
+    if (pr > 0) el('circle', { r: 27, class: 'jx-garc', transform: 'rotate(-90)', pathLength: 100, 'stroke-dasharray': pr + ' ' + (100 - pr + 0.01) }, pop);
     var ea = (ex * 3.6 - 90) * Math.PI / 180;
-    el('path', { d: 'M' + f1(17 * Math.cos(ea)) + ' ' + f1(17 * Math.sin(ea)) + 'L' + f1(30 * Math.cos(ea)) + ' ' + f1(30 * Math.sin(ea)), class: 'jx-gexp' }, pop);
-    el('text', { y: 5, class: 'jx-gpct', 'text-anchor': 'middle', style: 'direction:ltr' }, pop, pr + '%');
-    var bd = el('g', { class: 'jx-gbadge', transform: 'translate(23 -23)' }, pop);
-    if (s === 'completed') { el('circle', { r: 9.5, class: 'jx-bcirc' }, bd); el('path', { d: 'M-4 0.4L-1.2 3.2L4.2 -2.8', class: 'jx-mark jx-mark--ink' }, bd); }
-    else if (s === 'off_track') { el('circle', { r: 9.5, class: 'jx-bcirc' }, bd); el('path', { d: 'M0 -4.6V1', class: 'jx-mark' }, bd); el('circle', { cy: 4.2, r: 1.2, class: 'jx-markdot' }, bd); }
-    else if (s === 'at_risk') { el('circle', { r: 9.5, class: 'jx-bcirc' }, bd); el('path', { d: 'M0 -4.6V1', class: 'jx-mark jx-mark--ink' }, bd); el('circle', { cy: 4.2, r: 1.2, class: 'jx-markdot jx-markdot--ink' }, bd); }
-    var lb = el('text', { y: 52, class: 'jx-glabel', 'text-anchor': 'middle' }, pop);
-    lines(gl.title, 17, 2).forEach(function (ln, n) { el('tspan', { x: 0, dy: n ? 15 : 0 }, lb, ln); });
+    el('path', { d: 'M' + f1(20 * Math.cos(ea)) + ' ' + f1(20 * Math.sin(ea)) + 'L' + f1(35 * Math.cos(ea)) + ' ' + f1(35 * Math.sin(ea)), class: 'jx-gexp' }, pop);
+    el('text', { y: 6, class: 'jx-gpct', 'text-anchor': 'middle', style: 'direction:ltr' }, pop, pr + '%');
+    var bd = el('g', { class: 'jx-gbadge', transform: 'translate(27 -27)' }, pop);
+    if (s === 'completed') { el('circle', { r: 10.5, class: 'jx-bcirc' }, bd); el('path', { d: 'M-4.4 .4L-1.3 3.4L4.6 -3', class: 'jx-mark' }, bd); }
+    else if (s === 'off_track') { el('circle', { r: 10.5, class: 'jx-bcirc' }, bd); el('path', { d: 'M0 -5V1.2', class: 'jx-mark' }, bd); el('circle', { cy: 4.6, r: 1.4, class: 'jx-markdot' }, bd); }
+    else if (s === 'at_risk') { el('circle', { r: 10.5, class: 'jx-bcirc' }, bd); el('path', { d: 'M0 -5V1.2', class: 'jx-mark jx-mark--ink' }, bd); el('circle', { cy: 4.6, r: 1.4, class: 'jx-markdot jx-markdot--ink' }, bd); }
+    var lb = el('text', { y: 60, class: 'jx-glabel', 'text-anchor': 'middle' }, pop);
+    lines(gl.title, 17, 2).forEach(function (ln, n) { el('tspan', { x: 0, dy: n ? 16 : 0 }, lb, ln); });
     g.addEventListener('mouseenter', function () { state.hover = gl.id; apply(); });
     g.addEventListener('mouseleave', function () { state.hover = null; apply(); });
     g.addEventListener('focus', function () { state.hover = gl.id; apply(); });

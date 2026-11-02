@@ -1,0 +1,26 @@
+{# Inline SMART draft. Targets are not generated; the organization must validate achievability from its own history. #}
+{% if empty == 'short' %}
+  <p class="csmart__empty">{{ icon('info-circle', 14) }}{{ t('goals.smart.short') }}</p>
+{% elif not options %}
+  <p class="csmart__empty">{{ icon('info-circle', 14) }}{{ t('goals.draft.none') }}</p>
+{% else %}
+  <div class="csmart__results">
+    {% for o in options %}
+    <article class="csmart-card">
+      <div class="csmart-card__head"><span class="csmart-card__tag">{{ t('goals.smart.proposal', n=loop.index) }}</span><span class="csmart-card__label">SMART</span></div>
+      <h3 dir="auto">{{ o.title }}</h3>
+      <div class="csmart-grid">
+        <div><b><i>S</i>{{ t('goals.smart.specific') }}</b><p dir="auto">{{ o.title }}</p></div>
+        <div><b><i>M</i>{{ t('goals.smart.measurable') }}</b><p>{{ t('goals.smart.measure_count', n=o.krs|length) }}</p></div>
+        <div class="is-review"><b><i>A</i>{{ t('goals.smart.achievable') }}</b><p>{{ t('goals.smart.achievable_check') }}</p></div>
+        <div><b><i>R</i>{{ t('goals.smart.relevant') }}</b><p dir="auto">{{ o.rationale or t('goals.smart.relevant_check') }}</p></div>
+        <div class="{% if not deadline %}is-review{% endif %}"><b><i>T</i>{{ t('goals.smart.timebound') }}</b><p>{% if deadline %}{{ t('goals.smart.deadline', date=d(deadline)) }}{% else %}{{ t('goals.smart.deadline_missing') }}{% endif %}</p></div>
+      </div>
+      <div class="csmart-card__krs"><b>{{ t('goals.smart.key_results') }}</b><ul>{% for k in o.krs %}<li dir="auto">{{ k.title }} <span class="chip-type">{{ t('goals.kr_type.' ~ k.type) }}</span>{% if k.unit %}<span class="muted">{{ k.unit }}</span>{% endif %}</li>{% endfor %}</ul></div>
+      <button class="btn btn-sm btn-primary" type="button" data-pick-goal data-title="{{ o.title }}" data-rationale="{{ o.rationale }}" data-krs='{{ o.krs|tojson }}'>{{ icon('check', 14) }}{{ t('goals.smart.use') }}</button>
+    </article>
+    {% endfor %}
+  </div>
+  <p class="csmart__note">{{ icon('shield-check', 14) }}{{ t('goals.smart.note') }}</p>
+  {% if advice %}<p class="advice__foot">{% set a = advice %}{% include "goals/_ai_tag.html" %}</p>{% endif %}
+{% endif %}

@@ -1,4 +1,4 @@
-{# First sign-in welcome: a full-screen brand-blue stage, three steps (model, logo, direction). Blocks: title, step (1|2), main. #}
+{# First sign-in organization setup: five steps. Blocks: title, step, main. #}
 {% extends "layouts/base.html" %}
 {% from "components/ui.html" import csrf, flashes %}
 {% block css %}<meta name="csrf-token" content="{{ csrf_token() }}">
@@ -9,8 +9,8 @@
 <div class="wel" data-wel>
   <header class="wel__top">
     <span class="wel__brand">{{ logo('full', 'on_dark') }}</span>
-    <ol class="wel__steps" aria-label="{{ t('welcome.step', n=cur, total=3) }}">
-      {% for k in ('model', 'logo', 'vision') %}<li class="{{ 'is-done' if loop.index < cur else 'is-now' if loop.index == cur else '' }}" {% if loop.index == cur %}aria-current="step"{% endif %}><i>{% if loop.index < cur %}{{ icon('check', 14) }}{% else %}{{ loop.index }}{% endif %}</i><span>{{ t('welcome.steps.' ~ k) }}</span></li>{% endfor %}
+    <ol class="wel__steps" aria-label="{{ t('welcome.step', n=cur, total=5) }}">
+      {% for k in ('model', 'logo', 'vision', 'team', 'units') %}<li class="{{ 'is-done' if loop.index < cur else 'is-now' if loop.index == cur else '' }}" {% if loop.index == cur %}aria-current="step"{% endif %}><i>{% if loop.index < cur %}{{ icon('check', 14) }}{% else %}{{ loop.index }}{% endif %}</i><span>{{ t('welcome.steps.' ~ k) }}</span></li>{% endfor %}
     </ol>
     <form method="post" action="{{ url_for('shell.welcome_skip') }}">{{ csrf() }}<button class="wel__skip" type="submit">{{ t('welcome.skip') }}</button></form>
   </header>

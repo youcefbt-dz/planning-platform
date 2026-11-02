@@ -1,6 +1,6 @@
-"""First-run welcome after sign-in: (1) may the model help, (2) the logo, (3) the organization's direction (vision, mission, values) with the model's help,
-then the overview. Three org settings flags: `ai_asked`, `logo_done`, `welcomed` (all done, or the whole welcome skipped).
-Organizations that already saved a profile before this existed never see it."""
+"""First-run organization setup: AI consent, logo, direction, team, then departments.
+Organizations that completed the older welcome flow or saved a profile before it existed
+continue directly to the workspace."""
 from __future__ import annotations
 
 
@@ -13,7 +13,15 @@ def step_endpoint(org, role: str | None) -> str | None:
         return None
     if not s.get("ai_asked"):
         return "shell.welcome"
-    return "shell.welcome_direction" if s.get("logo_done") else "shell.welcome_logo"
+    if not s.get("logo_done"):
+        return "shell.welcome_logo"
+    if not s.get("direction_done"):
+        return "shell.welcome_direction"
+    if not s.get("team_done"):
+        return "shell.welcome_members"
+    if not s.get("units_done"):
+        return "shell.welcome_units"
+    return None
 
 
 def mark(org, **flags) -> None:

@@ -47,8 +47,7 @@ manifest = Manifest(
     home_endpoint="data.index",
     tabs=[
         Tab("data.tabs.files", "data.index", "table", match=("data.map", "data.detail", "data.series")),
-        Tab("data.tabs.dashboard", "data.dashboard", "layout-dashboard"),
-        Tab("data.tabs.charts", "data.charts", "chart-dots"),
+        Tab("data.tabs.dashboard", "data.dashboard", "chart-line"),
         Tab("data.tabs.ask", "data.ask", "sparkles"),
     ],
     optional_depends=["goals"],

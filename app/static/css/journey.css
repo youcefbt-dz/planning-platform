@@ -269,3 +269,52 @@
   .jx__zoom{inset-inline-start:10px}
   .jx__chips{inset-inline:68px 10px}
 }
+
+/* ==========================================================================
+   2.20 — a clearer map. Round departments, an orbit for the organization's own goals, and health you can read from across the room:
+   every ring carries its status colour (green on track · yellow at risk · red off track · blue done · grey not started) IN ADDITION to its shape,
+   and a department's perimeter fills with its own average progress.
+   ========================================================================== */
+:root{--st-ok:#119c78;--st-risk:#f2b705;--st-bad:#e5484d;--st-done:var(--c-primary);--st-idle:#a8aed0}
+.jx-svg .jx-island,.jx-svg .jx-goal,.jx-svg .jx-pill{--st:var(--st-ok)}
+.jx-svg [data-s=at_risk]{--st:var(--st-risk)}.jx-svg [data-s=off_track]{--st:var(--st-bad)}.jx-svg [data-s=completed]{--st:var(--st-done)}.jx-svg [data-s=not_started]{--st:var(--st-idle)}
+.jx-svg .jx-aura{fill:var(--st);fill-opacity:.08;pointer-events:none}
+.jx-svg .jx-disc{fill:#fff;stroke:none;cursor:pointer}
+.jx-svg .jx-inner{fill:color-mix(in srgb,var(--st) 5%,#f4f5ff);pointer-events:none}
+.jx-svg .jx-orbit{fill:none;stroke:color-mix(in srgb,var(--c-primary) 24%,#fff);stroke-width:1.8;stroke-dasharray:2 10;stroke-linecap:round;pointer-events:none}
+.jx-svg .jx-ptrack{fill:none;stroke:color-mix(in srgb,var(--st) 16%,#eceefb);stroke-width:10;pointer-events:none}
+.jx-svg .jx-parc{fill:none;stroke:var(--st);stroke-width:10;stroke-linecap:round;pointer-events:none}
+.jx-svg .jx-island:hover .jx-aura{fill-opacity:.15}
+.jx-svg .jx-island.is-sel .jx-aura{fill:var(--c-primary);fill-opacity:.16}
+.jx-svg .jx-pillbg{fill:#fff;stroke:color-mix(in srgb,var(--st) 60%,#fff);stroke-width:2.4}
+.jx-svg .jx-pilldot{fill:var(--st)}
+.jx-svg .jx-uname{font-size:26px;stroke:none;paint-order:normal}
+.jx-svg .jx-upct{fill:var(--c-muted);font-family:var(--font-heading);font-size:20px;font-weight:700}
+.jx-svg .jx-pill{pointer-events:none}
+.jx-svg .jx-island .jx-hring{stroke:var(--st);stroke-dasharray:none}
+.jx-svg .jx-island[data-s] .jx-hring{stroke:var(--st);stroke-dasharray:none}
+.jx-svg .jx-island .jx-head.is-empty .jx-hring{stroke:var(--c-line-strong);stroke-dasharray:5 6}
+.jx-svg .jx-hhalo{fill:var(--st);fill-opacity:.12}
+/* the organization */
+.jx-svg .jx-capfield{fill:color-mix(in srgb,var(--c-accent) 10%,transparent);stroke:color-mix(in srgb,var(--c-accent) 55%,transparent);stroke-width:2;stroke-dasharray:1 9;stroke-linecap:round;pointer-events:none}
+.jx-svg .jx-caporbit{fill:none;stroke:color-mix(in srgb,var(--c-primary) 28%,#fff);stroke-width:2;stroke-dasharray:2 10;stroke-linecap:round;pointer-events:none}
+.jx-svg .jx-capland{fill:#fff;stroke:color-mix(in srgb,var(--c-primary) 38%,#fff);stroke-width:3.5}
+.jx-svg .jx-oname{font-size:21px}
+.jx-svg .jx-ocap{font-size:13.5px}
+.jx-svg .jx-vtx{font-size:13px;fill:var(--c-body)}
+/* goals */
+.jx-svg .jx-gbase{stroke:color-mix(in srgb,var(--st) 38%,#fff);stroke-width:3}
+.jx-svg .jx-goal:hover .jx-gbase,.jx-svg .jx-goal.is-focus .jx-gbase{stroke:var(--st);stroke-width:4.5}
+.jx-svg .jx-gtrack{stroke:color-mix(in srgb,var(--st) 17%,#eef0fb);stroke-width:9}
+.jx-svg .jx-garc{stroke:var(--st);stroke-width:9;stroke-linecap:round}
+.jx-svg .jx-goal[data-s] .jx-garc{stroke:var(--st)}
+.jx-svg .jx-ggap{stroke-width:11}
+.jx-svg .jx-gpct{font-size:15.5px}
+.jx-svg .jx-goal[data-s=completed] .jx-gbase{fill:color-mix(in srgb,var(--st) 10%,#fff)}
+.jx-svg .jx-goal[data-s] .jx-bcirc{fill:var(--st);stroke:#fff;stroke-width:2.4}
+.jx-svg .jx-goal[data-s] .jx-ghalo{fill:var(--st);fill-opacity:.2}
+.jx-svg .jx-glabel{font-size:14px;stroke-width:6}
+.jx-mini .mm-g[data-s=on_track]{fill:var(--st-ok)}.jx-mini .mm-g[data-s=at_risk]{fill:var(--st-risk)}.jx-mini .mm-g[data-s=off_track]{fill:var(--st-bad)}.jx-mini .mm-g[data-s=completed]{fill:var(--c-primary)}
+.jx__legend .lg-st{display:inline-flex;align-items:center;gap:6px}
+.jx__legend .lg-dot{width:12px;height:12px;border-radius:50%;background:var(--st-ok)}
+.jx__legend .lg-dot[data-s=at_risk]{background:var(--st-risk)}.jx__legend .lg-dot[data-s=off_track]{background:var(--st-bad)}.jx__legend .lg-dot[data-s=completed]{background:var(--st-done)}.jx__legend .lg-dot[data-s=not_started]{background:var(--st-idle)}

@@ -5,7 +5,7 @@
 {% block main %}
 <div class="wl" data-wl data-max="{{ max_kb }}" data-err-type="{{ t('profile.errors.logo') }}">
   <div class="wl__head">
-    <p class="eyebrow">{{ t('welcome.step', n=2, total=3) }}</p>
+    <p class="eyebrow">{{ t('welcome.step', n=2, total=5) }}</p>
     <h1>{{ t('welcome.logo.title') }}</h1>
     <p class="lead">{{ t('welcome.logo.sub') }}</p>
   </div>
@@ -26,7 +26,7 @@
       <p class="hint" data-err hidden role="alert"></p>
       <p class="hint">{{ t('profile.logo_hint') }}</p>
       <div class="wl__act">
-        <button class="wbtn" type="submit"><span>{{ t('welcome.logo.next') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
+        <button class="wbtn" type="submit"><span>{{ t('welcome.continue') }}</span>{{ icon('arrow-right', 18, flip=True) }}</button>
         <button class="wlink" type="submit" name="skip" value="1" formnovalidate>{{ t('welcome.logo.skip') }}</button>
       </div>
     </div>
