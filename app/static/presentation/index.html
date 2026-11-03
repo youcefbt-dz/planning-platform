@@ -32,8 +32,7 @@
 .dia .halo{transform-origin:960px 650px;animation:breathe 4.8s ease-in-out infinite}
 .dia .h2{animation-delay:-2.4s}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
-#bar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;background:linear-gradient(transparent,rgba(15,23,51,.7));opacity:0;transition:opacity .25s}
-body:hover #bar,#bar:focus-within{opacity:1}
+#bar{display:none!important}
 #bar button,#bar a{all:unset;cursor:pointer;color:#fff;font:600 15px 'IBM Plex Sans Arabic',Arial;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.14)}
 #bar button:hover,#bar a:hover{background:rgba(255,255,255,.28)}
 #cnt{color:#dde1ff;font:600 15px 'IBM Plex Sans Arabic',Arial;min-width:64px;text-align:center;direction:ltr}
