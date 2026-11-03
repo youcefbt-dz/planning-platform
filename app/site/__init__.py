@@ -47,7 +47,9 @@ def demo():
         return redirect(url_for("site.landing"))
     from app.core.demo import ensure_demo
 
-    org = Organization.query.filter_by(is_demo=True).first() or ensure_demo(g.get("lang", "ar"))   # built on first visit when the database has none
+    # Always pass through the version check: a persistent database may already
+    # contain an older demo that needs its seed refreshed after a deploy.
+    org = ensure_demo(g.get("lang", "ar"))
     if org is None:
         flash(t("site.demo.missing"), "error")
         return redirect(url_for("site.landing"))
