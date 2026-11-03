@@ -139,6 +139,19 @@ def _apply_objective(o: Objective) -> str | None:
 
 
 # -- list -------------------------------------------------------------------------
+def _cycle_scope_ids(cycles, cycle_id: int | None) -> set[int] | None:
+    """A quarter view includes its annual parent objectives; a year view includes its quarter objectives."""
+    if not cycle_id:
+        return None
+    selected = next((c for c in cycles if c.id == cycle_id), None)
+    ids = {cycle_id}
+    if selected and selected.parent_id:
+        ids.add(selected.parent_id)
+    else:
+        ids.update(c.id for c in cycles if c.parent_id == cycle_id)
+    return ids
+
+
 @bp.get("/")
 def index():
     views = compute_objectives(g.org)
@@ -151,7 +164,8 @@ def index():
     q = (request.args.get("q") or "").strip().lower()
     status = request.args.get("status")
 
-    pool = [v for v in views.values() if (not cycle_id or v.obj.cycle_id in (cycle_id, *[c.id for c in cycles if c.parent_id == cycle_id]))]
+    cycle_scope = _cycle_scope_ids(cycles, cycle_id)
+    pool = [v for v in views.values() if cycle_scope is None or v.obj.cycle_id in cycle_scope]
     if unit_id:
         pool = [v for v in pool if v.obj.unit_id == unit_id]
     if owner_id:
@@ -181,7 +195,7 @@ def tree():
     cur = current_cycle(g.org)
     arg = request.args.get("cycle")
     cycle_id = None if arg == "all" else (int(arg) if (arg or "").isdigit() else (cur.id if cur else None))
-    inside = {cycle_id, *[c.id for c in cycles if c.parent_id == cycle_id]} if cycle_id else None
+    inside = _cycle_scope_ids(cycles, cycle_id)
     pool = {k: v for k, v in views.items() if inside is None or v.obj.cycle_id in inside}
     for v in list(pool.values()):                                   # a goal's ancestors stay in the map even when they belong to the year's cycle
         p = views.get(v.obj.parent_id)
