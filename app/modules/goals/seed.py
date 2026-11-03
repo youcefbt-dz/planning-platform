@@ -1,7 +1,6 @@
-"""Demo OKRs and KPIs for a fictional distribution company with one institutional goal
+"""Demo OKRs and KPIs for a fictional distribution company with two institutional goals
 cascading into nine department goals. Values are generated from a target *delta against expected progress*,
-so the demo always shows
-a believable mix of statuses whatever day it is opened.
+so the demo always shows a believable mix of statuses whatever day it is opened.
 """
 from __future__ import annotations
 
@@ -14,17 +13,22 @@ from app.extensions import db
 from app.modules.goals.models import Indicator, IndicatorValue, KeyResult, Objective
 
 
-# One institutional objective owns the shared outcome; its children are owned by nine departments.
+# Two institutional objectives own the shared outcomes; nine department objectives roll up into them.
 # (key, parent_key, level 'year'|'quarter', owner, unit, perspective, title, [KRs], note?)
 # KR: (title, unit_label, start, target, delta_points against the progress expected today, metric_type)
 # delta: about 0 or above = on track; -15 to -20 = at risk; -30 or worse = off track (the status rules are 10 and 25 points).
 OBJECTIVES = [
-    # One institutional outcome; its progress is calculated from the department goals below.
+    # Commercial outcome: progress rolls up from sales, marketing, finance and customer experience.
     ("institution", None, "year", "ceo", "root", "financial",
-     "تحقيق نمو مربح ومستدام مع رفع جودة الخدمة وكفاءة التشغيل",
+     "تحقيق نمو تجاري مربح وتعزيز مكانة المؤسسة وتجربة العملاء",
      [], None),
 
-    # Department goals: every one is explicitly aligned with the institutional objective.
+    # Operating outcome: progress rolls up from operations, supply, people, technology and logistics.
+    ("operations_institution", None, "year", "ceo", "root", "process",
+     "رفع كفاءة التشغيل وموثوقية سلسلة الإمداد والتوزيع",
+     [], None),
+
+    # Department goals: every one is explicitly aligned with one institutional objective.
     ("sales", "institution", "year", "sales", "sales", "financial",
      "زيادة المبيعات وتوسيع قاعدة العملاء",
      [("رقم الأعمال السنوي", "مليون دج", 480, 600, 2, "number"),
@@ -35,12 +39,12 @@ OBJECTIVES = [
      [("فرص بيع مؤهلة", "فرصة", 90, 300, -10, "number"),
       ("تحويل الفرص إلى عملاء", "%", 11, 18, -12, "percent")], None),
 
-    ("operations", "institution", "year", "ops", "ops", "process",
+    ("operations", "operations_institution", "year", "ops", "ops", "process",
      "رفع موثوقية تنفيذ الطلبات وتسريع دورة التشغيل",
      [("نسبة التسليم في الموعد", "%", 82, 95, -17, "percent"),
       ("المدة من الطلب إلى التسليم (يوم)", "يوم", 9, 5, -32, "number")], None),
 
-    ("supply", "institution", "year", "supply", "supply", "process",
+    ("supply", "operations_institution", "year", "supply", "supply", "process",
      "ضمان توفر المنتجات وتحسين أداء الموردين",
      [("التوريد في الموعد", "%", 78, 94, -12, "percent"),
       ("نسبة نفاد المخزون", "%", 8, 2, -18, "percent")],
@@ -51,12 +55,12 @@ OBJECTIVES = [
      [("هامش الربح الإجمالي", "%", 27, 31, -3, "percent"),
       ("تحصيل المستحقات خلال 60 يومًا", "%", 68, 90, -14, "percent")], None),
 
-    ("people", "institution", "year", "people", "people", "learning",
+    ("people", "operations_institution", "year", "people", "people", "learning",
      "رفع جاهزية الكفاءات وتحسين إنتاجية الفريق",
      [("تغطية الوظائف بالتكوين", "%", 35, 90, -15, "percent"),
       ("مدة شغل المناصب الشاغرة", "يوم", 60, 30, -10, "number")], None),
 
-    ("technology", "institution", "year", "tech", "tech", "process",
+    ("technology", "operations_institution", "year", "tech", "tech", "process",
      "رقمنة الإجراءات ورفع موثوقية الأنظمة",
      [("الطلبات المعالجة رقميًا", "%", 25, 80, -10, "percent"),
       ("جاهزية الأنظمة", "%", 96, 99.5, -4, "percent")], None),
@@ -66,15 +70,19 @@ OBJECTIVES = [
      [("رضا العملاء", "%", 72, 90, -16, "percent"),
       ("الشكاوى المعالجة خلال 48 ساعة", "%", 60, 90, -12, "percent")], None),
 
-    ("logistics", "institution", "year", "logistics", "logistics", "process",
+    ("logistics", "operations_institution", "year", "logistics", "logistics", "process",
      "خفض تكلفة التوزيع وتحسين استغلال الأسطول",
      [("تكلفة التوصيل للطلب", "دج", 1450, 1150, -10, "number"),
       ("معدل استغلال الأسطول", "%", 62, 82, -12, "percent")], None),
 ]
 
+# Both institutional objectives calculate progress from their aligned department objectives.
+INSTITUTION_KEYS = ("institution", "operations_institution")
+
 # Why each institutional and department objective matters
 RATIONALE = {
-    "institution": "توحيد جهود الأقسام حول نتيجة واحدة: نمو تجاري مربح ينعكس على العميل ولا يأتي على حساب كفاءة التشغيل.",
+    "institution": "توحيد جهود المبيعات والتسويق والمالية وخدمة العملاء حول نمو تجاري مربح ومستدام.",
+    "operations_institution": "توحيد جهود التشغيل والإمداد والموارد البشرية والتقنية والنقل لرفع موثوقية التنفيذ وخفض الهدر.",
     "sales": "زيادة الإيرادات تحتاج إلى نمو قاعدة العملاء مع الحفاظ على قيمة كل صفقة.",
     "marketing": "توفير فرص بيع ذات جودة يمنح فريق المبيعات خطًا مستمرًا من العملاء المحتملين.",
     "operations": "سرعة التنفيذ ودقته هما ما يحوّل الوعد التجاري إلى تجربة موثوقة.",
@@ -130,7 +138,7 @@ def seed(org, lang: str, ctx: dict) -> None:
         cyc = cycles["year"] if level == "year" else cycles["quarter"]
         o = Objective(org_id=org.id, cycle_id=cyc.id, unit_id=units[unit].id, owner_id=users[owner].id,
                       parent_id=objs[parent].id if parent else None, title=title, perspective=persp,
-                      progress_driver="children" if key == "institution" else "key_results",
+                      progress_driver="children" if key in INSTITUTION_KEYS else "key_results",
                       start_date=cyc.start_date, end_date=cyc.end_date,
                       rationale=RATIONALE[key] if key in RATIONALE else None, commitment="aspirational" if key in ASPIRATIONAL else "committed",
                       created_at=datetime.combine(cyc.start_date, datetime.min.time()) + timedelta(days=2))
@@ -171,14 +179,16 @@ def seed(org, lang: str, ctx: dict) -> None:
             db.session.add(CheckIn(org_id=org.id, entity_type="objective", entity_id=o.id, user_id=users[owner].id,
                                    progress=sum(p for _, p in kr_rows) / len(kr_rows), created_at=datetime.utcnow() - timedelta(days=2),
                                    comment=note, status="off_track"))
-    # The institutional objective has no independent metric: its progress is the weighted roll-up of all department objectives.
+    # Neither institutional objective has a standalone metric: each rolls up from its own department goals.
     from app.modules.goals.service import compute_objectives
-    rollup = compute_objectives(org, today=today).get(objs["institution"].id)
-    if rollup:
-        db.session.add(CheckIn(org_id=org.id, entity_type="objective", entity_id=objs["institution"].id,
-                               user_id=users["ceo"].id, progress=rollup.progress,
-                               created_at=datetime.combine(today, datetime.min.time()) + timedelta(hours=10),
-                               comment="ملخص تقدم الأهداف الفرعية للأقسام"))
+    views = compute_objectives(org, today=today)
+    for institution_key in INSTITUTION_KEYS:
+        rollup = views.get(objs[institution_key].id)
+        if rollup:
+            db.session.add(CheckIn(org_id=org.id, entity_type="objective", entity_id=objs[institution_key].id,
+                                   user_id=users["ceo"].id, progress=rollup.progress,
+                                   created_at=datetime.combine(today, datetime.min.time()) + timedelta(hours=10),
+                                   comment="ملخص تقدم الأهداف الفرعية للأقسام"))
 
     # Genuine cross-functional dependencies, separate from the parent-child alignment above.
     from app.core.models import Link
