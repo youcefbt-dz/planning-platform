@@ -388,11 +388,13 @@ def confirm(ds: Dataset, user_id: int | None = None) -> tuple[int, int, int]:
         s.unit, s.direction, s.aggregation, s.period_months, s.points = sd.unit, sd.direction, sd.aggregation, sd.period_months, pts
         keep.add(key)
     removed = 0
-    for key, s in existing.items():
-        if key not in keep:
-            Link.query.filter_by(org_id=ds.org_id, target_type="series", target_id=s.id).delete()
-            db.session.delete(s)
-            removed += 1
+    removed_series = [s for key, s in existing.items() if key not in keep]
+    if removed_series:
+        current_app.extensions["modules"].hook("series.deleted", series=removed_series)
+    for s in removed_series:
+        Link.query.filter_by(org_id=ds.org_id, target_type="series", target_id=s.id).delete()
+        db.session.delete(s)
+        removed += 1
     ds.status = "ready"
     db.session.flush()
     after = {(s.name, s.dimension): s.pairs() for s in ds.series}
@@ -411,6 +413,7 @@ def _date_kind(table: Table, idx: int) -> str | None:
 
 
 def delete_dataset(ds: Dataset) -> None:
+    current_app.extensions["modules"].hook("series.deleted", series=list(ds.series))
     for s in ds.series:
         Link.query.filter_by(org_id=ds.org_id, target_type="series", target_id=s.id).delete()
     delete_file(ds)

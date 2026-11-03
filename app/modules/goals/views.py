@@ -22,7 +22,7 @@ from app.modules.goals import bp
 from app.modules.goals import coach, factors as FX, health as H, path as PATH
 from app.modules.goals.models import (CERTAINTIES, COMMITMENTS, FACTOR_KINDS, FREQUENCIES, KR_TYPES, MEASURES, METRIC_TYPES, PERSPECTIVES,
                                       PROGRESS_DRIVERS, GoalEvent, Indicator, IndicatorValue, KeyResult, KRFactor, Objective)
-from app.modules.goals.service import compute_indicators, compute_objectives, roots, summary
+from app.modules.goals.service import compute_indicators, compute_objectives, indicator_series_id, roots, summary
 
 LEVER_STATES = ("planned", "in_progress", "done", "dropped")
 LIVE_FILTERS = ("on_track", "at_risk", "off_track", "not_started", "completed", "on_hold", "cancelled")
@@ -53,6 +53,60 @@ def _form_data(exclude_id: int | None = None) -> dict:
 
 def _modules():
     return current_app.extensions["modules"]
+
+
+def _indicator_series_context(i: Indicator) -> dict:
+    enabled = _modules().is_enabled("data")
+    catalog = (_modules().query("series.catalog", g.org.id) or [None])[0] if enabled else None
+    options = []
+    for item in catalog or []:
+        label = item["name"]
+        if item.get("unit"):
+            label += f" · {item['unit']}"
+        if item.get("dataset"):
+            label += f" — {item['dataset']}"
+        options.append((item["id"], label))
+    return {
+        "data_enabled": enabled,
+        "series_options": options,
+        "selected_series_id": indicator_series_id(g.org.id, i.id) if i.id else None,
+    }
+
+
+def _indicator_series_choice() -> tuple[int | None, str | None]:
+    """Validate a selected series against the current organization's own data catalog."""
+    if not _modules().is_enabled("data") or "series_id" not in request.form:
+        return None, None
+    raw = (request.form.get("series_id") or "").strip()
+    if not raw:
+        return None, None
+    try:
+        sid = int(raw)
+    except (TypeError, ValueError):
+        return None, "goals.errors.series_invalid"
+    catalog = (_modules().query("series.catalog", g.org.id) or [None])[0] or []
+    if not any(item.get("id") == sid for item in catalog):
+        return None, "goals.errors.series_invalid"
+    return sid, None
+
+
+def _save_indicator_series(i: Indicator, series_id: int | None) -> None:
+    if not _modules().is_enabled("data") or "series_id" not in request.form:
+        return
+    Link.query.filter_by(org_id=g.org.id, source_type="indicator", source_id=i.id,
+                         target_type="series", kind="measured_by").delete(synchronize_session=False)
+    if series_id:
+        add_link(g.org.id, ("indicator", i.id), ("series", series_id), kind="measured_by")
+        db.session.flush()
+        source = (_modules().query("series.get", series_id, g.org.id) or [None])[0]
+        if source is not None:
+            i.unit_label = (source.unit or i.unit_label or "")[:24]
+            i.direction = source.direction
+            if (source.unit or "").strip() == "%":
+                i.metric_type = "percent"
+            _modules().hook("series.updated", series=[source], user_id=current_user.id if current_user.is_authenticated else None)
+    else:
+        IndicatorValue.query.filter_by(indicator_id=i.id).filter(IndicatorValue.note.like("@data:%")).delete(synchronize_session=False)
 
 
 def _has_series() -> bool:
@@ -679,16 +733,19 @@ def indicator_new():
     i = Indicator(org_id=g.org.id)
     if request.method == "POST":
         err = _apply_indicator(i)
+        series_id, series_err = _indicator_series_choice()
+        err = err or series_err
         if err:
             flash(t(err), "error")
         else:
             db.session.add(i)
             db.session.flush()
+            _save_indicator_series(i, series_id)
             log_activity("created", "indicator", i.id, i.name)
             db.session.commit()
             flash(t("goals.flash.created"), "success")
             return redirect(url_for("goals.indicator_detail", id=i.id))
-    return render_template("goals/indicator_form.html", i=i, mode="new", **_form_data())
+    return render_template("goals/indicator_form.html", i=i, mode="new", **_form_data(), **_indicator_series_context(i))
 
 
 @bp.get("/indicators/<int:id>")
@@ -696,8 +753,11 @@ def indicator_detail(id):
     ind = F.get_scoped(Indicator, id)
     view = next(v for v in compute_indicators(g.org) if v.ind.id == ind.id)
     chart = line_chart(view.series, ind.target_value)
-    return render_template("goals/indicator_detail.html", i=ind, v=view, chart=chart, rows=list(reversed(view.series)),
-                           notes={x.period_date: x.note for x in ind.values})
+    sid = indicator_series_id(g.org.id, ind.id)
+    linked_series = (_modules().query("series.get", sid, g.org.id) or [None])[0] if sid else None
+    return render_template("goals/indicator_detail.html", i=ind, v=view, chart=chart, linked_series=linked_series,
+                           rows=list(reversed(view.series)),
+                           notes={x.period_date: x.note for x in ind.values if not (x.note or "").startswith("@data:")})
 
 
 @bp.route("/indicators/<int:id>/edit", methods=["GET", "POST"])
@@ -706,20 +766,26 @@ def indicator_edit(id):
     i = F.get_scoped(Indicator, id)
     if request.method == "POST":
         err = _apply_indicator(i)
+        series_id, series_err = _indicator_series_choice()
+        err = err or series_err
         if err:
             flash(t(err), "error")
         else:
+            _save_indicator_series(i, series_id)
             log_activity("updated", "indicator", i.id, i.name)
             db.session.commit()
             flash(t("goals.flash.saved"), "success")
             return redirect(url_for("goals.indicator_detail", id=i.id))
-    return render_template("goals/indicator_form.html", i=i, mode="edit", **_form_data())
+    return render_template("goals/indicator_form.html", i=i, mode="edit", **_form_data(), **_indicator_series_context(i))
 
 
 @bp.post("/indicators/<int:id>/value")
 @require("indicators.edit")
 def indicator_value(id):
     i = F.get_scoped(Indicator, id)
+    if indicator_series_id(g.org.id, i.id):
+        flash(t("goals.auto_values_readonly"), "info")
+        return redirect(url_for("goals.indicator_detail", id=i.id))
     value, period = F.num("value"), F.when("period_date", date.today().replace(day=1))
     if value is None:
         flash(t("goals.errors.value_required"), "error")

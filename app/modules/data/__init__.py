@@ -60,5 +60,5 @@ manifest = Manifest(
         EntityType("series", "data.entity.series", "chart-line", _series, lambda s: s.name, "data.series"),
     ],
     seed=seed,
-    hooks={"key_result.saved": hooks.key_result_saved, "kr.data": hooks.kr_data, "kr.branches": hooks.kr_branches, "series.check": hooks.series_check, "series.exists": hooks.series_exists, "series.catalog": hooks.series_catalog, "series.levels": hooks.series_levels},
+    hooks={"key_result.saved": hooks.key_result_saved, "kr.data": hooks.kr_data, "kr.branches": hooks.kr_branches, "series.check": hooks.series_check, "series.exists": hooks.series_exists, "series.catalog": hooks.series_catalog, "series.get": hooks.series_get, "series.levels": hooks.series_levels},
 )

@@ -10,7 +10,7 @@ from app.modules.goals import models  # noqa: E402,F401  (registers tables)
 from app.modules.goals import views  # noqa: E402,F401  (registers routes on bp)
 from app.modules.goals.search import search_provider  # noqa: E402
 from app.modules.goals.seed import seed  # noqa: E402
-from app.modules.goals.service import sync_from_series  # noqa: E402
+from app.modules.goals.service import remove_series_data, sync_from_series  # noqa: E402
 from app.modules.goals.widgets import attention_loader, indicators_loader, summary_loader  # noqa: E402
 
 
@@ -55,5 +55,5 @@ manifest = Manifest(
         EntityType("indicator", "goals.entity.indicator", "chart-line", _indicator, lambda i: i.name, "goals.indicator_detail"),
     ],
     seed=seed,
-    hooks={"series.updated": sync_from_series},
+    hooks={"series.updated": sync_from_series, "series.deleted": remove_series_data},
 )

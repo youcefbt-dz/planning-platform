@@ -5,6 +5,14 @@
 <div class="crumbs"><a href="{{ url_for('goals.indicators') }}">{{ t('goals.tabs.indicators') }}</a>{{ icon('chevron-right', 13, flip=true) }}<span>{{ t('goals.create.indicator') if mode == 'new' else t('goals.edit_title') }}</span></div>
 <div class="page-head"><div><h1>{{ icon('chart-line', 22) }}{{ t('goals.create.indicator') if mode == 'new' else t('goals.edit_title') }}</h1><p class="sub">{{ t('goals.indicator_form_sub') }}</p></div></div>
 <form method="post" style="max-width:860px">{{ csrf() }}
+  {% if data_enabled %}
+  <div class="box"><div class="box-body">
+    <h2>{{ t('goals.measurement_source') }}</h2>
+    <p class="hint">{{ t('goals.measurement_source_hint') }}</p>
+    {{ select(t('goals.series_source'), 'series_id', series_options, selected_series_id, blank=t('goals.manual_source')) }}
+    {% if not series_options %}<p class="hint">{{ t('goals.no_series_source') }}</p>{% endif %}
+  </div></div>
+  {% endif %}
   <div class="box"><div class="box-body">
     {{ field(t('goals.indicator_name'), 'name', i.name or '', required=true, hint=t('goals.indicator_name_hint')) }}
     {{ textarea(t('common.description'), 'description', i.description) }}
