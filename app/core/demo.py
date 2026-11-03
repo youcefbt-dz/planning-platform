@@ -13,15 +13,40 @@ from app.extensions import db
 SLUGS = {"ar": "demo"}
 
 ORG_NAME = "مؤسسة الأفق للتجهيزات"
-PEOPLE = {  # key: (name, title, role)
-    "ceo": ("سمير بن عيسى", "المدير العام", "owner"),
-    "sales": ("كريم مزياني", "مدير المبيعات", "admin"),
-    "ops": ("ليلى بوزيد", "مديرة العمليات", "admin"),
+PEOPLE = {  # key: (name, title, role, unit_key)
+    "ceo": ("سمير بن عيسى", "المدير العام", "owner", "root"),
+    "sales": ("كريم مزياني", "مدير المبيعات", "admin", "sales"),
+    "marketing": ("نادية بوعلام", "مديرة التسويق", "admin", "marketing"),
+    "ops": ("ليلى بوزيد", "مديرة العمليات", "admin", "ops"),
+    "supply": ("مراد شرفي", "مدير المشتريات والإمداد", "admin", "supply"),
+    "fin": ("أمينة قادري", "مديرة المالية", "admin", "fin"),
+    "people": ("يوسف رحماني", "مدير الموارد البشرية", "admin", "people"),
+    "tech": ("سليم عمار", "مدير التحول الرقمي", "admin", "tech"),
+    "customer": ("مريم بن عمر", "مديرة خدمة العملاء", "admin", "customer"),
+    "logistics": ("بلال قاسمي", "مدير النقل والتوزيع", "admin", "logistics"),
 }
-UNITS = [  # key, parent, kind, name
+STAFF = [  # one visible team member in each department, so the demo is not a set of empty boxes
+    ("sales_staff", "رانيا بوعلي", "مسؤولة الحسابات الرئيسية", "sales"),
+    ("marketing_staff", "هشام بوزيان", "مسؤول الحملات التجارية", "marketing"),
+    ("ops_staff", "سارة قادري", "مسؤولة متابعة الطلبات", "ops"),
+    ("supply_staff", "إلياس شريف", "مسؤول علاقات الموردين", "supply"),
+    ("fin_staff", "نسرين عابد", "محاسبة التكاليف", "fin"),
+    ("people_staff", "مروان بوشارب", "مسؤول التوظيف والتكوين", "people"),
+    ("tech_staff", "ياسين عيساوي", "مهندس نظم المعلومات", "tech"),
+    ("customer_staff", "إيمان زروقي", "مستشارة خدمة العملاء", "customer"),
+    ("logistics_staff", "عبد الرحمن قادري", "منسق الأسطول", "logistics"),
+]
+UNITS = [  # key, parent, kind, name — a realistic structure for the distribution company
     ("root", None, "company", ORG_NAME),
     ("sales", "root", "department", "المبيعات"),
+    ("marketing", "root", "department", "التسويق وتطوير الأعمال"),
     ("ops", "root", "department", "العمليات"),
+    ("supply", "root", "department", "المشتريات والإمداد"),
+    ("fin", "root", "department", "المالية والمحاسبة"),
+    ("people", "root", "department", "الموارد البشرية"),
+    ("tech", "root", "department", "تقنية المعلومات والتحول الرقمي"),
+    ("customer", "root", "department", "خدمة العملاء والجودة"),
+    ("logistics", "root", "department", "النقل والتوزيع"),
 ]
 
 
@@ -87,15 +112,22 @@ def create_demo(lang: str, today: date | None = None) -> Organization:
         units[key] = u
 
     users = {}
-    for key, (names, titles, role) in PEOPLE.items():
-        u = User(email=f"{key}@{slug}.demo.invalid", name=names, lang=lang)
+    for key, (name, title, role, unit_key) in PEOPLE.items():
+        u = User(email=f"{key}@{slug}.demo.invalid", name=name, lang=lang)
         u.set_password(secrets.token_urlsafe(24))  # nobody signs in as a demo person
         db.session.add(u)
         db.session.flush()
         users[key] = u
-        unit = {"ceo": "root", "sales": "sales", "ops": "ops"}[key]
-        db.session.add(Membership(org_id=org.id, user_id=u.id, role=role, unit_id=units[unit].id, title=titles))
-        units[unit].head_id = u.id
+        db.session.add(Membership(org_id=org.id, user_id=u.id, role=role, unit_id=units[unit_key].id, title=title))
+        units[unit_key].head_id = u.id
+
+    for key, name, title, unit_key in STAFF:
+        u = User(email=f"{key}@{slug}.demo.invalid", name=name, lang=lang)
+        u.set_password(secrets.token_urlsafe(24))
+        db.session.add(u)
+        db.session.flush()
+        users[key] = u
+        db.session.add(Membership(org_id=org.id, user_id=u.id, role="member", unit_id=units[unit_key].id, title=title))
 
     y = today.year
     year = Cycle(org_id=org.id, name=str(y), kind="year", start_date=date(y, 1, 1), end_date=date(y, 12, 31), status="active")

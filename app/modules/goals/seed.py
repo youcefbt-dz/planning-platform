@@ -1,6 +1,6 @@
-"""Demo data for the goals module — a small fictional distribution company; kept simple on purpose.
-
-Values are generated from a target *delta against expected progress*, so the demo always shows
+"""Demo OKRs and KPIs for a fictional distribution company with one institutional goal
+cascading into nine department goals. Values are generated from a target *delta against expected progress*,
+so the demo always shows
 a believable mix of statuses whatever day it is opened.
 """
 from __future__ import annotations
@@ -14,44 +14,76 @@ from app.extensions import db
 from app.modules.goals.models import Indicator, IndicatorValue, KeyResult, Objective
 
 
-# A deliberately small demo: three company goals, two department goals that serve them, and three indicators. Each one reads at a glance:
-#   تنمية رقم الأعمال ... على المسار      إرضاء عملائنا ... معرَّض للخطر      تشغيل أسرع ... خارج المسار
+# One institutional objective owns the shared outcome; its children are owned by nine departments.
 # (key, parent_key, level 'year'|'quarter', owner, unit, perspective, title, [KRs], note?)
 # KR: (title, unit_label, start, target, delta_points against the progress expected today, metric_type)
 # delta: about 0 or above = on track; -15 to -20 = at risk; -30 or worse = off track (the status rules are 10 and 25 points).
 OBJECTIVES = [
-    ("rev", None, "year", "ceo", "root", "financial",
-     "تنمية رقم الأعمال بربحية",
+    # One institutional outcome; its progress is calculated from the department goals below.
+    ("institution", None, "year", "ceo", "root", "financial",
+     "تحقيق نمو مربح ومستدام مع رفع جودة الخدمة وكفاءة التشغيل",
+     [], None),
+
+    # Department goals: every one is explicitly aligned with the institutional objective.
+    ("sales", "institution", "year", "sales", "sales", "financial",
+     "زيادة المبيعات وتوسيع قاعدة العملاء",
      [("رقم الأعمال السنوي", "مليون دج", 480, 600, 2, "number"),
-      ("هامش الربح الإجمالي", "%", 27, 31, -3, "percent")],
-     None),
-    ("cust", None, "year", "sales", "root", "customer",
-     "إرضاء عملائنا",
-     [("نسبة العملاء الراضين", "%", 70, 85, -16, "percent"),
-      ("نسبة التسليم في الموعد", "%", 82, 95, -17, "percent")],
-     None),
-    ("ops", None, "year", "ops", "root", "process",
-     "تشغيل أسرع وأكثر موثوقية",
-     [("المدة من الطلب إلى التسليم (يوم)", "يوم", 9, 5, -32, "number"),
-      ("الطلبيات التي فيها خطأ", "%", 3.2, 1, -30, "percent")],
-     None),
-    ("rev_q", "rev", "quarter", "sales", "sales", "financial",
-     "كسب 25 عميلًا جديدًا هذا الربع",
-     [("عملاء جدد", "", 0, 25, 3, "number"),
-      ("زيارات العملاء المحتملين", "", 0, 60, 0, "number")],
-     None),
-    ("wh_q", "ops", "quarter", "ops", "ops", "process",
-     "تجهيز الطلبيات في المستودع بسرعة أكبر",
-     [("مدة تجهيز الطلبية (ساعة)", "ساعة", 36, 12, -30, "number"),
-      ("أخطاء التحضير لكل 1000 سطر", "", 32, 10, -12, "number")],
-     "تأخر وصول الماسحات الضوئية من المورّد"),
+      ("عملاء جدد نشطون", "عميل", 0, 120, -8, "number")], None),
+
+    ("marketing", "institution", "year", "marketing", "marketing", "customer",
+     "توليد طلب مؤهل يدعم نمو المبيعات",
+     [("فرص بيع مؤهلة", "فرصة", 90, 300, -10, "number"),
+      ("تحويل الفرص إلى عملاء", "%", 11, 18, -12, "percent")], None),
+
+    ("operations", "institution", "year", "ops", "ops", "process",
+     "رفع موثوقية تنفيذ الطلبات وتسريع دورة التشغيل",
+     [("نسبة التسليم في الموعد", "%", 82, 95, -17, "percent"),
+      ("المدة من الطلب إلى التسليم (يوم)", "يوم", 9, 5, -32, "number")], None),
+
+    ("supply", "institution", "year", "supply", "supply", "process",
+     "ضمان توفر المنتجات وتحسين أداء الموردين",
+     [("التوريد في الموعد", "%", 78, 94, -12, "percent"),
+      ("نسبة نفاد المخزون", "%", 8, 2, -18, "percent")],
+     "تأخر توريد بعض الأصناف ذات الدوران المرتفع أثر مؤقتًا في توفر المخزون"),
+
+    ("finance", "institution", "year", "fin", "fin", "financial",
+     "حماية هامش الربح وتحسين إدارة السيولة",
+     [("هامش الربح الإجمالي", "%", 27, 31, -3, "percent"),
+      ("تحصيل المستحقات خلال 60 يومًا", "%", 68, 90, -14, "percent")], None),
+
+    ("people", "institution", "year", "people", "people", "learning",
+     "رفع جاهزية الكفاءات وتحسين إنتاجية الفريق",
+     [("تغطية الوظائف بالتكوين", "%", 35, 90, -15, "percent"),
+      ("مدة شغل المناصب الشاغرة", "يوم", 60, 30, -10, "number")], None),
+
+    ("technology", "institution", "year", "tech", "tech", "process",
+     "رقمنة الإجراءات ورفع موثوقية الأنظمة",
+     [("الطلبات المعالجة رقميًا", "%", 25, 80, -10, "percent"),
+      ("جاهزية الأنظمة", "%", 96, 99.5, -4, "percent")], None),
+
+    ("customer", "institution", "year", "customer", "customer", "customer",
+     "تحسين تجربة العميل وتسريع معالجة الشكاوى",
+     [("رضا العملاء", "%", 72, 90, -16, "percent"),
+      ("الشكاوى المعالجة خلال 48 ساعة", "%", 60, 90, -12, "percent")], None),
+
+    ("logistics", "institution", "year", "logistics", "logistics", "process",
+     "خفض تكلفة التوزيع وتحسين استغلال الأسطول",
+     [("تكلفة التوصيل للطلب", "دج", 1450, 1150, -10, "number"),
+      ("معدل استغلال الأسطول", "%", 62, 82, -12, "percent")], None),
 ]
 
-# Why each company goal matters
+# Why each institutional and department objective matters
 RATIONALE = {
-    "rev": "نمو مربح يمكّننا من تمويل المخزون والفريق.",
-    "cust": "العميل الراضي يعود ويوصي بنا، ويقلّل كلفة اكتساب عملاء جدد.",
-    "ops": "كل يوم تأخير في التسليم يتحول إلى شكوى وإلى مال متأخر.",
+    "institution": "توحيد جهود الأقسام حول نتيجة واحدة: نمو تجاري مربح ينعكس على العميل ولا يأتي على حساب كفاءة التشغيل.",
+    "sales": "زيادة الإيرادات تحتاج إلى نمو قاعدة العملاء مع الحفاظ على قيمة كل صفقة.",
+    "marketing": "توفير فرص بيع ذات جودة يمنح فريق المبيعات خطًا مستمرًا من العملاء المحتملين.",
+    "operations": "سرعة التنفيذ ودقته هما ما يحوّل الوعد التجاري إلى تجربة موثوقة.",
+    "supply": "توفر المخزون في الوقت المناسب يمنع ضياع المبيعات ويحد من تكاليف التخزين الطارئ.",
+    "finance": "حماية الهامش والسيولة تجعل النمو قابلًا للاستمرار والتمويل.",
+    "people": "النتائج التشغيلية تعتمد على جاهزية الفرق ووضوح المسؤوليات والمهارات.",
+    "technology": "رقمنة الإجراءات تقلل العمل اليدوي وتوفر بيانات أدق لاتخاذ القرار.",
+    "customer": "معالجة احتياجات العميل بسرعة تحافظ على الثقة وتزيد فرص عودته.",
+    "logistics": "تحسين مسارات التوزيع واستغلال الأسطول يخفض التكلفة ويحسن الالتزام بالمواعيد.",
 }
 ASPIRATIONAL: set[str] = set()
 
@@ -63,11 +95,18 @@ COMMENTS = [
     "",
 ]
 
-# (name, unit_label, metric_type, direction, baseline, target, start_value, end_value, owner, perspective)
 INDICATORS = [
-    ("رقم الأعمال الشهري", "مليون دج", "number", "higher_better", 40, 50, 41, 47.5, "ceo", "financial"),
-    ("نسبة التسليم في الموعد", "%", "percent", "higher_better", 80, 95, 82, 88.5, "ops", "customer"),
-    ("المدة من الطلب إلى التسليم (يوم)", "يوم", "number", "lower_better", 9.5, 5, 9, 6.8, "ops", "process"),
+    # name, unit, type, direction, baseline, target, first, latest, owner, perspective, org unit
+    ("رقم الأعمال الشهري", "مليون دج", "number", "higher_better", 40, 50, 41, 47.5, "sales", "financial", "sales"),
+    ("نسبة التسليم في الموعد", "%", "percent", "higher_better", 80, 95, 82, 88.5, "ops", "customer", "ops"),
+    ("المدة من الطلب إلى التسليم (يوم)", "يوم", "number", "lower_better", 9.5, 5, 9, 6.8, "ops", "process", "ops"),
+    ("فرص البيع المؤهلة شهريًا", "فرصة", "number", "higher_better", 14, 35, 16, 29, "marketing", "customer", "marketing"),
+    ("التوريد في الموعد", "%", "percent", "higher_better", 78, 94, 80, 88, "supply", "process", "supply"),
+    ("هامش الربح الإجمالي", "%", "percent", "higher_better", 27, 31, 27.5, 29.1, "fin", "financial", "fin"),
+    ("تغطية الموظفين بالتكوين", "%", "percent", "higher_better", 35, 90, 40, 67, "people", "learning", "people"),
+    ("جاهزية الأنظمة الرقمية", "%", "percent", "higher_better", 96, 99.5, 96.2, 98.7, "tech", "process", "tech"),
+    ("رضا العملاء", "%", "percent", "higher_better", 72, 90, 74, 84, "customer", "customer", "customer"),
+    ("تكلفة التوصيل للطلب", "دج", "number", "lower_better", 1450, 1150, 1420, 1270, "logistics", "financial", "logistics"),
 ]
 
 
@@ -91,7 +130,7 @@ def seed(org, lang: str, ctx: dict) -> None:
         cyc = cycles["year"] if level == "year" else cycles["quarter"]
         o = Objective(org_id=org.id, cycle_id=cyc.id, unit_id=units[unit].id, owner_id=users[owner].id,
                       parent_id=objs[parent].id if parent else None, title=title, perspective=persp,
-                      progress_driver="key_results",
+                      progress_driver="children" if key == "institution" else "key_results",
                       start_date=cyc.start_date, end_date=cyc.end_date,
                       rationale=RATIONALE[key] if key in RATIONALE else None, commitment="aspirational" if key in ASPIRATIONAL else "committed",
                       created_at=datetime.combine(cyc.start_date, datetime.min.time()) + timedelta(days=2))
@@ -113,30 +152,55 @@ def seed(org, lang: str, ctx: dict) -> None:
             kr_rows.append((kr, prog))
         db.session.flush()
 
-        for n, d in enumerate(dates):
-            frac = ((d - o.start_date).days / elapsed_days) ** 0.9
-            when = datetime.combine(d, datetime.min.time()) + timedelta(hours=9 + rnd.randint(0, 6))
-            sum_p = 0.0
-            for kr, prog in kr_rows:
-                wobble = rnd.uniform(-0.02, 0.02)
-                p = max(0.0, min(prog, prog * frac + wobble)) if d != dates[-1] else prog
-                v = _round(kr.start_value + (kr.target_value - kr.start_value) * p, kr.target_value - kr.start_value) if d != dates[-1] else kr.current_value
-                sum_p += P.kr_progress(kr.start_value, kr.target_value, v)
-                db.session.add(CheckIn(org_id=org.id, entity_type="key_result", entity_id=kr.id, user_id=users[owner].id, value=v,
-                                       progress=P.kr_progress(kr.start_value, kr.target_value, v), created_at=when,
-                                       comment=COMMENTS[rnd.randrange(len(COMMENTS))] if n else ""))
-            db.session.add(CheckIn(org_id=org.id, entity_type="objective", entity_id=o.id, user_id=users[owner].id,
-                                   progress=sum_p / len(kr_rows), created_at=when + timedelta(minutes=5), comment=""))
+        if kr_rows:
+            for n, d in enumerate(dates):
+                frac = ((d - o.start_date).days / elapsed_days) ** 0.9
+                when = datetime.combine(d, datetime.min.time()) + timedelta(hours=9 + rnd.randint(0, 6))
+                sum_p = 0.0
+                for kr, prog in kr_rows:
+                    wobble = rnd.uniform(-0.02, 0.02)
+                    p = max(0.0, min(prog, prog * frac + wobble)) if d != dates[-1] else prog
+                    v = _round(kr.start_value + (kr.target_value - kr.start_value) * p, kr.target_value - kr.start_value) if d != dates[-1] else kr.current_value
+                    sum_p += P.kr_progress(kr.start_value, kr.target_value, v)
+                    db.session.add(CheckIn(org_id=org.id, entity_type="key_result", entity_id=kr.id, user_id=users[owner].id, value=v,
+                                           progress=P.kr_progress(kr.start_value, kr.target_value, v), created_at=when,
+                                           comment=COMMENTS[rnd.randrange(len(COMMENTS))] if n else ""))
+                db.session.add(CheckIn(org_id=org.id, entity_type="objective", entity_id=o.id, user_id=users[owner].id,
+                                       progress=sum_p / len(kr_rows), created_at=when + timedelta(minutes=5), comment=""))
         if note:
             db.session.add(CheckIn(org_id=org.id, entity_type="objective", entity_id=o.id, user_id=users[owner].id,
                                    progress=sum(p for _, p in kr_rows) / len(kr_rows), created_at=datetime.utcnow() - timedelta(days=2),
                                    comment=note, status="off_track"))
-    ctx["objectives"] = objs
+    # The institutional objective has no independent metric: its progress is the weighted roll-up of all department objectives.
+    from app.modules.goals.service import compute_objectives
+    rollup = compute_objectives(org, today=today).get(objs["institution"].id)
+    if rollup:
+        db.session.add(CheckIn(org_id=org.id, entity_type="objective", entity_id=objs["institution"].id,
+                               user_id=users["ceo"].id, progress=rollup.progress,
+                               created_at=datetime.combine(today, datetime.min.time()) + timedelta(hours=10),
+                               comment="ملخص تقدم الأهداف الفرعية للأقسام"))
 
-    for name, ul, mt, direction, base, target, v0, v1, owner, persp in INDICATORS:
+    # Genuine cross-functional dependencies, separate from the parent-child alignment above.
+    from app.core.models import Link
+    for source, target in (("sales", "marketing"), ("operations", "supply"), ("customer", "logistics"), ("finance", "sales")):
+        db.session.add(Link(org_id=org.id, source_type="objective", source_id=objs[source].id,
+                            target_type="objective", target_id=objs[target].id, kind="depends_on"))
+
+    # Keep the optional strategy/initiatives seeders compatible without enabling either module.
+    # Their older objective keys now point to the closest matching department goal.
+    objective_refs = dict(objs)
+    objective_refs.update({
+        "rev": objs["sales"], "rev_q": objs["sales"],
+        "cust": objs["customer"], "promise_q": objs["customer"],
+        "ops": objs["operations"], "wh_q": objs["operations"],
+        "cash_q": objs["finance"], "onb_q": objs["people"], "team": objs["people"],
+    })
+    ctx["objectives"] = objective_refs
+
+    for name, ul, mt, direction, base, target, v0, v1, owner, persp, unit_key in INDICATORS:
         ind = Indicator(org_id=org.id, name=name, unit_label=ul, metric_type=mt, direction=direction, frequency="monthly",
                         baseline_value=base, target_value=target, owner_id=users[owner].id, perspective=persp,
-                        unit_id=units["root"].id)
+                        unit_id=units[unit_key].id)
         db.session.add(ind)
         db.session.flush()
         months = 10
