@@ -11,6 +11,7 @@ from app.core.models import Cycle, Membership, Organization, OrgUnit, User
 from app.extensions import db
 
 SLUGS = {"ar": "demo"}
+DEMO_SEED_VERSION = "2026-11-03-2"
 
 ORG_NAME = "مؤسسة الأفق للتجهيزات"
 PEOPLE = {  # key: (name, title, role, unit_key)
@@ -97,7 +98,7 @@ def create_demo(lang: str, today: date | None = None) -> Organization:
     today = today or date.today()
     slug = SLUGS[lang]
     delete_demo(slug)
-    org = Organization(name=ORG_NAME, slug=slug, is_demo=True, settings={})
+    org = Organization(name=ORG_NAME, slug=slug, is_demo=True, settings={"demo_seed_version": DEMO_SEED_VERSION})
     db.session.add(org)
     db.session.flush()
     from app.core import profile as _profile
@@ -153,11 +154,16 @@ def ensure_demo(lang: str = "ar") -> Organization | None:
     import logging
 
     org = Organization.query.filter_by(slug=SLUGS[lang], is_demo=True).first()
-    if org is not None:
+    if org is not None and (org.settings or {}).get("demo_seed_version") == DEMO_SEED_VERSION:
         return org
     try:
+        # Rebuild an older persistent demo once after a seed revision. Otherwise Render's
+        # existing database would keep serving stale demo content indefinitely.
         return create_demo(lang)
     except Exception:                       # a second worker built it first, or a seed failed: never take the page down
         db.session.rollback()
         logging.getLogger(__name__).exception("could not build the demo organization")
-        return Organization.query.filter_by(slug=SLUGS[lang], is_demo=True).first()
+        current = Organization.query.filter_by(slug=SLUGS[lang], is_demo=True).first()
+        if current is not None and (current.settings or {}).get("demo_seed_version") == DEMO_SEED_VERSION:
+            return current
+        return current
