@@ -187,6 +187,61 @@ def test_key_result_gets_linked_to_a_series_from_the_goal_form(app, owner):
         assert KeyResult.query.count() == 1
 
 
+def test_indicator_tracks_confirmed_data_and_can_return_to_manual_mode(app, owner):
+    c, slug = owner
+    r = upload(c, slug, "sales_by_branch.xlsx")
+    ds_id = int(r.headers["Location"].split("/")[-2])
+    c.post(f"/app/{slug}/data/{ds_id}/confirm")
+    with app.app_context():
+        source = Series.query.filter_by(dimension=None).first()
+        sid = source.id
+        initial_latest = source.latest[1]
+
+    created = c.post(f"/app/{slug}/goals/indicators/new", data={
+        "name": "Sales KPI", "target_value": "9999", "baseline_value": "100",
+        "metric_type": "number", "unit_label": "DZD", "direction": "higher_better",
+        "frequency": "monthly", "series_id": str(sid),
+    })
+    assert created.status_code == 302
+    indicator_id = int(created.headers["Location"].rstrip("/").split("/")[-1])
+
+    with app.app_context():
+        from app.modules.goals.models import Indicator, IndicatorValue
+        ind = db.session.get(Indicator, indicator_id)
+        values = IndicatorValue.query.filter_by(indicator_id=indicator_id).order_by(IndicatorValue.period_date).all()
+        assert Link.query.filter_by(org_id=ind.org_id, source_type="indicator", source_id=indicator_id,
+                                    target_type="series", target_id=sid, kind="measured_by").count() == 1
+        assert values and values[-1].value == initial_latest
+        assert all(v.note == f"@data:{sid}" for v in values)
+
+        source = db.session.get(Series, sid)
+        changed_latest = initial_latest + 25
+        source.points = [*source.points[:-1], [source.points[-1][0], changed_latest]]
+        from flask import current_app
+        current_app.extensions["modules"].hook("series.updated", series=[source], user_id=None)
+        db.session.flush()
+        values = IndicatorValue.query.filter_by(indicator_id=indicator_id).order_by(IndicatorValue.period_date).all()
+        assert values[-1].value == changed_latest
+
+    edited = c.post(f"/app/{slug}/goals/indicators/{indicator_id}/edit", data={
+        "name": "Sales KPI", "target_value": "9999", "baseline_value": "100",
+        "metric_type": "number", "unit_label": "DZD", "direction": "higher_better",
+        "frequency": "monthly", "series_id": "",
+    })
+    assert edited.status_code == 302
+    with app.app_context():
+        from app.modules.goals.models import IndicatorValue
+        assert not IndicatorValue.query.filter_by(indicator_id=indicator_id).filter(IndicatorValue.note.like("@data:%")).count()
+
+    recorded = c.post(f"/app/{slug}/goals/indicators/{indicator_id}/value", data={
+        "value": "123", "period_date": date.today().replace(day=1).isoformat(),
+    })
+    assert recorded.status_code == 302
+    with app.app_context():
+        row = IndicatorValue.query.filter_by(indicator_id=indicator_id).one()
+        assert row.value == 123 and not row.note.startswith("@data:")
+
+
 def test_ai_settings_page_and_consent_switch(app, owner, monkeypatch):
     c, slug = owner
     page = c.get(f"/app/{slug}/settings/ai").get_data(as_text=True)

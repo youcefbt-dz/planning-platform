@@ -6,12 +6,13 @@ run N+1 queries. The rules themselves live in app/core/progress.py.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import func
 
 from app.core import progress as P
-from app.core.models import CheckIn
+from app.core.models import CheckIn, Link
+from app.extensions import db
 from app.core.services import cadence_days, thresholds
 from app.modules.goals.models import Indicator, IndicatorValue, KeyResult, Objective
 
@@ -167,6 +168,67 @@ def compute_indicators(org) -> list[IndView]:
     return out
 
 
+# -- indicators linked to the data module -------------------------------------------------------------
+def indicator_series_id(org_id: int, indicator_id: int) -> int | None:
+    """Return the data series currently measuring this indicator, if any."""
+    link = Link.query.filter_by(org_id=org_id, source_type="indicator", source_id=indicator_id,
+                                target_type="series", kind="measured_by").first()
+    return link.target_id if link else None
+
+
+def _indicator_period(d: date, frequency: str) -> date:
+    """Normalize a source observation to the indicator's reporting period."""
+    if frequency == "weekly":
+        return d - timedelta(days=d.weekday())
+    if frequency == "quarterly":
+        return date(d.year, ((d.month - 1) // 3) * 3 + 1, 1)
+    if frequency == "yearly":
+        return date(d.year, 1, 1)
+    return date(d.year, d.month, 1)
+
+
+def _sync_indicator_values(ind: Indicator, source, points: list[tuple[date, float]]) -> None:
+    """Replace only values imported from this data integration; leave unrelated manual history intact."""
+    marker = f"@data:{source.id}"
+    old = (IndicatorValue.query.filter_by(indicator_id=ind.id)
+           .filter(IndicatorValue.note.like("@data:%")).all())
+    for row in old:
+        db.session.delete(row)
+    db.session.flush()
+
+    buckets: dict[date, list[float]] = {}
+    for period, value in points:
+        key = _indicator_period(period, ind.frequency)
+        buckets.setdefault(key, []).append(float(value))
+
+    for period, values in sorted(buckets.items()):
+        if source.aggregation == "sum":
+            value = sum(values)
+        elif source.aggregation == "avg":
+            value = sum(values) / len(values)
+        else:
+            value = values[-1]
+        row = IndicatorValue.query.filter_by(indicator_id=ind.id, period_date=period).first()
+        if row is None:
+            db.session.add(IndicatorValue(indicator_id=ind.id, period_date=period, value=value, note=marker))
+        else:
+            # A linked source is authoritative for its reporting periods.
+            row.value, row.note = value, marker
+
+
+def remove_series_data(series, **_) -> None:
+    """Clean indicator links and imported values when a source series is deleted."""
+    for source in series:
+        links = Link.query.filter_by(org_id=source.org_id, source_type="indicator", target_type="series",
+                                     target_id=source.id, kind="measured_by").all()
+        for link in links:
+            ind = db.session.get(Indicator, link.source_id)
+            if ind is not None and ind.org_id == source.org_id:
+                IndicatorValue.query.filter_by(indicator_id=ind.id, note=f"@data:{source.id}").delete(synchronize_session=False)
+            db.session.delete(link)
+    db.session.flush()
+
+
 # -- data -> key results (the "series.updated" hook) ------------------------------------------------------------------
 def sync_from_series(series, user_id=None, **_):
     """New data was confirmed: bring every key result measured by one of these series up to date and leave a check-in that says so.
@@ -179,6 +241,16 @@ def sync_from_series(series, user_id=None, **_):
     touched: dict[int, int] = {}                                   # objective id -> org id
     for s in series:
         pts = s.pairs()
+
+        # KPIs use the same cross-module relation as key results. Their history is
+        # rebuilt from the confirmed source, so revised or removed periods cannot linger.
+        indicator_links = Link.query.filter_by(org_id=s.org_id, target_type="series", target_id=s.id,
+                                               kind="measured_by", source_type="indicator").all()
+        for link in indicator_links:
+            ind = db.session.get(Indicator, link.source_id)
+            if ind is not None and ind.org_id == s.org_id:
+                _sync_indicator_values(ind, s, pts)
+
         if not pts:
             continue
         links = Link.query.filter_by(org_id=s.org_id, target_type="series", target_id=s.id, kind="measured_by", source_type="key_result").all()

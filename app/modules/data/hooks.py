@@ -100,6 +100,12 @@ def series_levels(series_id, org_id, *, end_date):
     return {"start": start, "unit": s.unit, "direction": s.direction, **(lv or {})} if lv else {"start": start, "unit": s.unit, "direction": s.direction, "insufficient": True}
 
 
+def series_get(series_id, org_id):
+    """Return one series only when it belongs to the requesting organization."""
+    s = db.session.get(Series, series_id) if series_id else None
+    return s if s is not None and s.org_id == org_id else None
+
+
 def series_exists(org_id):
     return True if Series.query.filter_by(org_id=org_id).first() else None
 
