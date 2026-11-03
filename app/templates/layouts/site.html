@@ -17,6 +17,7 @@
       <a href="{{ url_for('site.landing') }}#modular">{{ t('site.nav.modular') }}</a>
       <a href="{{ url_for('site.landing') }}#waitlist">{{ t('site.nav.waitlist') }}</a>
       {% if config.ENABLE_DEMO %}<a href="{{ url_for('site.demo') }}">{{ t('site.nav.demo') }}</a>{% endif %}
+      <a href="{{ url_for('site.presentation') }}">{{ t('site.nav.presentation') }}</a>
       {% if me.is_authenticated %}<a class="btn-pill btn-pill--sm btn-pill--outline" href="{{ url_for('auth.app_home') }}">{{ t('site.nav.open_app') }}</a>
       {% else %}<a class="nav-login" href="{{ url_for('auth.login') }}">{{ t('auth.login') }}</a>
       <a class="btn-pill btn-pill--sm btn-pill--outline" href="{{ url_for('auth.register') }}">{{ t('site.nav.start') }}</a>{% endif %}

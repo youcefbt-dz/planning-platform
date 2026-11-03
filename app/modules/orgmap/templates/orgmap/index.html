@@ -14,7 +14,7 @@
   </div>
 
   <div class="jx__hud" data-hud>
-    <div class="jx__title"><h1>{{ icon('sitemap', 20) }}{{ t('orgmap.jx.title') }}</h1><p>{{ t('orgmap.sub') }}</p></div>
+    <div class="jx__title"><h1>{{ icon('sitemap', 19) }}{{ t('orgmap.jx.title') }}</h1><p>{{ t('orgmap.sub') }}</p></div>
     <div class="jx__stats">
       <div><b class="num"><bdi dir="ltr">{{ payload.journey }}%</bdi></b><span>{{ t('orgmap.jx.journey') }}</span></div>
       {% if payload.time is not none %}{% set gap = payload.journey - payload.time %}
@@ -22,13 +22,16 @@
       <div data-tone="{{ 'lead' if gap >= 0 else 'lag' }}"><b class="num"><bdi dir="ltr">{{ '+' ~ gap if gap > 0 else ('−' ~ (-gap) if gap < 0 else '0') }}</bdi></b><span>{{ t('orgmap.jx.pace') }}</span></div>{% endif %}
       {% if payload.days_left is not none %}<div><b class="num"><bdi dir="ltr">{{ payload.days_left }}</bdi></b><span>{{ t('orgmap.jx.left') }}</span></div>{% endif %}
     </div>
-    <ul class="jx__legend" aria-hidden="true">
-      <li><i class="lg-gap"></i>{{ t('orgmap.jx.legend_gap') }}</li>
-      <li><i class="lg-tick"></i>{{ t('orgmap.jx.legend_today') }}</li>
-      <li><i class="lg-dep"></i>{{ t('orgmap.jx.legend_dep') }}</li>
-      <li><i class="lg-warn"></i>{{ t('orgmap.jx.legend_warn') }}</li>
-      <li><i class="lg-align"></i>{{ t('orgmap.jx.legend_align') }}</li>
-    </ul>
+    <details class="jx__legend-details">
+      <summary>{{ t('orgmap.jx.legend_title') }}</summary>
+      <ul class="jx__legend">
+        <li><i class="lg-gap"></i>{{ t('orgmap.jx.legend_gap') }}</li>
+        <li><i class="lg-tick"></i>{{ t('orgmap.jx.legend_today') }}</li>
+        <li><i class="lg-dep"></i>{{ t('orgmap.jx.legend_dep') }}</li>
+        <li><i class="lg-warn"></i>{{ t('orgmap.jx.legend_warn') }}</li>
+        <li><i class="lg-align"></i>{{ t('orgmap.jx.legend_align') }}</li>
+      </ul>
+    </details>
   </div>
 
   <nav class="jx__chips" data-chips aria-label="{{ t('orgmap.jx.map') }}"></nav>
@@ -37,6 +40,7 @@
     <button type="button" class="jx-tog" data-layer="deps" aria-pressed="true">{{ icon('route', 15) }}{{ t('orgmap.jx.deps') }}</button>
     <button type="button" class="jx-tog" data-layer="align" aria-pressed="true">{{ icon('sitemap', 15) }}{{ t('orgmap.jx.align') }}</button>
     <button type="button" class="jx-tog jx-tog--plain" data-export title="{{ t('orgmap.jx.export') }}">{{ icon('download', 15) }}</button>
+    <button type="button" class="jx-tog jx-tog--voice" data-voice-open aria-expanded="false" aria-controls="jx-voice-player" aria-label="{{ t('orgmap.jx.voice') }}">{{ icon('audio-lines', 16) }}<span>{{ t('orgmap.jx.voice') }}</span></button>
   </div>
 
   <div class="jx__zoom" role="group" aria-label="{{ t('orgmap.jx.map') }}">
@@ -49,8 +53,52 @@
   <div class="jx__mini" data-mini aria-hidden="true"></div>
   <p class="jx__hint" aria-hidden="true">{{ t('orgmap.jx.hint') }}</p>
   <aside class="jx__panel" data-panel hidden aria-live="polite"></aside>
+
+  <aside class="jx__voice" id="jx-voice-player" data-voice-player data-explain-url="{{ url_for('orgmap.explain') }}" data-ask-url="{{ url_for('orgmap.ask') }}" data-speech-url="{{ url_for('orgmap.speech') }}"
+    data-label-intro="{{ t('orgmap.jx.voice_intro') }}" data-label-play="{{ t('orgmap.jx.voice_play') }}" data-label-pause="{{ t('orgmap.jx.voice_pause') }}"
+    data-label-wait="{{ t('orgmap.jx.voice_wait') }}" data-label-preparing="{{ t('orgmap.jx.voice_preparing') }}"
+    data-label-ready="{{ t('orgmap.jx.voice_ready') }}" data-label-error="{{ t('orgmap.jx.voice_error') }}"
+    data-label-part="{{ t('orgmap.jx.voice_part') }}" data-label-model="{{ t('orgmap.jx.voice_model') }}"
+    data-label-rules="{{ t('orgmap.jx.voice_rules') }}" data-label-browser="{{ t('orgmap.jx.voice_browser') }}"
+    data-label-ask="{{ t('orgmap.jx.voice_ask') }}" data-label-answer="{{ t('orgmap.jx.voice_answer') }}"
+    data-label-question-error="{{ t('orgmap.jx.voice_question_error') }}" hidden aria-label="{{ t('orgmap.jx.voice_intro') }}">
+    <header class="jx-voice__head">
+      <div class="jx-voice__identity">
+        <span class="jx-voice__mark">{{ icon('audio-waveform', 18) }}</span>
+        <div><strong>{{ t('orgmap.jx.voice_intro') }}</strong><small data-voice-engine>{{ t('orgmap.jx.voice_wait') }}</small></div>
+      </div>
+      <button type="button" class="jx-voice__close" data-voice-close aria-label="{{ t('orgmap.jx.voice_close') }}">×</button>
+    </header>
+    <div class="jx-voice__body">
+      <div class="jx-voice__current">
+        <span class="jx-voice__eyebrow" data-voice-counter>{{ t('orgmap.jx.voice_part') }} 1</span>
+        <strong data-voice-title>{{ t('orgmap.jx.voice_intro') }}</strong>
+        <p data-voice-text>{{ t('orgmap.jx.voice_wait') }}</p>
+      </div>
+      <div class="jx-voice__progress" role="progressbar" aria-label="{{ t('orgmap.jx.voice') }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-voice-progress><i data-voice-progress-fill></i></div>
+      <div class="jx-voice__controls">
+        <button type="button" data-voice-prev disabled aria-label="{{ t('orgmap.jx.voice_prev') }}">{{ icon('skip-back', 17) }}</button>
+        <button type="button" class="jx-voice__play" data-voice-play disabled>{{ icon('play', 17) }}<span data-voice-play-label>{{ t('orgmap.jx.voice_play') }}</span></button>
+        <button type="button" data-voice-next disabled aria-label="{{ t('orgmap.jx.voice_next') }}">{{ icon('skip-forward', 17) }}</button>
+        <button type="button" data-voice-stop disabled aria-label="{{ t('orgmap.jx.voice_stop') }}">{{ icon('square', 15) }}</button>
+      </div>
+      <footer class="jx-voice__foot">
+        <label>{{ t('orgmap.jx.voice_select') }}
+          <select data-voice-voice aria-label="{{ t('orgmap.jx.voice_select') }}">
+            <option value="fahad">{{ t('orgmap.jx.voice_male') }}</option>
+            <option value="noura">{{ t('orgmap.jx.voice_female') }}</option>
+          </select>
+        </label>
+        <span data-voice-status aria-live="polite">{{ t('orgmap.jx.voice_wait') }}</span>
+      </footer>
+      <form class="jx-voice__ask" data-voice-question-form>
+        <input type="text" data-voice-question maxlength="220" placeholder="{{ t('orgmap.jx.voice_ask_placeholder') }}" aria-label="{{ t('orgmap.jx.voice_ask') }}" autocomplete="off">
+        <button type="submit">{{ t('orgmap.jx.voice_ask_send') }}</button>
+      </form>
+    </div>
+  </aside>
 </section>
 <p class="insight" style="margin-block-start:var(--sp-5)">{{ icon('bulb', 16) }}<span><b>{{ t('orgmap.read.title') }}:</b> {{ reading }}</span></p>
 {% endif %}
 {% endblock %}
-{% block js_page %}<script src="{{ url_for('static', filename='js/journey.js') }}" defer></script>{% endblock %}
+{% block js_page %}<script src="{{ url_for('static', filename='js/journey.js') }}" defer></script><script src="{{ url_for('static', filename='js/journey-voice.js') }}" defer></script>{% endblock %}

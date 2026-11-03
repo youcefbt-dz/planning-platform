@@ -1,6 +1,7 @@
-{% from "components/ui.html" import dot %}
-{% if data["items"] %}<section class="orb">
+{% from "components/ui.html" import empty %}
+<section class="orb">
   <header class="orb__head"><h2>{{ icon('chart-line', 18) }}{{ t('goals.widget.indicators') }}</h2><a class="btn btn-sm" href="{{ url_for('goals.indicators') }}">{{ t('common.view_all') }}</a></header>
+  {% if data["items"] %}
   <ul class="inds">
     {% for v in data["items"] %}
     {% set tgt = v.ind.target_value %}
@@ -16,4 +17,11 @@
     </li>
     {% endfor %}
   </ul>
-</section>{% endif %}
+  {% else %}
+    <div class="box-body" style="padding-block-start:0">
+      {% call empty('chart-line', t('goals.no_indicators_title'), t('goals.no_indicators_text')) %}
+        {% if can('indicators.edit') %}<a class="btn btn-sm" href="{{ url_for('goals.indicator_new') }}">{{ t('goals.create.indicator') }}</a>{% endif %}
+      {% endcall %}
+    </div>
+  {% endif %}
+</section>

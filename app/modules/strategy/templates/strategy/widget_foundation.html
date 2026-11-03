@@ -1,10 +1,23 @@
-{% if data.vision or data.mission or data["values"] %}
+{% from "components/ui.html" import empty %}
 <div class="box">
-  <div class="box-head"><h2>{{ icon('compass', 18) }}{{ t('strategy.foundation.title') }}</h2><div class="actions"><a class="btn btn-sm" href="{{ url_for('strategy.index') }}">{{ t('common.view_all') }}</a></div></div>
+  <div class="box-head">
+    <h2>{{ icon('compass', 18) }}{{ t('strategy.foundation.title') }}</h2>
+    <span class="count">{{ n(data.priorities) }}</span>
+    <div class="actions"><a class="btn btn-sm" href="{{ url_for('strategy.index') }}">{{ t('common.view_all') }}</a></div>
+  </div>
+  {% if data.vision or data.mission or data["values"] %}
   <div class="box-body"><div class="foundation">
-    <div>{% if data.vision %}<div class="side-title">{{ t('strategy.vision') }}</div><p class="quote">{{ data.vision }}</p>{% endif %}
-      {% if data.mission %}<div class="side-title" style="margin-block-start:var(--sp-4)">{{ t('strategy.mission') }}</div><p style="margin:0">{{ data.mission }}</p>{% endif %}</div>
+    <div>
+      {% if data.vision %}<div class="side-title">{{ t('strategy.vision') }}</div><p class="quote">{{ data.vision }}</p>{% endif %}
+      {% if data.mission %}<div class="side-title" style="margin-block-start:var(--sp-4)">{{ t('strategy.mission') }}</div><p style="margin:0">{{ data.mission }}</p>{% endif %}
+    </div>
     <div>{% if data["values"] %}<div class="side-title">{{ t('strategy.values') }}</div><div class="values-list">{% for v in data["values"] %}<span class="chip chip-primary">{{ v.title }}</span>{% endfor %}</div>{% endif %}</div>
   </div></div>
+  {% else %}
+  <div class="box-body">
+    {% call empty('compass', t('strategy.foundation.empty')) %}
+      <a class="btn btn-sm" href="{{ url_for('strategy.index') }}">{{ t('strategy.foundation.title') }}</a>
+    {% endcall %}
+  </div>
+  {% endif %}
 </div>
-{% endif %}

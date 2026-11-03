@@ -126,3 +126,15 @@
   .factors,.kr__data,.kr__edit{margin-inline-start:0;padding-inline-start:0}
   .factors{padding:var(--sp-3)}
 }
+
+/* Compact classic goal form: start with one measurable result and reveal its optional settings on demand. */
+.goal-assist>details>summary{display:flex;align-items:center;gap:9px;cursor:pointer;list-style:none;padding:2px}
+.goal-assist>details>summary::-webkit-details-marker{display:none}
+.goal-assist>details>summary .muted{margin-inline-start:auto;font-size:var(--fs-xs);max-width:58%;line-height:1.5}
+.goal-assist>details[open]>summary{padding-block-end:10px;border-block-end:1px solid var(--c-line)}
+.krrow__advanced{border-block-start:1px solid var(--c-line);padding-block-start:9px}
+.krrow__advanced>summary{cursor:pointer;color:var(--c-muted);font-size:var(--fs-xs);font-weight:650;list-style:none}
+.krrow__advanced>summary::-webkit-details-marker{display:none}
+.krrow__advanced>summary::after{content:'+';float:inline-end;font-size:16px;font-weight:400}
+.krrow__advanced[open]>summary::after{content:'−'}
+.krrow__advanced-body{display:grid;gap:var(--sp-2);padding-block-start:10px}

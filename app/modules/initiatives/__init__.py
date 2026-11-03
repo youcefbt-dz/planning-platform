@@ -38,7 +38,7 @@ manifest = Manifest(
     ],
     optional_depends=["goals"],
     permissions={"initiatives.edit": "member", "initiatives.delete": "admin"},
-    widgets=[Widget("initiatives_health", "initiatives/widget_health.html", health_loader, order=40, span=2)],
+    widgets=[Widget("initiatives_health", "initiatives/widget_health.html", health_loader, order=40, span=1)],
     create=[CreateAction("initiatives.create", "initiatives.new", "rocket", "initiatives.edit")],
     search=search_provider,
     entities=[EntityType("initiative", "initiatives.entity", "rocket", _initiative, lambda i: i.title, "initiatives.detail")],

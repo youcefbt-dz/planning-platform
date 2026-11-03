@@ -30,22 +30,27 @@
 
 {% call sec('list', 'list-details', t('goals.s_list'), t('goals.s_list_sub')) %}
 <form class="fbar" method="get" data-autosubmit>
-  <select class="select" name="cycle" aria-label="{{ t('common.cycle') }}">
-    <option value="all" {% if not cycle_id %}selected{% endif %}>{{ t('common.all_cycles') }}</option>
-    {% for c in cycles %}<option value="{{ c.id }}" {% if cycle_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
-  </select>
-  <select class="select" name="unit" aria-label="{{ t('common.unit') }}">
-    <option value="">{{ t('common.all_units') }}</option>
-    {% for u in units %}<option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
-  </select>
-  <select class="select" name="owner" aria-label="{{ t('common.owner') }}">
-    <option value="">{{ t('common.all_owners') }}</option>
-    {% for m in members %}<option value="{{ m.user_id }}" {% if owner_id == m.user_id %}selected{% endif %}>{{ m.user.name }}</option>{% endfor %}
-  </select>
-  <select class="select" name="sort" aria-label="{{ t('goals.sort.label') }}">
-    {% for k in ('gap','progress','title') %}<option value="{{ k }}" {% if sort == k %}selected{% endif %}>{{ t('goals.sort.' ~ k) }}</option>{% endfor %}
-  </select>
   <label class="fbar__search">{{ icon('search', 16) }}<input class="input" type="search" name="q" value="{{ q }}" placeholder="{{ t('goals.filter_placeholder') }}"></label>
+  <details class="gfilters" {% if unit_id or owner_id or sort != 'gap' %}open{% endif %}>
+    <summary>{{ icon('adjustments', 15) }}{{ t('goals.filters_more') }}</summary>
+    <div class="gfilters__body">
+      <select class="select" name="cycle" aria-label="{{ t('common.cycle') }}">
+        <option value="all" {% if not cycle_id %}selected{% endif %}>{{ t('common.all_cycles') }}</option>
+        {% for c in cycles %}<option value="{{ c.id }}" {% if cycle_id == c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
+      <select class="select" name="unit" aria-label="{{ t('common.unit') }}">
+        <option value="">{{ t('common.all_units') }}</option>
+        {% for u in units %}<option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
+      </select>
+      <select class="select" name="owner" aria-label="{{ t('common.owner') }}">
+        <option value="">{{ t('common.all_owners') }}</option>
+        {% for m in members %}<option value="{{ m.user_id }}" {% if owner_id == m.user_id %}selected{% endif %}>{{ m.user.name }}</option>{% endfor %}
+      </select>
+      <select class="select" name="sort" aria-label="{{ t('goals.sort.label') }}">
+        {% for k in ('gap','progress','title') %}<option value="{{ k }}" {% if sort == k %}selected{% endif %}>{{ t('goals.sort.' ~ k) }}</option>{% endfor %}
+      </select>
+    </div>
+  </details>
   {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
 </form>
 

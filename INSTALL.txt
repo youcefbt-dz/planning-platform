@@ -1,0 +1,14 @@
+PlanWise — Restore hidden modules
+
+This patch restores the original module switches:
+- Strategy: disabled
+- Initiatives: disabled
+
+Installation:
+1. Stop the Flask server.
+2. Extract this folder inside the planning-platform project root.
+3. Overwrite config/modules.yaml when prompted.
+4. Start Flask again.
+
+No database migration is required. Existing strategy and initiatives data/tables are preserved; the modules are simply hidden throughout the application.
+This patch changes only the module configuration. It does not alter the compact voice assistant UI or other overview sections.

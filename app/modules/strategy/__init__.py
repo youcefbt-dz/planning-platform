@@ -38,7 +38,7 @@ manifest = Manifest(
     ],
     optional_depends=["goals"],
     permissions={"strategy.edit": "admin"},
-    widgets=[Widget("strategy_foundation", "strategy/widget_foundation.html", foundation_loader, order=5, span=2)],
+    widgets=[Widget("strategy_foundation", "strategy/widget_foundation.html", foundation_loader, order=50, span=1)],
     create=[],
     search=search_provider,
     entities=[EntityType("priority", "strategy.entity.priority", "flag-3", _priority, lambda p: p.title, "strategy.index")],

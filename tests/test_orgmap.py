@@ -94,3 +94,75 @@ def test_map_payload_carries_departments_heads_and_real_dependencies(app, owner)
     assert data["deps"] == [{"from": f"goal:{a_id}", "to": f"goal:{b_id}"}]            # `from` depends on `to`
     assert data["i18n"]["status"]["on_track"] and "org" in data
     assert 'data-act="play"' not in page                                               # no player: the picture is always whole, on open space
+
+
+def test_spoken_map_briefing_uses_real_goals_and_can_focus_one_goal(app, owner, monkeypatch):
+    import json, re
+    from app import ai
+    from app.ai.base import AIResult
+    from app.ai.tasks.explain_journey import task as explain_task
+
+    c, slug = owner
+    sid = _ready(app, c, slug)
+    c.post(f"/app/{slug}/goals/compose", data={"series": sid, "target": "999999999", "end": END,
+            "title": "رفع المبيعات", "commitment": "committed", "do": "save"})
+    page = c.get(f"/app/{slug}/map/").get_data(as_text=True)
+    data = json.loads(re.search(r'data-jx-data>(.*?)</script>', page, re.S).group(1))
+    goal_id = data["goals"][0]["id"]
+
+    def offline_result(name, inputs, lang=None):
+        assert name == "explain_journey"
+        return AIResult(data=explain_task.fallback(inputs, lang or "ar"), provider="offline")
+
+    monkeypatch.setattr(ai, "run", offline_result)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+
+    response = c.post(f"/app/{slug}/map/explain", json={})
+    assert response.status_code == 200
+    briefing = response.get_json()
+    assert briefing["segments"][0]["kind"] == "org"
+    assert briefing["segments"][-1]["kind"] == "org"
+    assert any(x["kind"] == "goal" and x["id"] == goal_id for x in briefing["segments"])
+    assert briefing["tts_available"] is False
+
+    focused = c.post(f"/app/{slug}/map/explain", json={"focus": {"kind": "goal", "id": goal_id}})
+    assert focused.status_code == 200
+    segments = focused.get_json()["segments"]
+    assert segments[1]["kind"] == "goal" and segments[1]["id"] == goal_id
+
+
+def test_spoken_map_audio_endpoint_requires_organization_ai_consent(app, owner, monkeypatch):
+    c, slug = owner
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    response = c.post(f"/app/{slug}/map/speech", json={"token": "not-a-valid-token", "voice": "fahad"})
+    assert response.status_code == 403
+
+
+def test_spoken_map_question_returns_a_grounded_answer_for_audio(app, owner, monkeypatch):
+    import json, re
+    from app import ai
+    from app.ai.base import AIResult
+    from app.ai.tasks.ask_journey import task as ask_task
+
+    c, slug = owner
+    sid = _ready(app, c, slug)
+    c.post(f"/app/{slug}/goals/compose", data={"series": sid, "target": "999999999", "end": END,
+            "title": "رفع المبيعات", "commitment": "committed", "do": "save"})
+    page = c.get(f"/app/{slug}/map/").get_data(as_text=True)
+    data = json.loads(re.search(r'data-jx-data>(.*?)</script>', page, re.S).group(1))
+    goal = data["goals"][0]
+
+    def offline_answer(name, inputs, lang=None):
+        assert name == "ask_journey"
+        return AIResult(data=ask_task.fallback(inputs, lang or "ar"), provider="offline")
+
+    monkeypatch.setattr(ai, "run", offline_answer)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    response = c.post(f"/app/{slug}/map/ask", json={"question": "ما وضع هدف رفع المبيعات؟"})
+    assert response.status_code == 200
+    answer = response.get_json()
+    assert answer["segment"]["kind"] == "goal"
+    assert answer["segment"]["id"] == goal["id"]
+    assert "رفع المبيعات" in answer["segment"]["text"]
+    assert answer["parts"] and answer["tts_available"] is False
+    assert c.post(f"/app/{slug}/map/ask", json={"question": " "}).status_code == 400

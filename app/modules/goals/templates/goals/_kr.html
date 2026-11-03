@@ -1,8 +1,7 @@
-{# One key result, read first: where it was, where it is, where it must get to, and what the data says about that target.
-   Everything that CHANGES it (update the value, edit, outside factors) sits in the "manage" drawer, closed by default.
-   Expects: k (KRView), infos, o, kr_end, plus the lists kr_types / measures / certainties / factor_kinds #}
+{# Key result: current figure, target and a short assessment first. Historical details remain optional. #}
 {% set kr = k.kr %}{% set info = infos[kr.id] %}{% set dd = info.data %}{% set h = info.hist %}
 {% set num = kr.kr_type in ('increase', 'decrease') %}
+{% set kr_pc = ((k.progress or 0) * 100)|round|int %}
 <article class="kc" id="kr-{{ kr.id }}" data-s="{{ k.status }}">
   <header class="kc__top">
     <div class="kc__t"><span class="kc__dot">{{ dot(k.status) }}</span><h3 dir="auto">{{ kr.title }}</h3></div>
@@ -13,65 +12,76 @@
     </div>
   </header>
 
-  {% if num %}
-  {# 1. the numbers, in order: what came before, where it started, where it is, where it must get to #}
-  <ol class="kj" aria-label="{{ t('goals.kd.journey') }}">
-    {% if h.year_ago %}<li><small>{{ t('goals.kd.year_ago') }}</small><b class="num"><bdi dir="ltr">{{ val(h.year_ago[1], kr.unit_label, kr.metric_type) }}</bdi></b><em>{{ d(h.year_ago[0], 'month') }}</em></li>{% endif %}
-    {% if h.prior and not h.year_ago %}<li><small>{{ t('goals.kd.prior') }}</small><b class="num"><bdi dir="ltr">{{ val(h.prior[1], kr.unit_label, kr.metric_type) }}</bdi></b><em>{{ d(h.prior[0], 'month') }}</em></li>{% endif %}
-    {% if kr.start_value != kr.current_value or not (h.year_ago or h.prior) %}<li><small>{{ t('goals.kd.start') }}</small><b class="num"><bdi dir="ltr">{{ val(kr.start_value, kr.unit_label, kr.metric_type) }}</bdi></b></li>{% endif %}
-    <li class="is-now"><small>{{ t('goals.kd.now') }}</small><b class="num"><bdi dir="ltr">{{ val(kr.current_value, kr.unit_label, kr.metric_type) }}</bdi></b>{% if dd and dd.latest_period %}<em>{{ d(dd.latest_period, 'month') }}</em>{% endif %}</li>
-    <li class="is-goal"><small>{{ t('goals.kd.target') }}</small><b class="num"><bdi dir="ltr">{{ val(kr.target_value, kr.unit_label, kr.metric_type) }}</bdi></b>{% if kr_end %}<em>{{ t('goals.kd.by') }} {{ d(kr_end, 'month') }}</em>{% endif %}</li>
-  </ol>
-  <div class="kc__bar">{{ meter(k.progress, k.status) }}</div>
-  {% if h.need is not none %}
-  <p class="kc__need">{{ icon('target-arrow', 15) }}<span>{{ t('goals.kd.need') }}
-    <b class="num"><bdi dir="ltr">{{ '+' if h.need > 0 else '−' }}{{ val(h.need|abs, kr.unit_label, kr.metric_type) }}</bdi></b>{% if h.need_pct is not none %} (<b class="num"><bdi dir="ltr">{{ '+' if h.need_pct > 0 else '−' }}{{ pct(h.need_pct|abs, 0 if (h.need_pct|abs) >= 0.095 else 1) }}</bdi></b>){% endif %}{{ t('goals.kd.from_now') }}{% if h.yoy is not none %} · {{ t('goals.kd.yoy') }} <b class="num"><bdi dir="ltr">{{ '+' if h.yoy > 0 else '−' }}{{ pct(h.yoy|abs, 0 if (h.yoy|abs) >= 0.095 else 1) }}</bdi></b>{% endif %}{% if h.best is not none %} · {{ t('goals.kd.best') }} <b class="num"><bdi dir="ltr">{{ val(h.best, kr.unit_label, kr.metric_type) }}</bdi></b>{% endif %}</span></p>
-  {% endif %}
-  {% else %}
-  <div class="kc__plain"><span class="nums"><b class="num">{{ val(kr.current_value, kr.unit_label, kr.metric_type) }}</b> <span class="muted">/ {{ val(kr.target_value, kr.unit_label, kr.metric_type) }}</span></span><div class="kc__bar">{{ meter(k.progress, k.status) }}</div></div>
-  {% endif %}
-
-  {# 2. the verdict of the data on that target, in one line #}
-  {% if dd and dd.level %}
-  <a class="kc__verdict" data-l="{{ dd.level }}" href="{{ url_for('goals.reality_page', series=dd.series.id, start=kr.current_value, target=kr.target_value, end=kr_end.isoformat() if kr_end else '', goal=kr.title) if kr_end else '#' }}" title="{{ t('data.goal.chip_title') }}">
-    {{ icon({'realistic':'circle-check','ambitious':'trending-up','stretch':'alert-triangle','unrealistic':'circle-x','insufficient':'help-circle'}[dd.level], 17) }}
-    <span><b>{{ t('data.level.' ~ dd.level) }}</b> — {{ t('goals.kd.verdict.' ~ dd.level) }}</span>{{ icon('chevron-left', 15) }}</a>
-  {% endif %}
-  {% if kr.basis and kr.basis.level in ('conservative','ambitious','stretch') %}<p class="kc__basis">{{ icon('bulb', 13) }}{{ t('goals.kd.basis', level=t('goals.level.' ~ kr.basis.level)) }}</p>{% endif %}
-
-  {# 3. where the number comes from, and where it is likely to end #}
-  {% if dd %}
-  <div class="kc__data">
-    <p class="kr__src">{{ icon('table', 14) }}{{ t('goals.measured_from', series=dd.series.name) }} · {{ t('goals.latest_data', period=d(dd.latest_period, 'month')) }}{% if dd.age_days > stale_days %} · <span class="warn-text">{{ icon('alert-triangle', 13) }}{{ tn('goals.data_old', dd.age_days) }}</span>{% endif %}</p>
-    {% if info.bar and dd.projected %}
-    {% set b = info.bar %}{% set pr = dd.projected %}
-    <div class="rbar" role="img" aria-label="{{ t('goals.expected_end') }}">
-      <span class="rbar__axis"></span>
-      <span class="rbar__band" style="inset-inline-start:{{ b.low }}%;width:{{ (b.high - b.low)|round(1) }}%"></span>
-      <span class="rbar__mid" style="inset-inline-start:{{ b.mid }}%"></span>
-      <span class="rbar__now" style="inset-inline-start:{{ b.current }}%"></span>
-      <span class="rbar__goal" style="inset-inline-start:{{ b.target }}%"></span>
+  <div class="kc__figures">
+    <div class="kc__figure kc__figure--current">
+      <span>القيمة الحالية</span>
+      <strong class="num"><bdi dir="ltr">{{ val(kr.current_value, kr.unit_label, kr.metric_type) }}</bdi></strong>
+      {% if dd and dd.latest_period %}<small>{{ d(dd.latest_period, 'month') }}</small>{% endif %}
     </div>
-    <p class="rbar__legend"><span><i class="k-now"></i>{{ t('goals.kd.now') }} <b class="num"><bdi dir="ltr">{{ val(kr.current_value, kr.unit_label) }}</bdi></b></span>
-      <span><i class="k-band"></i>{{ t('goals.likely_end') }} <b class="num"><bdi dir="ltr">{{ val(pr.low, kr.unit_label) }} – {{ val(pr.high, kr.unit_label) }}</bdi></b></span>
-      <span><i class="k-goal"></i>{{ t('goals.kd.target') }} <b class="num"><bdi dir="ltr">{{ val(kr.target_value, kr.unit_label) }}</bdi></b></span></p>
-    {% elif not dd.projected and kr_end %}<p class="muted kr__note">{{ icon('info-circle', 14) }}{{ t('goals.projection_insufficient') }}</p>{% endif %}
+    <div class="kc__figure kc__figure--target">
+      <span>المستهدف</span>
+      <strong class="num"><bdi dir="ltr">{{ val(kr.target_value, kr.unit_label, kr.metric_type) }}</bdi></strong>
+      {% if kr_end %}<small>بحلول {{ d(kr_end, 'month') }}</small>{% endif %}
+    </div>
   </div>
+  <div class="kc__progress" role="progressbar" aria-label="التقدّم نحو المستهدف" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ kr_pc }}">
+    <span style="width:{{ [100, [0, kr_pc]|max]|min }}%" data-status="{{ k.status }}"></span>
+  </div>
+  {% if num and h.need is not none %}
+  <p class="kc__need"><span>المتبقي للوصول إلى المستهدف</span>
+    <b class="num"><bdi dir="ltr">{{ '+' if h.need > 0 else '−' }}{{ val(h.need|abs, kr.unit_label, kr.metric_type) }}</bdi></b>
+    {% if h.need_pct is not none %}<small class="num">({{ '+' if h.need_pct > 0 else '−' }}{{ pct(h.need_pct|abs, 0 if (h.need_pct|abs) >= 0.095 else 1) }})</small>{% endif %}
+  </p>
   {% endif %}
 
-  {% if info.needs_factors and info.gap > 0 %}<p class="kc__gap" data-status="{{ info.coverage.status }}">{{ icon('puzzle', 15) }}<span>{{ t('goals.kd.gap_open', gap=val(info.gap, kr.unit_label), status=t('goals.factors.s.' ~ info.coverage.status)) }}</span></p>{% endif %}
+  {% if dd and dd.level %}
+  <a class="kc__reality" data-l="{{ dd.level }}" href="{{ url_for('goals.reality_page', series=dd.series.id, start=kr.current_value, target=kr.target_value, end=kr_end.isoformat() if kr_end else '', goal=kr.title) if kr_end else '#' }}" title="{{ t('data.goal.chip_title') }}">
+    <span class="kc__reality-icon">{{ icon({'realistic':'circle-check','ambitious':'trending-up','stretch':'alert-triangle','unrealistic':'circle-x','insufficient':'help-circle'}[dd.level], 19) }}</span>
+    <span class="kc__reality-copy">
+      <small>فحص واقعية المستهدف</small>
+      <strong>{{ t('data.level.' ~ dd.level) }}</strong>
+      <span>{{ t('goals.kd.verdict.' ~ dd.level) }}</span>
+    </span>
+    <span class="kc__reality-link">التفاصيل {{ icon('arrow-left', 14) }}</span>
+  </a>
+  {% endif %}
 
-  {# 4. the path chart, opened on demand #}
-  {% if info.path %}
-  <details class="kc__more"><summary>{{ icon('chart-line', 15) }}{{ t('goals.kd.path') }}{{ icon('chevron-down', 15) }}</summary>
-    <div class="kc__more-b">
-      {% if info.row and dd and dd.projected %}{% set pr = dd.projected %}<p class="insight" style="margin:0 0 var(--sp-3)">{{ icon('bulb', 16) }}<span>{{ t('goals.path.sentence_' ~ info.row.status, mid=val(pr.mid, kr.unit_label), low=val(pr.low, kr.unit_label), high=val(pr.high, kr.unit_label), target=val(kr.target_value, kr.unit_label), end=d(kr_end)) }}</span></p>
-      {% elif not dd %}<p class="muted" style="margin:0 0 var(--sp-3)">{{ t('goals.path.manual_note') }}</p>{% endif %}
-      {% set pc = info.path %}{% include "goals/_path.html" %}
+  {% if h.year_ago or h.prior or h.best is not none or h.yoy is not none or kr.start_value != kr.current_value %}
+  <details class="kc__history">
+    <summary>{{ icon('history', 14) }}<span>تفاصيل الأداء السابقة</span>{{ icon('chevron-down', 14) }}</summary>
+    <div class="kc__history-grid">
+      {% if h.year_ago %}<div><small>قبل سنة</small><b class="num"><bdi dir="ltr">{{ val(h.year_ago[1], kr.unit_label, kr.metric_type) }}</bdi></b><span>{{ d(h.year_ago[0], 'month') }}</span></div>
+      {% elif h.prior %}<div><small>الفترة السابقة</small><b class="num"><bdi dir="ltr">{{ val(h.prior[1], kr.unit_label, kr.metric_type) }}</bdi></b><span>{{ d(h.prior[0], 'month') }}</span></div>{% endif %}
+      {% if kr.start_value != kr.current_value %}<div><small>قيمة البداية</small><b class="num"><bdi dir="ltr">{{ val(kr.start_value, kr.unit_label, kr.metric_type) }}</bdi></b></div>{% endif %}
+      {% if h.yoy is not none %}<div><small>التغيّر خلال سنة</small><b class="num">{{ '+' if h.yoy > 0 else '−' }}{{ pct(h.yoy|abs, 0 if (h.yoy|abs) >= 0.095 else 1) }}</b></div>{% endif %}
+      {% if h.best is not none %}<div><small>أفضل قيمة سابقة</small><b class="num"><bdi dir="ltr">{{ val(h.best, kr.unit_label, kr.metric_type) }}</bdi></b></div>{% endif %}
+    </div>
+  </details>
+  {% endif %}
+
+  {% if dd or info.path %}
+  <details class="kc__analysis" {% if info.path %}open{% endif %}>
+    <summary>{{ icon('chart-line', 16) }}<span>مسار الأداء والتوقّع</span>{{ icon('chevron-down', 14) }}</summary>
+    <div class="kc__analysis-body">
+      {% if dd %}
+      <div class="kc__source">{{ icon('database', 14) }}<span>{{ t('goals.measured_from', series=dd.series.name) }} · {{ t('goals.latest_data', period=d(dd.latest_period, 'month')) }}{% if dd.age_days > stale_days %}<em class="warn-text"> · {{ icon('alert-triangle', 13) }}{{ tn('goals.data_old', dd.age_days) }}</em>{% endif %}</span></div>
+      {% if kr.basis and kr.basis.level in ('conservative','ambitious','stretch') %}<p class="kc__basis">{{ icon('bulb', 13) }}{{ t('goals.kd.basis', level=t('goals.level.' ~ kr.basis.level)) }}</p>{% endif %}
+      {% if dd.projected %}
+      <div class="kc__forecast">
+        <span>التوقّع عند نهاية الدورة</span>
+        <strong class="num"><bdi dir="ltr">{{ val(dd.projected.low, kr.unit_label) }} – {{ val(dd.projected.high, kr.unit_label) }}</bdi></strong>
+      </div>
+      {% elif kr_end %}<p class="kc__no-forecast">{{ icon('info-circle', 14) }}{{ t('goals.projection_insufficient') }}</p>{% endif %}
+      {% endif %}
+      {% if info.path %}
+        {% set pc = info.path %}{% include "goals/_path.html" %}
+      {% elif not dd %}<p class="kc__no-forecast">{{ icon('info-circle', 14) }}{{ t('goals.path.manual_note') }}</p>{% endif %}
       {% if info.branches %}{% set c = info.branches %}{% include "data/_chart.html" %}{% endif %}
     </div>
   </details>
   {% endif %}
+
+  {% if info.needs_factors and info.gap > 0 %}<p class="kc__gap" data-status="{{ info.coverage.status }}">{{ icon('puzzle', 15) }}<span>{{ t('goals.kd.gap_open', gap=val(info.gap, kr.unit_label), status=t('goals.factors.s.' ~ info.coverage.status)) }}</span></p>{% endif %}
 
   {# 5. everything that changes it #}
   {% if can_update_goal(o) or can_edit_goal(o) %}

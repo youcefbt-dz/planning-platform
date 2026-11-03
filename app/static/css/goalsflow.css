@@ -72,3 +72,12 @@
 .icard__foot{display:flex;gap:8px;align-items:center;justify-content:space-between;padding-block-start:10px;border-block-start:1px solid var(--c-line);font-size:var(--fs-sm)}
 
 @media (max-width:900px){.krr{grid-template-columns:1fr 1fr}.krr__main{grid-column:1/-1}.gcards{grid-template-columns:1fr}}
+
+/* The search field is primary; secondary filters are available when needed. */
+.gfilters{flex:1 0 100%;position:relative}
+.gfilters>summary{display:inline-flex;align-items:center;gap:7px;cursor:pointer;list-style:none;color:var(--c-muted);font-size:var(--fs-sm);font-weight:600;padding:7px 2px}
+.gfilters>summary::-webkit-details-marker{display:none}
+.gfilters>summary::after{content:'+';margin-inline-start:4px;font-size:16px;font-weight:400}
+.gfilters[open]>summary::after{content:'−'}
+.gfilters__body{display:flex;flex-wrap:wrap;gap:10px;padding-block-start:8px;border-block-start:1px solid var(--c-line)}
+.gfilters__body .select{min-width:160px;max-width:100%;border-radius:var(--r-md)}

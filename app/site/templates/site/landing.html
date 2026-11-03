@@ -26,6 +26,7 @@
       <div class="hero__cta">
         {% if config.ENABLE_DEMO %}<a class="btn-pill btn-pill--white" href="{{ url_for('site.demo') }}">{{ t('site.hero.cta_demo') }}</a>{% endif %}
         <a class="btn-pill btn-pill--outline" href="#waitlist">{{ t('site.hero.cta_waitlist') }}</a>
+        <a class="btn-pill btn-pill--outline" href="{{ url_for('site.presentation') }}">{{ t('site.hero.cta_presentation') }}</a>
       </div>
     </div>
     <div class="hero__media">{{ shot('overview', t('site.hero.shot_alt')) }}</div>

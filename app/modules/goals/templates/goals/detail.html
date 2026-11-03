@@ -1,5 +1,5 @@
 {% extends "layouts/app.html" %}
-{% from "components/ui.html" import csrf, badge, dot, meter, avatar, delete_button, status_select, empty, quick_notes, sec, ring %}
+{% from "components/ui.html" import csrf, badge, dot, meter, avatar, delete_button, status_select, empty, quick_notes, sec %}
 {% block title %}{{ o.title }}{% endblock %}
 
 {% set kr_end = o.end_date or (o.cycle.end_date if o.cycle else none) %}
@@ -26,22 +26,32 @@
     <a class="btn" href="{{ url_for('goals.new', parent=o.id) }}">{{ icon('plus', 15) }}{{ t('goals.add_child') }}</a>{% endif %}
     {% if can('goals.delete') and can_edit_goal(o) %}{{ delete_button(url_for('goals.delete', id=o.id), confirm=t('goals.confirm_delete')) }}{% endif %}
   </div>
-  <dl class="hstats">
-    <div><dt>{{ t('common.progress') }}</dt><dd class="num">{{ pct(v.progress) }}</dd></div>
-    <div><dt>{{ t('common.expected') }}</dt><dd class="num">{{ pct(v.expected) }}</dd></div>
-    <div data-s="{{ 'on_track' if gp >= 0 else 'off_track' }}"><dt>{{ t('goals.col.gap') }}</dt><dd class="num"><bdi dir="ltr">{{ '+' if gp > 0 else ('−' if gp < 0 else '') }}{{ n(gp|abs) }}</bdi></dd></div>
-    {% if left is not none and left >= 0 %}<div><dt>{{ t('goals.widget.days_label') }}</dt><dd class="num">{{ n(left) }}</dd></div>{% endif %}
-  </dl>
+
 </div>
 
 <div class="layout-side">
   <div class="gd">
-    {# where the goal stands, in one glance and one sentence #}
+    {# One simple progress summary: actual pace, expected pace and remaining time. #}
     <section class="gd__now" aria-label="{{ t('goals.kd.where') }}">
-      {{ ring(v.progress, v.status, 84) }}
-      <div><h2>{{ t('goals.kd.where') }}</h2>
-        <p>{% if gp > 0 %}{{ t('goals.kd.ahead', n=n(gp), expected=pct(v.expected)) }}{% elif gp < 0 %}{{ t('goals.kd.behind', n=n(gp|abs), expected=pct(v.expected)) }}{% else %}{{ t('goals.kd.on_plan', expected=pct(v.expected)) }}{% endif %}
-          {% if left is not none and left >= 0 %} {{ t('goals.kd.days_left', n=n(left), end=d(kr_end)) }}{% endif %}</p></div>
+      <div class="gd__now-value">
+        <span>التقدّم الحالي</span>
+        <strong class="num">{{ pct(v.progress) }}</strong>
+      </div>
+      <div class="gd__now-main">
+        <p class="gd__now-message">
+          {% if gp > 0 %}متقدّم عن الخطة بـ <b class="num">{{ n(gp) }}</b> نقطة
+          {% elif gp < 0 %}متأخر عن الخطة بـ <b class="num">{{ n(gp|abs) }}</b> نقطة
+          {% else %}التقدّم يسير وفق الخطة{% endif %}
+        </p>
+        <div class="gd__now-track" role="img" aria-label="التقدّم {{ pct(v.progress) }}، والمتوقّع {{ pct(v.expected) }}">
+          <span class="gd__now-fill" style="width:{{ [100, [0, (v.progress or 0) * 100]|max]|min }}%"></span>
+          <i class="gd__now-plan" style="inset-inline-start:{{ [100, [0, (v.expected or 0) * 100]|max]|min }}%"></i>
+        </div>
+        <span class="gd__now-expected">المتوقّع حتى اليوم: <b>{{ pct(v.expected) }}</b></span>
+      </div>
+      {% if left is not none and left >= 0 %}
+      <div class="gd__now-days"><strong class="num">{{ n(left) }}</strong><span>يومًا متبقيًا</span><small>حتى {{ d(kr_end) }}</small></div>
+      {% endif %}
     </section>
     {% if o.rationale %}<blockquote class="gd__why">{{ icon('bulb', 18) }}<div><b>{{ t('goals.rationale') }}</b><p dir="auto">{{ o.rationale }}</p></div></blockquote>{% endif %}
 
@@ -83,27 +93,32 @@
       </details>{% endif %}
     </div>
     {% if timeline %}
-    <ol class="tl2">
-      {% for it in timeline %}
-      {% if it.kind == 'update' %}{% set c = it.c %}
-      <li class="tl2__i"><span class="tl2__ic">{{ c.user.initials if c.user else '–' }}</span>
-        <div><p class="tl2__h"><b>{{ c.user.name if c.user else t('common.system') }}</b><span>{{ c.created_at|ago }}</span></p>
-          {% if c.entity_type == 'key_result' %}<p class="tl2__c">{{ icon('flag', 13) }}{{ kr_titles.get(c.entity_id, '') }}{% if c.value is not none %} → <b class="num">{{ n(c.value) }}</b>{% endif %}</p>{% endif %}
-          {% if c.status %}<p class="tl2__c">{{ badge(c.status) }}</p>{% endif %}
-          {% if c.comment == '@data' %}<p class="muted tl2__c">{{ icon('refresh', 13) }}{{ t('goals.updated_from_data') }}</p>{% elif c.comment %}<p class="tl2__t" dir="auto">{{ c.comment }}</p>{% endif %}</div></li>
-      {% else %}{% set e = it.e %}
-      <li class="tl2__i tl2__i--d"><span class="tl2__ic">{{ icon('target-arrow' if e.kind == 'target' else 'gavel', 15) }}</span>
-        <div><p class="tl2__h"><b>{% if e.kind == 'target' %}{{ t('goals.events.target_changed', old=n(e.old_value), new=n(e.new_value)) }}{% else %}{{ t('goals.events.decision') }}{% endif %}</b><span>{{ e.user.name if e.user else t('common.system') }} · {{ e.created_at|ago }}</span></p>
-          {% if e.text %}<p class="tl2__t" dir="auto">{{ e.text }}</p>{% elif e.kind == 'target' %}<p class="muted tl2__c">{{ t('goals.events.no_reason') }}</p>{% endif %}</div></li>
-      {% endif %}
-      {% endfor %}
-    </ol>
+    <details class="gd__history">
+      <summary>{{ icon('history', 15) }}{{ t('goals.events.history_toggle') }}<span class="count">{{ n(timeline|length) }}</span>{{ icon('chevron-down', 14) }}</summary>
+      <ol class="tl2">
+        {% for it in timeline %}
+        {% if it.kind == 'update' %}{% set c = it.c %}
+        <li class="tl2__i"><span class="tl2__ic">{{ c.user.initials if c.user else '–' }}</span>
+          <div><p class="tl2__h"><b>{{ c.user.name if c.user else t('common.system') }}</b><span>{{ c.created_at|ago }}</span></p>
+            {% if c.entity_type == 'key_result' %}<p class="tl2__c">{{ icon('flag', 13) }}{{ kr_titles.get(c.entity_id, '') }}{% if c.value is not none %} → <b class="num">{{ n(c.value) }}</b>{% endif %}</p>{% endif %}
+            {% if c.status %}<p class="tl2__c">{{ badge(c.status) }}</p>{% endif %}
+            {% if c.comment == '@data' %}<p class="muted tl2__c">{{ icon('refresh', 13) }}{{ t('goals.updated_from_data') }}</p>{% elif c.comment %}<p class="tl2__t" dir="auto">{{ c.comment }}</p>{% endif %}</div></li>
+        {% else %}{% set e = it.e %}
+        <li class="tl2__i tl2__i--d"><span class="tl2__ic">{{ icon('target-arrow' if e.kind == 'target' else 'gavel', 15) }}</span>
+          <div><p class="tl2__h"><b>{% if e.kind == 'target' %}{{ t('goals.events.target_changed', old=n(e.old_value), new=n(e.new_value)) }}{% else %}{{ t('goals.events.decision') }}{% endif %}</b><span>{{ e.user.name if e.user else t('common.system') }} · {{ e.created_at|ago }}</span></p>
+            {% if e.text %}<p class="tl2__t" dir="auto">{{ e.text }}</p>{% elif e.kind == 'target' %}<p class="muted tl2__c">{{ t('goals.events.no_reason') }}</p>{% endif %}</div></li>
+        {% endif %}
+        {% endfor %}
+      </ol>
+    </details>
     {% else %}{% call empty('message-circle', t('goals.no_checkins')) %}{% endcall %}{% endif %}
     {% endcall %}
   </div>
 
   <aside class="stack">
-    <div class="box"><div class="box-body">
+    <details class="box gd__meta">
+      <summary class="gd__meta-summary">{{ icon('clipboard-list', 16) }}<b>{{ t('goals.kd.details_toggle') }}</b><span class="gd__meta-preview">{% if o.owner %}{{ o.owner.name }}{% else %}{{ t('common.unassigned') }}{% endif %}{% if o.cycle %} · {{ o.cycle.name }}{% endif %}</span>{{ icon('chevron-down', 15) }}</summary>
+      <div class="box-body">
       <dl class="kv">
         <div><dt>{{ t('common.owner') }}</dt><dd>{% if o.owner %}{{ avatar(o.owner, 'avatar-sm') }}{{ o.owner.name }}{% else %}<span class="muted">{{ t('common.unassigned') }}</span>{% endif %}</dd></div>
         <div><dt>{{ t('common.unit') }}</dt><dd>{{ o.unit.name if o.unit else '—' }}</dd></div>
@@ -113,33 +128,40 @@
         <div><dt>{{ t('goals.progress_driver') }}</dt><dd>{{ t('goals.drivers.' ~ o.progress_driver) }}</dd></div>
         {% if o.parent_id %}<div><dt>{{ t('goals.weight') }}</dt><dd class="num">{{ n(o.weight) }}</dd></div>{% endif %}
       </dl>
-    </div></div>
+      </div>
+    </details>
 
     {% if split_n %}
-    <section class="cai cai--split" data-assist="{{ url_for('goals.split_preview', id=o.id) }}" data-assist-from="" data-assist-failed="{{ t('goals.draft.failed') }}">
-      <header class="cai__head"><span class="cai__ic">{{ icon('bulb', 22) }}</span><div><h2>{{ t('goals.split.title') }}</h2><p>{{ t('goals.split.sub', n=n(split_n)) }}</p></div></header>
-      <button class="btn btn-primary cai__run" type="button" data-assist-run>{{ icon('bulb', 16) }}{{ t('goals.split.run') }}</button>
-      <div data-assist-out aria-live="polite"></div>
-    </section>
+    <details class="cai cai--split" data-assist="{{ url_for('goals.split_preview', id=o.id) }}" data-assist-from="" data-assist-failed="{{ t('goals.draft.failed') }}">
+      <summary class="cai__summary"><span class="cai__ic">{{ icon('bulb', 22) }}</span><span class="cai__summary-text"><b>{{ t('goals.split.title') }}</b><small>{{ t('goals.split.sub', n=n(split_n)) }}</small></span>{{ icon('chevron-down', 16) }}</summary>
+      <div class="cai__content"><button class="btn btn-primary cai__run" type="button" data-assist-run>{{ icon('bulb', 16) }}{{ t('goals.split.run') }}</button>
+        <div data-assist-out aria-live="polite"></div></div>
+    </details>
     {% endif %}
 
     {% if v.children %}
-    <div class="box"><div class="box-head"><h3>{{ icon('sitemap', 16) }}{{ t('goals.children') }}</h3><span class="count">{{ n(v.children|length) }}</span></div>
+    <details class="box gd__relation">
+      <summary class="gd__relation-summary">{{ icon('sitemap', 16) }}<b>{{ t('goals.children') }}</b><span class="count">{{ n(v.children|length) }}</span>{{ icon('chevron-down', 15) }}</summary>
+      <div class="gd__relation-body">
       {% for c in v.children|sort(attribute='obj.id') %}
       <div class="box-row" style="flex-wrap:wrap;gap:var(--sp-2)"><div class="main"><a class="title" href="{{ url_for('goals.detail', id=c.obj.id) }}">{{ c.obj.title }}</a></div>
         <div style="width:100%">{{ meter(c.progress, c.status) }}</div></div>
       {% endfor %}
-    </div>{% endif %}
+      </div>
+    </details>{% endif %}
 
     <details class="gd__q" id="quality"><summary>{{ icon('clipboard-check', 16) }}<b>{{ t('goals.coach.title') }}</b><span class="count {% if quality.open %}count-warn{% endif %}">{{ n(quality.passed) }}/{{ n(quality.total) }}</span>{{ icon('chevron-down', 15) }}</summary>
       {% set res = quality %}{% include "goals/_checks.html" %}
     </details>
     {% if modules.is_enabled('initiatives') %}
-    <div class="box"><div class="box-head"><h3>{{ icon('rocket', 16) }}{{ t('goals.supporting_initiatives') }}</h3><span class="count">{{ n(supporters|length) }}</span>
-      <div class="actions">{% if can('initiatives.edit') %}<a class="btn btn-sm btn-ghost btn-icon" href="{{ url_for('initiatives.new', goal=o.id) }}" title="{{ t('initiatives.create') }}">{{ icon('plus', 15) }}</a>{% endif %}</div></div>
-      {% for s in supporters %}<div class="box-row"><div class="main"><a class="title" href="{{ s.url }}">{{ s.title }}</a></div></div>
-      {% else %}<div class="box-body muted" style="font-size:var(--fs-sm)">{{ t('goals.no_initiatives') }}</div>{% endfor %}
-    </div>{% endif %}
+    <details class="box gd__relation">
+      <summary class="gd__relation-summary">{{ icon('rocket', 16) }}<b>{{ t('goals.supporting_initiatives') }}</b><span class="count">{{ n(supporters|length) }}</span>{{ icon('chevron-down', 15) }}</summary>
+      <div class="gd__relation-body">
+        {% for s in supporters %}<div class="box-row"><div class="main"><a class="title" href="{{ s.url }}">{{ s.title }}</a></div></div>
+        {% else %}<div class="box-body muted" style="font-size:var(--fs-sm)">{{ t('goals.no_initiatives') }}</div>{% endfor %}
+        {% if can('initiatives.edit') %}<div class="box-body"><a class="btn btn-sm" href="{{ url_for('initiatives.new', goal=o.id) }}">{{ icon('plus', 14) }}{{ t('initiatives.create') }}</a></div>{% endif %}
+      </div>
+    </details>{% endif %}
   </aside>
 </div>
 {% endblock %}

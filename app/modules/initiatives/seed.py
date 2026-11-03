@@ -52,6 +52,8 @@ def seed(org, lang: str, ctx: dict) -> None:
     objs = ctx.get("objectives", {})  # present only when the goals module is enabled
     cyc = ctx["cycles"]["quarter"]
     for pos, (key, title, owner, unit, state, prio, so, eo, goal, ms, note) in enumerate(DATA):
+        if unit not in units or owner not in users:      # the demo organization is small: skip initiatives of departments it does not have
+            continue
         it = Initiative(org_id=org.id, cycle_id=cyc.id, unit_id=units[unit].id, owner_id=users[owner].id, title=title, state=state,
                         priority=prio, start_date=today + timedelta(days=so), end_date=today + timedelta(days=eo), position=pos)
         db.session.add(it)

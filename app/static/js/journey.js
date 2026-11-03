@@ -60,7 +60,7 @@
   var attention = D.goals.filter(function (g) { return BAD[g.status]; }).map(function (g) { return g.id; });
 
   // ---------- layout (world coordinates) ----------
-  var AX = 2.0, AY = 0.58, islands = [], cap = { x: 0, y: 0, R: 190, goals: [] }, bounds = { x1: -400, y1: -400, x2: 400, y2: 400 };
+  var islands = [], cap = { x: 0, y: 0, R: 190, goals: [] }, bounds = { x1: -400, y1: -400, x2: 400, y2: 400 };
   function relax(pts, dmin, rc) {
     for (var it = 0; it < 90; it++) {
       for (var i = 0; i < pts.length; i++) for (var j = i + 1; j < pts.length; j++) {
@@ -81,47 +81,79 @@
     var map = {};
     D.units.forEach(function (u) {
       if (u === rootU) return;
-      var pts = localPts(u.goals.length, u.id), far = u.goals.length ? pts.Rg : 100;
-      var isl = { u: u, x: 0, y: 0, R: Math.max(196, far + 98), pts: pts, kids: [] };
+      var pts = localPts(u.goals.length, u.id), far = u.goals.length ? pts.Rg : 96;
+      // Give each department only the room its own goals need; avoid oversized empty discs.
+      var isl = { u: u, x: 0, y: 0, R: Math.max(172, far + 104), pts: pts, kids: [] };
       islands.push(isl); map[u.id] = isl;
     });
     var tops = islands.filter(function (i) { return !i.u.parent || i.u.parent === (rootU && rootU.id) || !map[i.u.parent]; });
     islands.forEach(function (i) { if (i.u.parent && map[i.u.parent]) map[i.u.parent].kids.push(i); });
 
-    // the capital: a clean disc with the identity; the organization's own goals travel on an orbit around it, evenly spaced from the top
-    var n = capGoals.length, ringR = n ? Math.max(250, 62 / Math.sin(Math.PI / Math.max(n, 2))) : 0;
-    cap.disc = 150; cap.ringR = ringR;
-    cap.R = n ? ringR + 64 : cap.disc + 40;
+    // Keep the organization's goals close to the centre, with enough breathing room for labels.
+    var n = capGoals.length;
+    cap.disc = 132;
+    var ringR = n ? Math.max(230, 56 / Math.sin(Math.PI / Math.max(n, 2))) : 0;
+    cap.ringR = ringR;
+    cap.R = n ? ringR + 92 : cap.disc + 42;
     cap.goals = capGoals.map(function (id, i) {
       var a = -Math.PI / 2 + i * 2 * Math.PI / n;
       return { id: id, x: ringR * Math.cos(a), y: ringR * Math.sin(a) };
     });
 
-    // departments around the capital, in proportion to their size; sub-departments beside their parent
-    var sumD = 0; tops.forEach(function (i) { sumD += 2 * i.R + 90; });
-    var ringNeed = sumD / (2 * Math.PI), start = -Math.PI / 2, acc = 0;
-    tops.forEach(function (i) {
-      var th = start + (acc + (2 * i.R + 90) / 2) / sumD * 2 * Math.PI; acc += 2 * i.R + 90;
-      var dist = Math.max(cap.R + i.R + 36, ringNeed);
-      i.x = dist * Math.cos(th) * AX; i.y = dist * Math.sin(th) * AY; i.th = th;
+    // Place top-level departments on one balanced ring. Each sector gets space in proportion
+    // to its department size, so the map stays circular instead of stretching into an ellipse.
+    var total = 0, gap = 94, xScale = 1.15, yScale = 0.9, cursor = -Math.PI / 2;
+    tops.forEach(function (i) { total += 2 * i.R + gap; });
+    var sectors = tops.map(function (i) {
+      var span = total ? (2 * i.R + gap) / total * 2 * Math.PI : 0;
+      var th = cursor + span / 2;
+      cursor += span;
+      return { island: i, angle: th };
     });
-    tops.forEach(function (i) { (function walk(p) { var m = p.kids.length; p.kids.forEach(function (c, idx) { var th = (p.th || 0) + (idx - (m - 1) / 2) * 0.95, d = p.R + c.R + 56; c.x = p.x + d * Math.cos(th); c.y = p.y + d * Math.sin(th); c.th = th; walk(c); }); })(i); });
-    // relax overlaps (capital is fixed)
-    for (var it = 0; it < 160; it++) {
-      for (var a = 0; a < islands.length; a++) {
-        var A = islands[a], dc = Math.sqrt(A.x * A.x + A.y * A.y) || 0.01, minc = cap.R + A.R + 36;
-        if (dc < minc) { A.x *= minc / dc; A.y *= minc / dc; }
-        for (var b = a + 1; b < islands.length; b++) {
-          var B = islands[b], dx = B.x - A.x, dy = B.y - A.y, d = Math.sqrt(dx * dx + dy * dy) || 0.01, need = A.R + B.R + 36;
-          if (d < need) { var m2 = (need - d) / 2, ux = dx / d, uy = dy / d; A.x -= ux * m2; A.y -= uy * m2; B.x += ux * m2; B.y += uy * m2; }
-        }
-      }
-    }
+    // The slightly horizontal composition is accounted for in the clearance calculation,
+    // so even a department placed at the top or bottom cannot intrude into the central orbit.
+    var clearRing = sectors.reduce(function (need, sector) {
+      var th = sector.angle, factor = Math.sqrt(Math.pow(xScale * Math.cos(th), 2) + Math.pow(yScale * Math.sin(th), 2));
+      return Math.max(need, (cap.R + sector.island.R + 108) / factor);
+    }, 0);
+    var ring = tops.length ? Math.max(clearRing, total / (2 * Math.PI) * 1.14) : 0;
+    sectors.forEach(function (sector) {
+      var i = sector.island, th = sector.angle;
+      i.x = ring * xScale * Math.cos(th); i.y = ring * yScale * Math.sin(th); i.th = th;
+    });
+
+    // Sub-departments sit on the outward side of their parent, with a fan wide enough
+    // to keep neighbouring departments apart without arbitrary nudging.
+    tops.forEach(function (top) {
+      (function placeChildren(parent) {
+        var kids = parent.kids;
+        if (!kids.length) return;
+        var maxChild = Math.max.apply(null, kids.map(function (c) { return c.R; }));
+        var distance = parent.R + maxChild + 86;
+        var required = kids.reduce(function (sum, c) { return sum + 2 * c.R + 82; }, 0);
+        var span = Math.min(Math.PI * 1.8, required / distance);
+        var angle = (parent.th == null ? 0 : parent.th) - span / 2;
+        kids.forEach(function (c) {
+          var part = (2 * c.R + 82) / required * span;
+          var th = angle + part / 2;
+          angle += part;
+          c.x = parent.x + distance * Math.cos(th);
+          c.y = parent.y + distance * Math.sin(th);
+          c.th = th;
+          placeChildren(c);
+        });
+      })(top);
+    });
+
     var x1 = -cap.R, y1 = -cap.R, x2 = cap.R, y2 = cap.R;
-    islands.forEach(function (i) { x1 = Math.min(x1, i.x - i.R); y1 = Math.min(y1, i.y - i.R); x2 = Math.max(x2, i.x + i.R); y2 = Math.max(y2, i.y + i.R); });
+    islands.forEach(function (i) {
+      x1 = Math.min(x1, i.x - i.R); y1 = Math.min(y1, i.y - i.R);
+      x2 = Math.max(x2, i.x + i.R); y2 = Math.max(y2, i.y + i.R);
+    });
     bounds = { x1: x1, y1: y1, x2: x2, y2: y2 };
-    // world positions of every goal
-    islands.forEach(function (i) { i.goals = i.u.goals.map(function (id, k) { return { id: id, x: i.x + i.pts[k].x, y: i.y + i.pts[k].y }; }); });
+    islands.forEach(function (i) {
+      i.goals = i.u.goals.map(function (id, k) { return { id: id, x: i.x + i.pts[k].x, y: i.y + i.pts[k].y }; });
+    });
     pos = {};
     cap.goals.forEach(function (p) { pos[p.id] = p; });
     islands.forEach(function (i) { i.goals.forEach(function (p) { pos[p.id] = p; }); });
@@ -153,7 +185,7 @@
   }
 
   // ---------- drawing ----------
-  var svg, world, L = {}, nodes = {}, state = { deps: true, align: true, attn: false, sel: null, hover: null }, intro = true;
+  var svg, world, L = {}, nodes = {}, state = { deps: true, align: true, attn: false, sel: null, hover: null, voiceFocus: null }, intro = true;
   function defs() {
     var d = el('defs', null, svg);
     var p = el('pattern', { id: 'jx-hatch', width: 7, height: 7, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, d);
@@ -214,23 +246,22 @@
   }
 
   function pill(parent, y, text, pct, st) {                 // the department's name on a tag that straddles the top of its disc
-    var w = Math.max(190, text.length * 17 + 118), g = el('g', { class: 'jx-pill', 'data-s': st, transform: 'translate(0 ' + f1(y) + ')' }, parent);
-    el('rect', { x: f1(-w / 2), y: -29, width: f1(w), height: 58, rx: 29, class: 'jx-pillbg' }, g);
-    el('circle', { cx: f1(RTL ? w / 2 - 30 : -w / 2 + 30), r: 8.5, class: 'jx-pilldot' }, g);
-    el('text', { y: 9, class: 'jx-uname', 'text-anchor': 'middle', x: RTL ? -10 : 10 }, g, text);
-    var pc = el('text', { y: 8, class: 'jx-upct', 'text-anchor': RTL ? 'start' : 'end', x: f1(RTL ? -w / 2 + 24 : w / 2 - 24), style: 'direction:ltr' }, g, pct + '%');
+    var w = Math.max(164, Math.min(270, text.length * 13 + 96)), g = el('g', { class: 'jx-pill', 'data-s': st, transform: 'translate(0 ' + f1(y) + ')' }, parent);
+    el('rect', { x: f1(-w / 2), y: -24, width: f1(w), height: 48, rx: 24, class: 'jx-pillbg' }, g);
+    el('circle', { cx: f1(RTL ? w / 2 - 25 : -w / 2 + 25), r: 6.5, class: 'jx-pilldot' }, g);
+    el('text', { y: 7, class: 'jx-uname', 'text-anchor': 'middle', x: RTL ? -7 : 7 }, g, text);
+    var pc = el('text', { y: 6, class: 'jx-upct', 'text-anchor': RTL ? 'start' : 'end', x: f1(RTL ? -w / 2 + 19 : w / 2 - 19), style: 'direction:ltr' }, g, pct + '%');
     return pc;
   }
 
   function island(gLand, gGoals, i, k) {
     var u = i.u, ids = goalsOf(u.id), st = standing(ids), pr = avg(ids), g = el('g', { class: 'jx-island', transform: 'translate(' + f1(i.x) + ' ' + f1(i.y) + ')', 'data-unit': u.id, 'data-s': st }, gLand);
     var pop = el('g', { class: 'jx-pop', style: '--i:' + (k + 1) }, g);
-    el('circle', { r: i.R + 18, class: 'jx-aura' }, pop);
+    el('circle', { r: i.R + 12, class: 'jx-aura' }, pop);
     var land = el('circle', { r: i.R, class: 'jx-disc' }, pop);
-    el('circle', { r: i.R - 26, class: 'jx-inner' }, pop);
-    el('circle', { r: i.R - 26, class: 'jx-stipple' }, pop);
+    el('circle', { r: i.R - 24, class: 'jx-inner' }, pop);
     if (u.goals.length) el('circle', { r: i.pts.Rg, class: 'jx-orbit' }, pop);
-    var rr = i.R - 11;                                        // the perimeter is the department's progress: filled clockwise from the top
+    var rr = i.R - 8;                                        // the perimeter is the department's progress: filled clockwise from the top
     el('circle', { r: rr, class: 'jx-ptrack' }, pop);
     if (pr > 0) el('circle', { r: rr, class: 'jx-parc', transform: 'rotate(-90)', pathLength: 100, 'stroke-dasharray': pr + ' ' + (100 - pr + 0.01) }, pop);
     pill(pop, -i.R, clip(u.name, 24), pr, st);
@@ -287,18 +318,18 @@
     var pop = el('g', { class: 'jx-pop', style: '--i:' + order }, el('g', { class: 'jx-gs' }, g));
     el('circle', { r: 50, class: 'jx-ghit' }, pop);
     if (BAD[s]) el('circle', { r: 44, class: 'jx-ghalo' }, pop);
-    el('circle', { r: 36, class: 'jx-gbase' }, pop);
-    el('circle', { r: 27, class: 'jx-gtrack' }, pop);
-    if (pr < ex) el('path', { d: arc(27, pr * 3.6, ex * 3.6), class: 'jx-ggap' }, pop);
-    if (pr > 0) el('circle', { r: 27, class: 'jx-garc', transform: 'rotate(-90)', pathLength: 100, 'stroke-dasharray': pr + ' ' + (100 - pr + 0.01) }, pop);
+    el('circle', { r: 33, class: 'jx-gbase' }, pop);
+    el('circle', { r: 24, class: 'jx-gtrack' }, pop);
+    if (pr < ex) el('path', { d: arc(24, pr * 3.6, ex * 3.6), class: 'jx-ggap' }, pop);
+    if (pr > 0) el('circle', { r: 24, class: 'jx-garc', transform: 'rotate(-90)', pathLength: 100, 'stroke-dasharray': pr + ' ' + (100 - pr + 0.01) }, pop);
     var ea = (ex * 3.6 - 90) * Math.PI / 180;
-    el('path', { d: 'M' + f1(20 * Math.cos(ea)) + ' ' + f1(20 * Math.sin(ea)) + 'L' + f1(35 * Math.cos(ea)) + ' ' + f1(35 * Math.sin(ea)), class: 'jx-gexp' }, pop);
-    el('text', { y: 6, class: 'jx-gpct', 'text-anchor': 'middle', style: 'direction:ltr' }, pop, pr + '%');
-    var bd = el('g', { class: 'jx-gbadge', transform: 'translate(27 -27)' }, pop);
+    el('path', { d: 'M' + f1(18 * Math.cos(ea)) + ' ' + f1(18 * Math.sin(ea)) + 'L' + f1(32 * Math.cos(ea)) + ' ' + f1(32 * Math.sin(ea)), class: 'jx-gexp' }, pop);
+    el('text', { y: 5, class: 'jx-gpct', 'text-anchor': 'middle', style: 'direction:ltr' }, pop, pr + '%');
+    var bd = el('g', { class: 'jx-gbadge', transform: 'translate(23 -23)' }, pop);
     if (s === 'completed') { el('circle', { r: 10.5, class: 'jx-bcirc' }, bd); el('path', { d: 'M-4.4 .4L-1.3 3.4L4.6 -3', class: 'jx-mark' }, bd); }
     else if (s === 'off_track') { el('circle', { r: 10.5, class: 'jx-bcirc' }, bd); el('path', { d: 'M0 -5V1.2', class: 'jx-mark' }, bd); el('circle', { cy: 4.6, r: 1.4, class: 'jx-markdot' }, bd); }
     else if (s === 'at_risk') { el('circle', { r: 10.5, class: 'jx-bcirc' }, bd); el('path', { d: 'M0 -5V1.2', class: 'jx-mark jx-mark--ink' }, bd); el('circle', { cy: 4.6, r: 1.4, class: 'jx-markdot jx-markdot--ink' }, bd); }
-    var lb = el('text', { y: 60, class: 'jx-glabel', 'text-anchor': 'middle' }, pop);
+    var lb = el('text', { y: 54, class: 'jx-glabel', 'text-anchor': 'middle' }, pop);
     lines(gl.title, 17, 2).forEach(function (ln, n) { el('tspan', { x: 0, dy: n ? 16 : 0 }, lb, ln); });
     g.addEventListener('mouseenter', function () { state.hover = gl.id; apply(); });
     g.addEventListener('mouseleave', function () { state.hover = null; apply(); });
@@ -318,24 +349,29 @@
     return r;
   }
   function apply() {
-    var focus = state.hover || (state.sel && state.sel.kind === 'goal' ? state.sel.id : null), rel = focus ? related(focus) : null, unitSet = null;
-    if (!focus && state.sel && state.sel.kind === 'unit') { unitSet = {}; goalsOf(state.sel.id).forEach(function (i) { unitSet[i] = 1; }); }
-    root.classList.toggle('has-focus', !!focus); root.classList.toggle('has-unit', !!unitSet);
+    var vf = state.voiceFocus, focus = vf ? (vf.kind === 'goal' ? vf.id : null) : (state.hover || (state.sel && state.sel.kind === 'goal' ? state.sel.id : null)), rel = focus ? related(focus) : null, unitSet = null;
+    if (!focus && vf && vf.kind === 'unit') { unitSet = {}; goalsOf(vf.id).forEach(function (i) { unitSet[i] = 1; }); }
+    if (!unitSet && !focus && state.sel && state.sel.kind === 'unit') { unitSet = {}; goalsOf(state.sel.id).forEach(function (i) { unitSet[i] = 1; }); }
+    root.classList.toggle('has-focus', !!focus); root.classList.toggle('has-unit', !!unitSet); root.classList.toggle('has-voice-focus', !!vf && vf.kind !== 'org');
     root.classList.toggle('no-deps', !state.deps); root.classList.toggle('no-align', !state.align); root.classList.toggle('only-attn', state.attn);
     Object.keys(nodes.goals).forEach(function (id) {
       var n = nodes.goals[id];
       n.classList.toggle('is-dim', (!!rel && !rel[id]) || (!!unitSet && !unitSet[id]));
       n.classList.toggle('is-focus', id === focus);
       n.classList.toggle('is-sel', !!state.sel && state.sel.kind === 'goal' && state.sel.id === id);
+      n.classList.toggle('is-voice-focus', !!vf && vf.kind === 'goal' && vf.id === id);
+      n.classList.toggle('is-voice-related', !!vf && (focus ? !!rel[id] : !!unitSet && !!unitSet[id]));
     });
     nodes.deps.concat(nodes.aligns).forEach(function (n) { n.classList.toggle('is-on', !!focus && (n.getAttribute('data-a') === focus || n.getAttribute('data-b') === focus)); });
-    Array.prototype.forEach.call(svg.querySelectorAll('.jx-island'), function (n) { n.classList.toggle('is-sel', !!state.sel && state.sel.kind === 'unit' && String(state.sel.id) === n.getAttribute('data-unit')); });
+    Array.prototype.forEach.call(svg.querySelectorAll('.jx-island'), function (n) { n.classList.toggle('is-sel', !!state.sel && state.sel.kind === 'unit' && String(state.sel.id) === n.getAttribute('data-unit')); n.classList.toggle('is-voice-focus', !!vf && vf.kind === 'unit' && String(vf.id) === n.getAttribute('data-unit')); });
+    var capNode = svg.querySelector('.jx-cap'); if (capNode) capNode.classList.toggle('is-voice-focus', !!vf && vf.kind === 'org');
     Array.prototype.forEach.call(chipsEl.querySelectorAll('[data-u]'), function (b) { b.setAttribute('aria-pressed', state.sel && state.sel.kind === 'unit' && String(state.sel.id) === b.getAttribute('data-u') ? 'true' : 'false'); });
   }
 
   // ---------- selection, the panel and the key-result blossom ----------
   function fmtDate(iso) { if (!iso) return ''; try { return new Date(iso).toLocaleDateString(document.documentElement.lang || 'ar', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return iso; } }
   function closeBtn(parent) { var x = h('button', 'jp-x', '×', parent); x.type = 'button'; x.setAttribute('aria-label', I.close); x.addEventListener('click', deselect); return x; }
+  function voiceExplainBtn(parent, kind, id) { var b = h('button', 'jp-voice-btn', I.voice_explain, parent); b.type = 'button'; b.setAttribute('data-voice-target-kind', kind); b.setAttribute('data-voice-target-id', String(id)); return b; }
   function stPill(parent, s) { var p = h('span', 'jp-st', I.status[s] || s, parent); p.setAttribute('data-s', s); return p; }
   function row(parent, label, val) { var r = h('p', 'jp-row', null, parent); h('span', null, label, r); h('b', null, val, r); return r; }
   function goalBtn(parent, id, extra) {
@@ -350,6 +386,7 @@
     var g = G[id]; state.sel = { kind: 'goal', id: id }; state.hover = null;
     panel.textContent = ''; var top = h('div', 'jp-top', null, panel); stPill(top, g.status); closeBtn(top);
     h('h2', null, g.title, panel).setAttribute('dir', 'auto');
+    voiceExplainBtn(panel, 'goal', id);
     var d = g.progress - g.expected, bar = h('div', 'jp-bar', null, panel); h('i', null, null, bar).style.width = g.progress + '%'; h('u', null, null, bar).style.insetInlineStart = g.expected + '%';
     var line = h('p', 'jp-line', null, panel); h('b', 'num', g.progress + '%', line).setAttribute('dir', 'ltr');
     h('span', null, d === 0 ? I.even : (d < 0 ? I.behind : I.ahead) + ' · ' + Math.abs(d) + ' ' + I.points, line).setAttribute('data-tone', d < 0 ? 'lag' : 'lead');
@@ -380,6 +417,7 @@
     panel.textContent = ''; var top = h('div', 'jp-top', null, panel); stPill(top, st); closeBtn(top);
     var hd = h('div', 'jp-head', null, panel); avatar(hd, u.head, true);
     var tx = h('div', null, null, hd); h('h2', null, u.name, tx).setAttribute('dir', 'auto');
+    voiceExplainBtn(panel, 'unit', id);
     if (u.head) { h('b', null, u.head.name, tx).setAttribute('dir', 'auto'); if (u.head.title) h('small', null, u.head.title, tx); } else h('small', 'is-none', I.no_head, tx);
     var nums = h('div', 'jp-nums', null, panel);
     [[ids.length, I.goals], [avg(ids) + '%', I.avg], [u.people, I.people]].forEach(function (x) { var c = h('div', null, null, nums); h('b', 'num', String(x[0]), c).setAttribute('dir', 'ltr'); h('span', null, x[1], c); });
@@ -396,6 +434,7 @@
     var hd = h('div', 'jp-head', null, panel); var a = h('span', 'jp-av jp-av--big', D.org.logo ? '' : D.org.initials, hd);
     if (D.org.logo) { var im = h('img', null, null, a); im.src = D.org.logo; im.alt = ''; }
     var tx = h('div', null, null, hd); h('h2', null, D.org.name, tx).setAttribute('dir', 'auto'); if (D.cycle) h('small', null, I.cycle + ': ' + D.cycle, tx);
+    voiceExplainBtn(panel, 'org', 'org');
     if (D.vision.text) { h('h3', null, I.vision, panel); h('p', 'jp-text', D.vision.text, panel).setAttribute('dir', 'auto'); }
     if (D.vision.mission) { h('h3', null, I.mission, panel); h('p', 'jp-text', D.vision.mission, panel).setAttribute('dir', 'auto'); }
     var counts = {}; D.goals.forEach(function (g) { counts[g.status] = (counts[g.status] || 0) + 1; });
@@ -427,9 +466,15 @@
   // ---------- camera ----------
   var cam = { x: 0, y: 0, k: 1 }, fitK = 0.5, tween = null, minK = 0.1, maxK = 3.4;
   function size() { return { w: stage.clientWidth, h: stage.clientHeight }; }
-  function freeCenter() {                                  // the centre of the part of the screen the panel is not covering
-    var s = size(), pw = root.classList.contains('has-panel') && s.w > 760 ? panel.offsetWidth + 24 : 0, tb = s.w > 760 ? 40 : 0;
-    return { cx: RTL ? (s.w + pw) / 2 : (s.w - pw) / 2, cy: s.h / 2 + tb / 2 - 14, w: s.w - pw, h: s.h - 96 };
+  function freeCenter() {                                  // fit the map into the unobstructed side of the canvas
+    var s = size(), hasPanel = root.classList.contains('has-panel') && s.w > 760;
+    var hud = root.querySelector('.jx__hud');
+    var occupied = hasPanel ? panel.offsetWidth + 28 : (s.w > 900 && hud ? hud.offsetWidth + 34 : 0);
+    occupied = Math.min(occupied, s.w * 0.38);
+    var freeW = Math.max(320, s.w - occupied);
+    var cx = RTL ? freeW / 2 : (s.w + occupied) / 2;
+    var topOffset = !hasPanel && s.w > 900 && hud ? Math.min(48, hud.offsetHeight * 0.18) : 0;
+    return { cx: cx, cy: s.h / 2 + topOffset - 18, w: freeW, h: s.h - 104 };
   }
   var lastZ = '', mini = null;
   function applyCam() {
@@ -578,6 +623,10 @@
   }
   sizeRoot(); window.addEventListener('resize', sizeRoot);
   layout(); render(); buildChips(); buildMini();
+  window.PlanWiseJourney = {
+    focus: function (kind, id) { state.voiceFocus = { kind: String(kind || 'org'), id: String(id || 'org') }; apply(); },
+    clearFocus: function () { state.voiceFocus = null; apply(); }
+  };
   root.classList.add('is-intro');
   (function begin() {
     var c = fitCam(bounds.x1, bounds.y1, bounds.x2, bounds.y2, 40); fitK = c.k; minK = Math.max(0.05, c.k * 0.5);

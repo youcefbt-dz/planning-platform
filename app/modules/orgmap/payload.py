@@ -19,7 +19,10 @@ STATUSES = ("not_started", "on_track", "at_risk", "off_track", "completed")
 WORDS = ("title", "journey", "of_time", "pace", "left", "days", "all", "attention", "attention_none", "deps", "align", "zoom_in", "zoom_out", "fit", "full", "exit_full",
          "hint", "origin", "vision", "mission", "horizon", "no_head", "head", "people", "goals", "avg", "owner", "unit", "ends", "krs", "gap", "levers", "behind", "ahead", "even",
          "points", "today", "depends", "needed", "serves", "served", "blocked", "open_goal", "open_unit", "close", "export", "map", "cycle", "no_goals", "org_goals",
-         "legend_gap", "legend_today", "legend_dep", "legend_warn", "legend_align", "lands", "stations")
+         "legend_gap", "legend_today", "legend_dep", "legend_warn", "legend_align", "lands", "stations",
+         "voice", "voice_explain", "voice_intro", "voice_wait", "voice_preparing", "voice_ready", "voice_play", "voice_pause", "voice_next", "voice_prev",
+         "voice_stop", "voice_close", "voice_error", "voice_model", "voice_rules", "voice_select", "voice_male", "voice_female", "voice_browser", "voice_part",
+         "voice_ask", "voice_ask_placeholder", "voice_ask_send", "voice_answer", "voice_question_error")
 
 
 def _iso(d) -> str:

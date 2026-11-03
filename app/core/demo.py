@@ -15,18 +15,13 @@ SLUGS = {"ar": "demo"}
 ORG_NAME = "مؤسسة الأفق للتجهيزات"
 PEOPLE = {  # key: (name, title, role)
     "ceo": ("سمير بن عيسى", "المدير العام", "owner"),
-    "fin": ("نادية حداد", "مديرة المالية", "admin"),
     "sales": ("كريم مزياني", "مدير المبيعات", "admin"),
     "ops": ("ليلى بوزيد", "مديرة العمليات", "admin"),
-    "people": ("أمين شرفي", "مسؤول الموارد البشرية", "member"),
 }
 UNITS = [  # key, parent, kind, name
     ("root", None, "company", ORG_NAME),
     ("sales", "root", "department", "المبيعات"),
     ("ops", "root", "department", "العمليات"),
-    ("logistics", "ops", "team", "اللوجستيك"),
-    ("fin", "root", "department", "المالية"),
-    ("people", "root", "department", "الموارد البشرية"),
 ]
 
 
@@ -53,9 +48,9 @@ def delete_demo(slug: str) -> None:
         for name in reversed(tables):
             conn.execute(text(f'DELETE FROM "{name}" WHERE org_id=:o'), {"o": org.id})
         conn.execute(text("DELETE FROM membership WHERE org_id=:o"), {"o": org.id})
-        user_ids = [r[0] for r in conn.execute(text("SELECT id FROM user WHERE email LIKE :e"), {"e": f"%@{slug}.demo.invalid"})]
+        user_ids = [r[0] for r in conn.execute(text('SELECT id FROM "user" WHERE email LIKE :e'), {"e": f"%@{slug}.demo.invalid"})]
         for uid in user_ids:
-            conn.execute(text("DELETE FROM user WHERE id=:u"), {"u": uid})
+            conn.execute(text('DELETE FROM "user" WHERE id=:u'), {"u": uid})
         conn.execute(text("DELETE FROM organization WHERE id=:o"), {"o": org.id})
     db.session.expire_all()
     # uploaded demo files live outside the database
@@ -68,7 +63,7 @@ def delete_demo(slug: str) -> None:
 PROFILE = {
     "sector": "trade", "size": "medium", "currency": "DZD", "fiscal_start": 1,
     "vision": "أن نكون الخيار الأول للتوزيع الموثوق في شمال الجزائر.",
-    "mission": "نوصل البضاعة في موعدها وبجودة ثابتة، ونبني علاقة طويلة مع كل عميل.",
+    "mission": "نوصل البضاعة في موعدها وبجودة ثابتة.",
     "values": "الأمانة، الالتزام بالمواعيد، الجودة",
 }
 
@@ -98,7 +93,7 @@ def create_demo(lang: str, today: date | None = None) -> Organization:
         db.session.add(u)
         db.session.flush()
         users[key] = u
-        unit = {"ceo": "root", "fin": "fin", "sales": "sales", "ops": "ops", "people": "people"}[key]
+        unit = {"ceo": "root", "sales": "sales", "ops": "ops"}[key]
         db.session.add(Membership(org_id=org.id, user_id=u.id, role=role, unit_id=units[unit].id, title=titles))
         units[unit].head_id = u.id
 
@@ -118,3 +113,19 @@ def create_demo(lang: str, today: date | None = None) -> Organization:
         fn(org, lang, ctx)
     db.session.commit()
     return org
+
+
+def ensure_demo(lang: str = "ar") -> Organization | None:
+    """The demo organization, built on first use. A fresh database (a new Render deploy, a wiped disk) has none, and `flask seed-demo` is a manual step
+    nobody remembers: so the landing page's demo button, and the start script, call this. Safe to repeat and safe when two visitors arrive together."""
+    import logging
+
+    org = Organization.query.filter_by(slug=SLUGS[lang], is_demo=True).first()
+    if org is not None:
+        return org
+    try:
+        return create_demo(lang)
+    except Exception:                       # a second worker built it first, or a seed failed: never take the page down
+        db.session.rollback()
+        logging.getLogger(__name__).exception("could not build the demo organization")
+        return Organization.query.filter_by(slug=SLUGS[lang], is_demo=True).first()

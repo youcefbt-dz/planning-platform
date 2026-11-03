@@ -10,5 +10,11 @@
     <div class="main"><a class="title" href="{{ url_for('initiatives.detail', id=v.obj.id) }}">{{ v.next_milestone.title }}</a><div class="meta"><span>{{ v.obj.title }}</span></div></div>
     <span class="chip {% if v.next_milestone.due_date < today %}chip-primary{% endif %} num">{{ icon('calendar', 12) }}{{ d(v.next_milestone.due_date, 'day') }}</span></div>
   {% endfor %}
-  {% else %}{% call empty('rocket', t('initiatives.empty_title'), t('initiatives.empty_text')) %}{% endcall %}{% endif %}
+  {% else %}
+    <div class="box-body" style="padding-block-start:0">
+      {% call empty('rocket', t('initiatives.empty_title'), t('initiatives.empty_text')) %}
+        {% if can('initiatives.edit') %}<a class="btn btn-sm" href="{{ url_for('initiatives.new') }}">{{ t('initiatives.create') }}</a>{% endif %}
+      {% endcall %}
+    </div>
+  {% endif %}
 </div>

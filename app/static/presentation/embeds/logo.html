@@ -1,0 +1,190 @@
+<!doctype html><meta charset="utf-8"><title>PlanWise logo scene</title>
+<style>
+@font-face{font-family:"IBM Plex Sans Arabic";font-weight:600;font-display:block;src:url("/static/fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2") format("woff2")}
+@font-face{font-family:"IBM Plex Sans Arabic";font-weight:700;font-display:block;src:url("/static/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2") format("woff2")}
+@font-face{font-family:"Arimo";font-weight:700;font-display:block;src:url("/static/fonts/arimo-latin-700-normal.woff2") format("woff2")}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#5864FF}
+#bg{position:absolute;left:360px;top:0;width:1200px;height:1080px;background:radial-gradient(circle at 50% 45%,#7C86FF 0%,#5864FF 65%)}
+svg{position:absolute;left:0;top:0}
+.w{fill:#F6F8FD}
+.lab{position:absolute;top:760px;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0;font-family:'IBM Plex Sans Arabic',Arial,sans-serif;will-change:transform,opacity}
+.lab p{margin:0;font-size:24px;font-weight:600;line-height:1.4;color:#DDE1FF}
+.lab h3{margin:0;font-family:'Arimo','IBM Plex Sans Arabic',Arial,sans-serif;font-size:56px;font-weight:700;line-height:1.4;color:#F6F8FD}
+#l2 p,#l2 h3{color:#FDD446}
+#wm{position:absolute;left:460px;top:730px;width:1000px;text-align:center;font-family:'Arimo','IBM Plex Sans Arabic',Arial,sans-serif;font-size:160px;font-weight:700;line-height:1.1;color:#F6F8FD;direction:ltr;white-space:nowrap}
+#wm span{display:inline-block;opacity:0;will-change:transform,opacity}
+#ul{position:absolute;left:760px;top:930px;width:400px;height:10px;background:#FDD446;border-radius:5px;transform:scaleX(0);opacity:0}
+</style>
+<div id="bg"></div>
+<svg id="s" width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<clipPath id="rc"><rect id="rr" x="-20" y="120" width="0" height="420"/></clipPath>
+<clipPath id="rp"><path d="M225.8 511L221.2 511.2L194.2 510.5L178 509.6L156 507.6L137 505L115.3 500.8L94.5 495.4L77.9 489.8L61.5 482.9L43.5 473.2L33.5 466.6L24.7 459.8L20.9 456.2L15 449.8L11 444L8.1 438.8L6.1 433.8L4.9 428.8L4.5 424L4.6 419.8L5.5 414.5L7.2 409.4L12 401.2L14.4 397.8L23.5 388.2L27.2 385L39 376.2L49.5 369.2L59.5 363.2L77.8 353L105.5 339.2L126 330L149.8 320L182.5 307.2L246.1 283.8L314.5 257.7L344 245.8L369.2 234.7L391.7 223.8L404.8 216.6L413.1 211.5L425 202.7L434.1 193.8L438.2 187.2L439 187.1L439.3 188.2L439.1 193L437.5 201L435.4 206.5L431.5 213.2L424.5 221.9L419.6 226.8L411.8 233.5L405 238.7L393.2 246.6L380.2 254.7L357.2 267.3L329.2 281.6L261.8 314.3L242.8 324.1L221.8 336L210.2 343.1L194.2 354.9L184.1 364.2L178.7 371.2L175 378L173.5 383L172.9 386.8L173 390.5L174.2 397.2L177.1 403.8L182.3 411.8L187.2 417.3L196.2 425.4L204.8 431.8L216.5 439.6L235.7 450.8L251 458.7L280.5 472.8L303.2 483.1L333.8 496L334.8 497L334.2 497.5L330 498.7L318.2 501.4L289.5 506.5L258 509.6L241.5 510.6Z"/></clipPath>
+<clipPath id="cbars"><path d="M1.8 378.6L1 378.7L0.3 378.2L0 376L0.4 365.8L0.2 355.8L0.5 337.8L0.3 306.8L0.5 273L0.1 266L0.4 255.8L0.2 243L0.5 237.8L0.2 219L0.4 215.8L1.4 211.8L3 208.5L5.5 206.2L60 175.2L71.8 168.8L74.5 168.3L77.5 168.8L79.6 170L81.3 171.8L82.4 174L82.8 176.5L82.8 321L82.5 328.5L81.5 329.6L59.8 341.1L39 353.1L18.8 366.1Z"/><path d="M109 317.3L107.8 317.2L107.4 316L107.4 138L108 134L110 130.4L112.8 128L161 100.1L178.8 90.2L182 89.4L185.2 89.9L187.5 91.2L189 93L189.9 95.2L190.3 98L190.1 283.2L188.8 284.5L154.2 298.2Z"/><path d="M218.2 272L217.6 271.8L217.3 271L217.2 249.5L217.2 54L217.3 51.2L218.1 48.2L220.2 44.2L223.3 41.2L260.7 19L265.2 16.7L290 2.2L294 0.9L297.5 1.2L300 2.4L301.9 4.2L303.2 6.8L303.6 9.5L303.5 235.2L302.2 236.6L296.2 239.5L268.5 251.6Z"/></clipPath>
+<clipPath id="csw"><path d="M225.8 511L221.2 511.2L194.2 510.5L178 509.6L156 507.6L137 505L115.3 500.8L94.5 495.4L77.9 489.8L61.5 482.9L43.5 473.2L33.5 466.6L24.7 459.8L20.9 456.2L15 449.8L11 444L8.1 438.8L6.1 433.8L4.9 428.8L4.5 424L4.6 419.8L5.5 414.5L7.2 409.4L12 401.2L14.4 397.8L23.5 388.2L27.2 385L39 376.2L49.5 369.2L59.5 363.2L77.8 353L105.5 339.2L126 330L149.8 320L182.5 307.2L246.1 283.8L314.5 257.7L344 245.8L369.2 234.7L391.7 223.8L404.8 216.6L413.1 211.5L425 202.7L434.1 193.8L438.2 187.2L439 187.1L439.3 188.2L439.1 193L437.5 201L435.4 206.5L431.5 213.2L424.5 221.9L419.6 226.8L411.8 233.5L405 238.7L393.2 246.6L380.2 254.7L357.2 267.3L329.2 281.6L261.8 314.3L242.8 324.1L221.8 336L210.2 343.1L194.2 354.9L184.1 364.2L178.7 371.2L175 378L173.5 383L172.9 386.8L173 390.5L174.2 397.2L177.1 403.8L182.3 411.8L187.2 417.3L196.2 425.4L204.8 431.8L216.5 439.6L235.7 450.8L251 458.7L280.5 472.8L303.2 483.1L333.8 496L334.8 497L334.2 497.5L330 498.7L318.2 501.4L289.5 506.5L258 509.6L241.5 510.6Z"/><path d="M384 195.3L383.5 195.1L383.2 194.5L383.3 187.5L381.9 181.2L379.7 175.5L376.2 170.3L371.5 164.5L361.9 154.5L335.6 128.8L334.8 127.2L336.8 127.3L347.5 130.3L440.2 158.2L452.3 162.2L451.7 163.2L446.7 165.8L400.8 187.7Z"/></clipPath>
+<linearGradient id="shg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#DDE1FF" stop-opacity="0"/><stop offset=".75" stop-color="#DDE1FF" stop-opacity=".6"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="1"/></linearGradient>
+<linearGradient id="gold" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#FDD446" stop-opacity="0"/><stop offset=".5" stop-color="#FDD446" stop-opacity=".95"/><stop offset="1" stop-color="#FDD446" stop-opacity="0"/></linearGradient>
+<radialGradient id="glY"><stop offset="0" stop-color="#FDD446" stop-opacity=".5"/><stop offset="1" stop-color="#FDD446" stop-opacity="0"/></radialGradient>
+<radialGradient id="glW"><stop offset="0" stop-color="#DDE1FF" stop-opacity=".6"/><stop offset="1" stop-color="#DDE1FF" stop-opacity="0"/></radialGradient>
+</defs>
+<g id="amb"></g>
+<g id="deco" fill="none" stroke="#DDE1FF"></g>
+<g id="gridG" transform="translate(1288 210)"><g id="gr" fill="none" stroke="#DDE1FF" stroke-width="0.8"></g><g id="dt"></g></g>
+<g transform="translate(700 100) scale(1.1454)"><circle id="fl" cx="227" cy="256" r="400" fill="url(#glW)" opacity="0"/></g>
+<g id="LG">
+ <g id="P1">
+  <g id="g1"><path class="w" d="M1.8 378.6L1 378.7L0.3 378.2L0 376L0.4 365.8L0.2 355.8L0.5 337.8L0.3 306.8L0.5 273L0.1 266L0.4 255.8L0.2 243L0.5 237.8L0.2 219L0.4 215.8L1.4 211.8L3 208.5L5.5 206.2L60 175.2L71.8 168.8L74.5 168.3L77.5 168.8L79.6 170L81.3 171.8L82.4 174L82.8 176.5L82.8 321L82.5 328.5L81.5 329.6L59.8 341.1L39 353.1L18.8 366.1Z"/></g>
+  <g id="g2"><path class="w" d="M109 317.3L107.8 317.2L107.4 316L107.4 138L108 134L110 130.4L112.8 128L161 100.1L178.8 90.2L182 89.4L185.2 89.9L187.5 91.2L189 93L189.9 95.2L190.3 98L190.1 283.2L188.8 284.5L154.2 298.2Z"/></g>
+  <g id="g3"><path class="w" d="M218.2 272L217.6 271.8L217.3 271L217.2 249.5L217.2 54L217.3 51.2L218.1 48.2L220.2 44.2L223.3 41.2L260.7 19L265.2 16.7L290 2.2L294 0.9L297.5 1.2L300 2.4L301.9 4.2L303.2 6.8L303.6 9.5L303.5 235.2L302.2 236.6L296.2 239.5L268.5 251.6Z"/></g>
+  <g clip-path="url(#cbars)"><rect id="gb" x="-260" y="-80" width="80" height="560" fill="url(#gold)" opacity="0"/></g>
+ </g>
+ <g id="P2">
+  <g clip-path="url(#rc)"><path class="w" d="M225.8 511L221.2 511.2L194.2 510.5L178 509.6L156 507.6L137 505L115.3 500.8L94.5 495.4L77.9 489.8L61.5 482.9L43.5 473.2L33.5 466.6L24.7 459.8L20.9 456.2L15 449.8L11 444L8.1 438.8L6.1 433.8L4.9 428.8L4.5 424L4.6 419.8L5.5 414.5L7.2 409.4L12 401.2L14.4 397.8L23.5 388.2L27.2 385L39 376.2L49.5 369.2L59.5 363.2L77.8 353L105.5 339.2L126 330L149.8 320L182.5 307.2L246.1 283.8L314.5 257.7L344 245.8L369.2 234.7L391.7 223.8L404.8 216.6L413.1 211.5L425 202.7L434.1 193.8L438.2 187.2L439 187.1L439.3 188.2L439.1 193L437.5 201L435.4 206.5L431.5 213.2L424.5 221.9L419.6 226.8L411.8 233.5L405 238.7L393.2 246.6L380.2 254.7L357.2 267.3L329.2 281.6L261.8 314.3L242.8 324.1L221.8 336L210.2 343.1L194.2 354.9L184.1 364.2L178.7 371.2L175 378L173.5 383L172.9 386.8L173 390.5L174.2 397.2L177.1 403.8L182.3 411.8L187.2 417.3L196.2 425.4L204.8 431.8L216.5 439.6L235.7 450.8L251 458.7L280.5 472.8L303.2 483.1L333.8 496L334.8 497L334.2 497.5L330 498.7L318.2 501.4L289.5 506.5L258 509.6L241.5 510.6Z"/></g>
+  <g clip-path="url(#rp)"><rect id="sh" x="-200" y="120" width="90" height="420" fill="url(#shg)" opacity="0"/></g>
+  <g id="ar"><path class="w" d="M384 195.3L383.5 195.1L383.2 194.5L383.3 187.5L381.9 181.2L379.7 175.5L376.2 170.3L371.5 164.5L361.9 154.5L335.6 128.8L334.8 127.2L336.8 127.3L347.5 130.3L440.2 158.2L452.3 162.2L451.7 163.2L446.7 165.8L400.8 187.7Z"/></g>
+  <g clip-path="url(#csw)"><rect id="gs" x="-260" y="60" width="90" height="520" fill="url(#gold)" opacity="0"/></g>
+  <g id="rg" fill="none" stroke="#DDE1FF" stroke-width="2"></g>
+ </g>
+ <g id="P3" fill="#FDD446">
+  <circle id="gc" cx="364.5" cy="57.5" r="95" fill="url(#glY)" opacity="0"/>
+  <g id="ry" stroke="#FDD446" stroke-width="0.7" stroke-linecap="round"></g>
+  <g id="sp"></g>
+ </g>
+</g>
+<g transform="translate(700 100) scale(1.1454)"><g id="nw" fill="none" stroke="#FDD446" stroke-width="1.6" stroke-linecap="round"></g><g id="nd" fill="#FDD446"></g></g>
+</svg>
+<div class="lab" id="l0" style="left:1230px;width:420px"><p>01</p><h3>&#8295;البيانات&#8297;</h3></div>
+<div class="lab" id="l1" style="left:750px;width:420px"><p>02</p><h3>&#8295;الأهداف&#8297;</h3></div>
+<div class="lab" id="l2" style="left:200px;width:560px"><p>03</p><h3>&#8295;الذكاء الاصطناعي&#8297;</h3></div>
+<div id="wm"></div><div id="ul"></div>
+<script>
+(function(){
+var NS='http://www.w3.org/2000/svg',$=function(i){return document.getElementById(i)};
+function E(t,a,p){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function cl(x){return x<0?0:x>1?1:x}
+function eo(x){return 1-Math.pow(1-x,3)}
+function eio(x){return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2}
+function eb(x,c){c=c||1.9;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)}
+var seed=7;function R(){seed=(seed*16807)%2147483647;return seed/2147483647}
+
+/* ---------- state variables (each 0..1) animated toward targets ---------- */
+var V={bar:0,sw:0,ai:0,asm:0,word:0,l0:0,l1:0,l2:0},A={},cur=-1,active=true;
+var reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+var D={bar:[3.4,.1],sw:[4.6,.1],ai:[2.1,.1],asm:[5.4,.1],word:[1.8,3.0],l0:[.7,1.3],l1:[.7,1.5],l2:[.7,1.1]};
+function step(n,force){
+ if(n===cur)return;
+ var tg={bar:n>=1?1:0,sw:n>=2?1:0,ai:n>=3?1:0,asm:n>=4?1:0,word:n>=4?1:0,
+  l0:(n>=1&&n<=3)?1:0,l1:(n>=2&&n<=3)?1:0,l2:n===3?1:0};
+ var adj=cur>=0&&Math.abs(n-cur)===1&&!reduce&&!force,now=performance.now();
+ for(var k in tg){
+  if(!adj){A[k]=null;V[k]=tg[k];continue}
+  if(A[k]&&A[k].t===tg[k])continue;
+  if(!A[k]&&V[k]===tg[k])continue;
+  var up=tg[k]>V[k];
+  A[k]={f:V[k],t:tg[k],s:now+(up?D[k][1]:0)*1000,d:(up?D[k][0]:Math.max(.45,D[k][0]*.22))*1000};
+ }
+ cur=n;
+}
+function tick(now){for(var k in A){var a=A[k];if(!a)continue;var q=cl((now-a.s)/a.d);V[k]=a.f+(a.t-a.f)*q;if(q>=1){V[k]=a.t;A[k]=null}}}
+
+/* ---------- ambient particles ---------- */
+var amb=$('amb'),ad=[];
+for(var i=0;i<70;i++)ad.push({c:E('circle',{cx:R()*1920,cy:R()*1080,r:1+R()*2,fill:'#DDE1FF'},amb),ph:R()*6.28,sp:.6+R()});
+function ambient(t){for(var i=0;i<ad.length;i++){var d=ad[i];d.c.setAttribute('opacity',(.1+.3*(.5+.5*Math.sin(t*d.sp+d.ph))).toFixed(3))}}
+
+/* ---------- opening decor: slow orbits ---------- */
+var deco=$('deco'),RR=[250,400,560,740],sat=[];
+for(var i=0;i<RR.length;i++){
+ E('circle',{cx:960,cy:540,r:RR[i],'stroke-width':2,'stroke-opacity':.13-.02*i,'stroke-dasharray':i%2?'3 16':'none','stroke-linecap':'round'},deco);
+ for(var j=0;j<(i%2?2:1);j++)sat.push({c:E('circle',{r:i%2?5:8,fill:i%2?'#DDE1FF':'#FDD446',stroke:'none'},deco),r:RR[i],a:R()*6.28+j*3.14,s:(i%2?-1:1)*(.10+.05*i)});
+}
+function renderDeco(t){
+ var o=1-eo(cl(V.bar/.3));deco.setAttribute('opacity',o.toFixed(3));if(o<=0)return;
+ for(var i=0;i<sat.length;i++){var d=sat[i],a=d.a+t*d.s;d.c.setAttribute('cx',(960+Math.cos(a)*d.r).toFixed(1));d.c.setAttribute('cy',(540+Math.sin(a)*d.r).toFixed(1))}
+}
+
+/* ---------- step 1: data (bars) ---------- */
+var gr=$('gr'),gl=[];
+for(var i=0;i<5;i++)gl.push(E('line',{x1:-40,x2:340,y1:60+i*75,y2:60+i*75,pathLength:1,'stroke-dasharray':1,'stroke-dashoffset':1},gr));
+var box=[[12,76,225,335],[114,184,130,290],[222,298,45,250]],dots=[],dg=$('dt');
+for(var b=0;b<3;b++)for(var j=0;j<18;j++){var a=R()*6.283;dots.push({l:E('line',{stroke:b==1?'#DDE1FF':'#F6F8FD','stroke-width':2,'stroke-linecap':'round'},dg),c:E('circle',{r:5,fill:b==1?'#DDE1FF':'#F6F8FD'},dg),tx:box[b][0]+R()*(box[b][1]-box[b][0]),ty:box[b][2]+R()*(box[b][3]-box[b][2]),sx:227+Math.cos(a)*700,sy:250+Math.sin(a)*700,d:R()*.9})}
+var BY=[379,317,272],GB=[$('g1'),$('g2'),$('g3')],gb=$('gb');
+function renderBars(Tb,Ta){
+ var gf=1-cl(Ta/.6);
+ for(var i=0;i<5;i++){var p=eo(cl((Tb-.1*i)/.9));gl[i].setAttribute('stroke-dashoffset',(1-p).toFixed(4));gl[i].setAttribute('opacity',((Tb>2.4?.16:.16+.2*cl(Tb*2))*gf).toFixed(3))}
+ for(var i=0;i<dots.length;i++){var d=dots[i],q=eio(cl((Tb-d.d)/1.4)),o=cl((Tb-d.d)/.3)*(1-cl((Tb-2.1-d.d*.5)/.6));
+  d.c.setAttribute('cx',(d.sx+(d.tx-d.sx)*q).toFixed(1));d.c.setAttribute('cy',(d.sy+(d.ty-d.sy)*q).toFixed(1));d.c.setAttribute('opacity',o.toFixed(3));
+  var q2=eio(cl((Tb-d.d)/1.4-.07));d.l.setAttribute('x1',(d.sx+(d.tx-d.sx)*q2).toFixed(1));d.l.setAttribute('y1',(d.sy+(d.ty-d.sy)*q2).toFixed(1));d.l.setAttribute('x2',(d.sx+(d.tx-d.sx)*q).toFixed(1));d.l.setAttribute('y2',(d.sy+(d.ty-d.sy)*q).toFixed(1));d.l.setAttribute('opacity',(o*.5).toFixed(3))}
+ for(var k=0;k<3;k++){var s=cl((Tb-1.4-.2*k)/.9);s=s>0?eb(s,1.4):0;GB[k].setAttribute('transform','translate(0 '+BY[k]+') scale(1 '+s.toFixed(4)+') translate(0 '+(-BY[k])+')')}
+ var g=Ta>0?cl((Ta-4.5)/.9):cl((Tb-2.5)/.9);
+ gb.setAttribute('x',(-260+820*eio(g)).toFixed(1));gb.setAttribute('opacity',(g>0&&g<1?1:0));gb.setAttribute('transform','skewX(-18)')
+}
+
+/* ---------- step 2: goals (swoosh + arrow) ---------- */
+var rr=$('rr'),sh=$('sh'),ar=$('ar'),gs=$('gs'),rg=$('rg'),rings=[];
+for(var i=0;i<3;i++)rings.push(E('circle',{cx:452,cy:163,r:0,opacity:0},rg));
+function renderSwoosh(Ts,Ta){
+ var p=eio(cl((Ts-.3)/1.5)),w=474*p;rr.setAttribute('width',w.toFixed(1));
+ sh.setAttribute('x',(-20+w-90).toFixed(1));sh.setAttribute('opacity',(p>0&&p<1?1:Math.max(0,1-cl((Ts-1.8)/.4))*(p>=1?1:0)).toFixed(3));
+ var s=cl((Ts-1.75)/.6);s=s>0?eb(s,1.7):0;ar.setAttribute('transform','translate(393 163) scale('+s.toFixed(4)+') translate(-393 -163)');
+ for(var i=0;i<3;i++){var q=cl((Ts-1.95-.22*i)/1.2);rings[i].setAttribute('r',(10+110*eo(q)).toFixed(2));rings[i].setAttribute('opacity',(q>0?.8*(1-q):0).toFixed(3))}
+ var g=Ta>0?cl((Ta-4.75)/.9):cl((Ts-3.6)/1);
+ gs.setAttribute('x',(-260+820*eio(g)).toFixed(1));gs.setAttribute('opacity',(g>0&&g<1?1:0));gs.setAttribute('transform','skewX(-18)')
+}
+
+/* ---------- step 3: AI (sparkles) ---------- */
+function star(r){var p=[];for(var i=0;i<60;i++){var a=6.2832*i/60,c=Math.cos(a),s=Math.sin(a);p.push((r*Math.sign(c)*Math.pow(Math.abs(c),3)).toFixed(2)+','+(r*Math.sign(s)*Math.pow(Math.abs(s),3)).toFixed(2))}return p.join(' ')}
+var SP=[[364.5,57.5,45,.35,-110],[410.4,96.5,18.6,.75,60],[408,26,9,.95,-60]],spg=$('sp'),stars=[],ry=$('ry'),rl=[],gc=$('gc');
+for(var i=0;i<3;i++)stars.push(E('polygon',{points:star(SP[i][2])},spg));
+for(var i=0;i<14;i++)rl.push(E('line',{},ry));
+function renderAI(Ta,t){
+ var tw=cl((Ta-1.8)/.3);
+ for(var i=0;i<3;i++){var q=cl((Ta-SP[i][3])/.8),s=q>0?eb(q,1.9):0,a=SP[i][4]*(1-eo(q));
+  s*=1+tw*.07*Math.sin(t*2.3+i*1.9);
+  stars[i].setAttribute('transform','translate('+SP[i][0]+' '+SP[i][1]+') rotate('+a.toFixed(2)+') scale('+s.toFixed(4)+')')}
+ var p=cl((Ta-.5)/1);for(var i=0;i<14;i++){var an=i*6.2832/14,r1=52+70*eo(p),r2=r1+26*(1-p),c=Math.cos(an),s=Math.sin(an);
+  rl[i].setAttribute('x1',(364.5+c*r1).toFixed(1));rl[i].setAttribute('y1',(57.5+s*r1).toFixed(1));rl[i].setAttribute('x2',(364.5+c*r2).toFixed(1));rl[i].setAttribute('y2',(57.5+s*r2).toFixed(1));rl[i].setAttribute('opacity',(p>0?.9*(1-p):0).toFixed(3))}
+ gc.setAttribute('opacity',Math.sin(cl((Ta-.3)/1.8)*3.1416).toFixed(3))
+}
+
+/* ---------- step 4: assembly ---------- */
+var P=[$('P1'),$('P2'),$('P3')],F=[[1288,210,1],[732,81,1],[-642,208,3]],E1=[700,100,1.1454];
+var nw=$('nw'),nd=$('nd'),TG=[[300,8],[186,92],[78,170],[448,163],[330,254]],ln=[],nn=[],fl=$('fl'),LG=$('LG');
+for(var i=0;i<TG.length;i++){ln.push(E('line',{x1:364.5,y1:57.5,x2:TG[i][0],y2:TG[i][1],pathLength:1,'stroke-dasharray':1,'stroke-dashoffset':1},nw));nn.push(E('circle',{cx:TG[i][0],cy:TG[i][1],r:0},nd))}
+function renderAsm(Ta){
+ for(var k=0;k<3;k++){var x=cl((Ta-.4-.22*k)/1.7),u=k===2?eb(x,.6):eio(x),f=F[k];
+  P[k].setAttribute('transform','translate('+(f[0]+(E1[0]-f[0])*u).toFixed(2)+' '+(f[1]+(E1[1]-f[1])*u).toFixed(2)+') scale('+(f[2]+(E1[2]-f[2])*u).toFixed(4)+')')}
+ var fo=1-cl((Ta-4.4)/.8);
+ for(var i=0;i<TG.length;i++){var p=cl((Ta-2.6-.15*i)/.7);ln[i].setAttribute('stroke-dashoffset',(1-eo(p)).toFixed(4));ln[i].setAttribute('opacity',(.9*fo).toFixed(3));var np=cl((p-.85)/.15);nn[i].setAttribute('r',(5*(np>0?eb(np,1.9):0)).toFixed(2));nn[i].setAttribute('opacity',fo.toFixed(3))}
+ fl.setAttribute('opacity',(Math.sin(cl((Ta-2.2)/1.4)*3.1416)*.9).toFixed(3))
+}
+
+/* ---------- labels + wordmark ---------- */
+var L=[$('l0'),$('l1'),$('l2')],wm=$('wm'),ul=$('ul'),ls=[];
+'PlanWise'.split('').forEach(function(ch){var s=document.createElement('span');s.textContent=ch;wm.appendChild(s);ls.push(s)});
+function renderText(Tw,t){
+ for(var k=0;k<3;k++){var q=eo(cl(V['l'+k]));L[k].style.opacity=q.toFixed(3);L[k].style.transform='translateY('+((1-q)*36).toFixed(1)+'px)'}
+ for(var i=0;i<ls.length;i++){var q=eo(cl((Tw-i*.07)/.7));ls[i].style.opacity=q.toFixed(3);ls[i].style.transform='translateY('+((1-q)*60).toFixed(1)+'px) scale('+(.9+.1*q).toFixed(3)+')'}
+ var u=eo(cl((Tw-.45)/.8));ul.style.opacity=u>0?1:0;ul.style.transform='scaleX('+u.toFixed(3)+')';
+ LG.setAttribute('transform','translate(0 '+(V.word>=.999?(Math.sin(t*.9)*3).toFixed(2):0)+')')
+}
+
+function render(now){
+ tick(now);var t=now/1000;
+ ambient(t);renderDeco(t);
+ var Tb=V.bar*3.4,Ts=V.sw*4.6,Ta=V.ai*2.1,Tm=V.asm*5.4;
+ renderBars(Tb,Tm);renderSwoosh(Ts,Tm);renderAI(Ta,t);renderAsm(Tm);renderText(V.word*1.8,t);
+ /* in steps 1-3 the three parts sit at their own spots (asm=0 → transform = F[k]) */
+}
+function loop(n){if(active)render(n);requestAnimationFrame(loop)}
+render(performance.now());requestAnimationFrame(loop);
+
+addEventListener('message',function(e){
+ var d=e.data;if(!d||!d.scene)return;
+ if(d.active!==undefined)active=!!d.active;
+ if(typeof d.step==='number')step(d.step,!!d.force);
+ try{e.source.postMessage({ack:1},'*')}catch(x){}
+});
+window.step=step;window.render=render;
+})();
+</script>

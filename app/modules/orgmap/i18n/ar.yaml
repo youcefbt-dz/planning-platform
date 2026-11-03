@@ -144,6 +144,7 @@ unit:
 jx:
   title: مخطط المؤسسة
   journey: التقدّم الحالي
+  legend_title: دليل قراءة المخطط
   of_time: الوقت المنقضي من الدورة
   pace: الفرق عن التقدّم المتوقع
   left: المتبقي من الدورة
@@ -199,3 +200,28 @@ jx:
   legend_align: يخدم
   lands: ينتهي عند
   stations: نتيجة رئيسية
+  voice: الشرح الصوتي
+  voice_explain: استمع إلى شرح هذا العنصر
+  voice_intro: قراءة ذكية للمخطط
+  voice_wait: يقرأ المساعد بيانات المؤسسة ويرتب أهم النقاط…
+  voice_preparing: يجري إعداد الصوت…
+  voice_ready: أصبح الشرح جاهزًا للاستماع
+  voice_play: تشغيل الشرح
+  voice_pause: إيقاف مؤقت
+  voice_next: التالي
+  voice_prev: السابق
+  voice_stop: إنهاء الاستماع
+  voice_close: إغلاق المشغل
+  voice_error: تعذّر إعداد الشرح. حاول مجددًا.
+  voice_model: تحليل الذكاء الاصطناعي
+  voice_rules: قراءة مبنية على البيانات
+  voice_select: الصوت
+  voice_male: فهد
+  voice_female: نورة
+  voice_browser: صوت الجهاز
+  voice_part: الجزء
+  voice_ask: اسأل عن المخطط
+  voice_ask_placeholder: اكتب سؤالك عن الأداء أو الأهداف…
+  voice_ask_send: اسأل
+  voice_answer: إجابة المساعد
+  voice_question_error: اكتب سؤالًا واضحًا لا يتجاوز 220 حرفًا.

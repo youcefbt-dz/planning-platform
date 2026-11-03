@@ -1,13 +1,18 @@
-/* The assistant's chat. The server is stateless: each turn sends the (short) conversation and gets back the answer, the tools it used, and any
-   drafted goals (rendered by the server). Nothing is written until the person presses "approve" on a draft card. */
+/* The assistant's chat (PlanWise: the person's travel companion). The server is stateless: each turn sends the (short) conversation and gets back the answer,
+   the tools it used, follow-up suggestions, and any drafted goals (rendered by the server). Nothing is written until the person presses "approve" on a draft card. */
 (function () {
   'use strict';
   var root = document.querySelector('[data-dock-root]') || document.querySelector('[data-agent]');
   if (!root) return;
   var thread = root.querySelector('[data-thread]'), form = root.querySelector('[data-form]'), input = root.querySelector('[data-input]'), send = root.querySelector('[data-send]');
   var hello = root.querySelector('[data-hello]');
+  var helloHTML = hello ? hello.outerHTML : '';
   var panel = root.querySelector('[data-dock-panel]');
   var launcher = root.querySelector('[data-dock-open]');
+  var suggestBox = root.querySelector('[data-suggest]');
+  var teaser = root.querySelector('[data-teaser]');
+  var markSvg = root.querySelector('.assistant-dock__mark svg');
+  var AVATAR = '<span class="ag__avatar" aria-hidden="true">' + (markSvg ? markSvg.outerHTML : '') + '</span>';
   var token = (document.querySelector('meta[name=csrf-token]') || {}).content || '';
   var floating = root.classList.contains('ag--floating');
   var KEY = root.dataset.historyKey || ('planwise.agent.' + location.pathname);
@@ -149,9 +154,21 @@
     root.classList.add('is-speaking');
     nextChunk();
   }
-  function voiceControls(value) {
-    if (!speechSupported || !String(value || '').trim()) return '';
-    return '<div class="assistant-dock__reply-tools"><button class="assistant-dock__reply-audio" type="button" data-speak data-speech="' + esc(value) + '" aria-label="' + esc(L.lListen || 'استمع إلى الإجابة') + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><span>' + esc(L.lListen || 'استمع') + '</span></button></div>';
+  function replyTools(value) {
+    value = String(value || '');
+    if (!value.trim()) return '';
+    var copy = '<button class="assistant-dock__reply-audio" type="button" data-copy data-text="' + esc(value) + '" aria-label="' + esc(L.lCopy || 'نسخ الإجابة') + '"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg><span>' + esc(L.lCopy || 'نسخ') + '</span></button>';
+    var listen = speechSupported ? '<button class="assistant-dock__reply-audio" type="button" data-speak data-speech="' + esc(value) + '" aria-label="' + esc(L.lListen || 'استمع إلى الإجابة') + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><span>' + esc(L.lListen || 'استمع') + '</span></button>' : '';
+    return '<div class="assistant-dock__reply-tools">' + listen + copy + '</div>';
+  }
+  function copyText(text, btn) {
+    var label = btn.querySelector('span'), old = label ? label.textContent : '';
+    function done() { if (label) { label.textContent = L.lCopied || 'نُسخت'; setTimeout(function () { label.textContent = old; }, 1600); } }
+    function fallback() {
+      var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (_) {} ta.remove();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
   }
   autoVoice = speechSupported ? readVoicePreference() : false;
   if (voiceToggle && !speechSupported) {
@@ -160,6 +177,7 @@
     voiceToggle.setAttribute('aria-label', voiceToggle.title);
   }
   updateVoiceToggle();
+
 
   function readHidden() {
     try { return HIDDEN_KEY && localStorage.getItem(HIDDEN_KEY) === '1'; } catch (_) { return false; }
@@ -177,63 +195,97 @@
     panel.hidden = !open;
     if (launcher) launcher.setAttribute('aria-expanded', open ? 'true' : 'false');
     root.classList.toggle('is-open', !!open);
+    if (open && teaser) teaser.hidden = true;
     if (open && input) input.focus();
+    if (open) bottom();
   }
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function md(text) {                       // paragraphs, "- " lists and **bold**: nothing else, always escaped first
-    var out = [], list = false;
+  function md(text) {                       // paragraphs, "- " lists, "1. " lists and **bold**: nothing else, always escaped first
+    var out = [], list = null;
+    function close() { if (list) { out.push('</' + list + '>'); list = null; } }
+    function inline(x) { return esc(x).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); }
     String(text || '').split(/\n/).forEach(function (line) {
-      var li = /^\s*[-•*]\s+(.*)$/.exec(line), inline = function (x) { return esc(x).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'); };
-      if (li) { if (!list) { out.push('<ul>'); list = true; } out.push('<li>' + inline(li[1]) + '</li>'); return; }
-      if (list) { out.push('</ul>'); list = false; }
+      var ul = /^\s*[-•*]\s+(.*)$/.exec(line), ol = /^\s*\d+[.)]\s+(.*)$/.exec(line), m = ul || ol;
+      if (m) {
+        var kind = ul ? 'ul' : 'ol';
+        if (list !== kind) { close(); out.push('<' + kind + '>'); list = kind; }
+        out.push('<li>' + inline(m[1]) + '</li>');
+        return;
+      }
+      close();
       if (line.trim()) out.push('<p>' + inline(line) + '</p>');
     });
-    if (list) out.push('</ul>');
+    close();
     return out.join('');
   }
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify(history.slice(-14))); } catch (_) {} }
   function bottom() { thread.scrollTop = thread.scrollHeight; if (!floating) window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
+  function hideHello() { if (hello) { hello.remove(); hello = null; } }
   function add(role, html, cls) {
-    if (hello) { hello.remove(); hello = null; }
+    hideHello();
     var el = document.createElement('div'); el.className = 'ag__msg ag__msg--' + role + (cls ? ' ' + cls : '');
-    el.innerHTML = html; thread.appendChild(el); bottom(); return el;
+    el.innerHTML = role === 'bot' ? AVATAR + '<div class="ag__bubble" data-body>' + html + '</div>' : html;
+    thread.appendChild(el); bottom(); return el;
   }
+  function body(el) { return el.querySelector('[data-body]') || el; }
   function chips(steps) {
     if (!steps || !steps.length) return '';
     return '<div class="ag__steps">' + steps.map(function (s) { return '<span class="ag__step' + (s.ok ? '' : ' is-bad') + '">' + esc(s.label) + '</span>'; }).join('') + '</div>';
+  }
+  function showSuggest(list) {
+    if (!suggestBox) return;
+    list = (list || []).filter(Boolean).slice(0, 3);
+    suggestBox.innerHTML = list.map(function (q) { return '<button class="chip-btn" type="button" data-ask="' + esc(q) + '">' + esc(q) + '</button>'; }).join('');
+    suggestBox.hidden = !list.length;
   }
   function render(res) {
     var badge = res.mode === 'model'
       ? '<span class="ag__by">' + esc(res.provider || '') + (res.model ? ' · ' + esc(res.model) : '') + '</span>' : '';
     var warn = res.unverified && res.unverified.length ? '<p class="ag__warn">' + esc(L.lUnverified) + ': <bdi dir="ltr">' + res.unverified.map(function (n) { return esc(n); }).join(', ') + '</bdi></p>' : '';
-    var off = res.mode === 'rules' ? '<p class="ag__rules">' + esc(res.offText || '') + '</p>' : '';
-    return chips(res.steps) + '<div class="ag__text">' + md(res.answer) + '</div>' + voiceControls(res.answer) + warn + (res.proposals_html || '') + off + badge;
+    var off = res.mode !== 'model' && res.offText ? '<p class="ag__rules">' + esc(res.offText) + '</p>' : '';
+    return chips(res.steps) + '<div class="ag__text">' + md(res.answer) + '</div>' + replyTools(res.answer) + warn + (res.proposals_html || '') + off + badge;
   }
+  function typing() { return '<span class="ag__dots" role="status" aria-label="..."><i></i><i></i><i></i></span>'; }
   function ask(text) {
     text = (text || '').trim(); if (!text || busy) return;
     stopSpeech();
-    busy = true; send.disabled = true; input.value = ''; grow();
+    busy = true; send.disabled = true; input.value = ''; grow(); showSuggest([]);
     history.push({ role: 'user', content: text });
     add('user', '<div class="ag__text"><p>' + esc(text) + '</p></div>');
     root.classList.remove('is-speaking');
     root.classList.add('is-thinking');
-    var robotWait = '<span class="orb orb--sm assistant-dock__wait-orb" aria-hidden="true"></span>';
-    var wait = add('bot', '<div class="ag__think assistant-dock__think-robot">' + robotWait + '</div>', 'is-wait');
+    var wait = add('bot', typing(), 'is-wait');
     fetch(root.dataset.endpoint, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token, 'X-Requested-With': 'fetch' },
       body: JSON.stringify({ messages: history.slice(-14) }) })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'x'); return j; }); })
       .then(function (res) {
         res.offText = res.off_text || '';
-        wait.classList.remove('is-wait'); wait.innerHTML = render(res);
+        wait.classList.remove('is-wait'); body(wait).innerHTML = render(res);
         root.classList.remove('is-thinking');
         history.push({ role: 'assistant', content: res.answer || '' }); save();
+        showSuggest(res.suggestions);
         if (autoVoice && res.answer) speakAnswer(res.answer, wait.querySelector('[data-speak]'));
       })
-      .catch(function (e) { root.classList.remove('is-thinking'); wait.classList.remove('is-wait'); wait.innerHTML = '<div class="ag__text"><p class="ag__warn">' + esc(e && e.message && e.message !== 'x' && e.message !== 'Failed to fetch' ? e.message : L.lError) + '</p></div>'; history.pop(); })
+      .catch(function (e) { root.classList.remove('is-thinking'); wait.classList.remove('is-wait'); body(wait).innerHTML = '<div class="ag__text"><p class="ag__warn">' + esc(e && e.message && e.message !== 'x' && e.message !== 'Failed to fetch' ? e.message : L.lError) + '</p></div>'; history.pop(); })
       .then(function () { busy = false; send.disabled = false; bottom(); if (!floating || (panel && !panel.hidden)) input.focus(); });
   }
   function grow() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 160) + 'px'; }
+  function reset() {                          // a fresh conversation: forget this chat (only in this tab), bring the welcome back
+    stopSpeech(); history = []; save(); showSuggest([]);
+    thread.innerHTML = helloHTML; hello = thread.querySelector('[data-hello]');
+    if (input) { input.value = ''; grow(); input.focus(); }
+  }
+  function maybeTeaser() {                    // once per browser tab, only when the chat is empty: a friendly hello above the launcher
+    if (!teaser || history.length || root.hidden || (panel && !panel.hidden)) return;
+    var key = root.dataset.teaserKey || '';
+    try { if (key && sessionStorage.getItem(key)) return; sessionStorage.setItem(key, '1'); } catch (_) {}
+    setTimeout(function () {
+      if (root.hidden || (panel && !panel.hidden)) return;
+      teaser.hidden = false;
+      setTimeout(function () { teaser.hidden = true; }, 9000);
+    }, 1800);
+  }
 
   form.addEventListener('submit', function (e) { e.preventDefault(); ask(input.value); });
   input.addEventListener('input', grow);
@@ -243,8 +295,14 @@
     if (open) { setPanelOpen(true); return; }
     var close = e.target.closest('[data-dock-close]');
     if (close) { setPanelOpen(false); return; }
+    var tclose = e.target.closest('[data-teaser-close]');
+    if (tclose) { if (teaser) teaser.hidden = true; return; }
+    var again = e.target.closest('[data-chat-reset]');
+    if (again) { reset(); return; }
     var voiceSwitch = e.target.closest('[data-voice-toggle]');
     if (voiceSwitch) { setAutoVoice(!autoVoice); return; }
+    var copyButton = e.target.closest('[data-copy]');
+    if (copyButton) { copyText(copyButton.getAttribute('data-text') || '', copyButton); return; }
     var speakButton = e.target.closest('[data-speak]');
     if (speakButton) {
       if (activeSpeakButton === speakButton && root.classList.contains('is-speaking')) stopSpeech();
@@ -281,6 +339,13 @@
   var hidden = readHidden();
   root.hidden = hidden;
   if (visibilityToggle) visibilityToggle.checked = !hidden;
-  try { var prev = JSON.parse(sessionStorage.getItem(KEY) || '[]'); if (prev.length) { history = prev; if (hello) { hello.remove(); hello = null; } prev.forEach(function (m) { add(m.role === 'user' ? 'user' : 'bot', '<div class="ag__text">' + md(m.content) + '</div>' + (m.role === 'assistant' ? voiceControls(m.content) : '')); }); } } catch (_) {}
+  try {
+    var prev = JSON.parse(sessionStorage.getItem(KEY) || '[]');
+    if (prev.length) {
+      history = prev; hideHello();
+      prev.forEach(function (m) { add(m.role === 'user' ? 'user' : 'bot', '<div class="ag__text">' + md(m.content) + '</div>' + (m.role === 'assistant' ? replyTools(m.content) : '')); });
+    }
+  } catch (_) {}
   if (!floating) input.focus();
+  maybeTeaser();
 })();

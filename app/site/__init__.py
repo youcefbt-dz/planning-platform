@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 
-from flask import Blueprint, current_app, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, current_app, flash, g, redirect, render_template, request, send_from_directory, url_for
 
 from app.core.i18n import t
 from app.core.models import Organization
@@ -17,6 +17,12 @@ EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 @bp.get("/")
 def landing():
     return render_template("site/landing.html")
+
+
+@bp.get("/presentation")
+def presentation():
+    """The project presentation: a standalone full-screen slide deck (static files in static/presentation)."""
+    return send_from_directory(current_app.static_folder + "/presentation", "index.html", max_age=0)
 
 
 @bp.post("/waitlist")
@@ -39,8 +45,9 @@ def demo():
     """Open the read-only sample organization in the visitor's language."""
     if not current_app.config.get("ENABLE_DEMO"):
         return redirect(url_for("site.landing"))
-    slug = "demo"
-    org = Organization.query.filter_by(slug=slug, is_demo=True).first() or Organization.query.filter_by(is_demo=True).first()
+    from app.core.demo import ensure_demo
+
+    org = Organization.query.filter_by(is_demo=True).first() or ensure_demo(g.get("lang", "ar"))   # built on first visit when the database has none
     if org is None:
         flash(t("site.demo.missing"), "error")
         return redirect(url_for("site.landing"))

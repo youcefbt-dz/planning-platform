@@ -50,9 +50,18 @@
       {% call step(1, 'flag', t('goals.compose.st1_t'), t('goals.compose.st1_d')) %}
         <div class="field"><label for="c-title">{{ t('goals.compose.goal_title') }}</label>
           <input class="input input-lg" id="c-title" name="title" maxlength="255" dir="auto" autocomplete="off" value="{{ title }}" placeholder="{{ t('goals.compose.title_ph') }}"></div>
-        <div class="chips" role="group" aria-label="{{ t('goals.draft.examples') }}">{% for k in ('sales','costs','customers','team','delivery','cash') %}<button class="chip-btn" type="button" data-fill="{{ t('goals.draft.ex.' ~ k) }}" data-target="#c-title" data-mode="empty">{{ t('goals.draft.ex.' ~ k) }}</button>{% endfor %}</div>
-        <div class="field"><label for="c-why">{{ t('goals.compose.why') }}</label>
-          <textarea class="textarea" id="c-why" name="rationale" rows="2" maxlength="600" dir="auto" placeholder="{{ t('goals.compose.why_ph') }}">{{ rationale }}</textarea></div>
+        <details class="cmp-inline">
+          <summary>{{ t('goals.draft.examples') }}</summary>
+          <div class="cmp-inline__body">
+            <div class="chips" role="group" aria-label="{{ t('goals.draft.examples') }}">{% for k in ('sales','costs','customers','team','delivery','cash') %}<button class="chip-btn" type="button" data-fill="{{ t('goals.draft.ex.' ~ k) }}" data-target="#c-title" data-mode="empty">{{ t('goals.draft.ex.' ~ k) }}</button>{% endfor %}</div>
+          </div>
+        </details>
+        <details class="cmp-inline">
+          <summary>{{ t('goals.compose.why') }} <span class="cmp-optional">{{ t('goals.compose.optional') }}</span></summary>
+          <div class="cmp-inline__body">
+            <textarea class="textarea" id="c-why" name="rationale" rows="2" maxlength="600" dir="auto" placeholder="{{ t('goals.compose.why_ph') }}">{{ rationale }}</textarea>
+          </div>
+        </details>
       {% endcall %}
 
       {% if source == 'data' %}
@@ -78,10 +87,12 @@
         <div class="cact"><button class="btn btn-primary" type="submit" name="do" value="check">{{ icon('target-arrow', 16) }}{{ t('goals.compose.check') }}</button><span class="hint">{{ t('goals.compose.check_hint') }}</span></div>
       {% endcall %}
 
+      {% if result or asked %}
       {% call step(3, 'shield-check', t('goals.compose.st3_t'), t('goals.compose.st3_d')) %}
         {% if result %}{% include "data/_panel.html" %}
         {% else %}<div class="cwait">{{ icon('target-arrow', 22) }}<p>{% if asked and err %}{{ t('data.reality.err.' ~ err) }}{% else %}{{ t('goals.compose.s2_wait') }}{% endif %}</p></div>{% endif %}
       {% endcall %}
+      {% endif %}
 
       {% else %}
       {% call step(2, 'pencil', t('goals.compose.st2_t_manual'), t('goals.compose.st2_d_manual')) %}
@@ -108,54 +119,69 @@
       {% endif %}
 
       {% if ready %}
-      {% call step(4, 'rocket', t('goals.compose.st4_t'), t('goals.compose.st4_d')) %}
-        <p class="muted" style="margin:0">{% if sel and gap and gap > 0 %}{{ t('goals.compose.s3_gap', gap=val(gap, sel.unit), supported=val(supported, sel.unit)) }}{% elif not sel %}{{ t('goals.compose.s3_manual') }}{% else %}{{ t('goals.compose.s3_free') }}{% endif %}</p>
-        {% if lever_ideas %}<div class="chips" role="group" aria-label="{{ t('goals.compose.ideas') }}"><span class="hint">{{ t('goals.compose.ideas') }}</span>{% for x in lever_ideas %}<button class="chip-btn" type="button" data-fill="{{ x }}" data-target="[name=lever_title]" data-mode="empty">{{ x }}</button>{% endfor %}</div>{% endif %}
-        <div class="clev">
-        {% for i in range(3) %}{% set lv = levers[i] if i < levers|length else none %}
-          <div class="clev__r">
-            <div class="field"><label>{{ t('goals.compose.lever') }} {{ i + 1 }}</label><input class="input" name="lever_title" maxlength="200" dir="auto" placeholder="{{ t('goals.compose.lever_ph') }}" value="{{ lv.title if lv else '' }}"></div>
-            <div class="field"><label>{{ t('goals.compose.effect') }}{% set u = sel.unit if sel else man.unit %}{% if u %} ({{ u }}){% endif %}</label><input class="input" name="lever_effect" inputmode="decimal" value="{{ lv.effect if lv else '' }}"></div>
-            <div class="field"><label>{{ t('goals.compose.certainty') }}</label><select class="select" name="lever_certainty">{% for c in certainties %}<option value="{{ c }}" {% if lv and lv.certainty == c %}selected{% endif %}>{{ t('goals.factors.certainty.' ~ c) }}</option>{% endfor %}</select></div>
-          </div>
-        {% endfor %}
+      <details class="cmp-extra" {% if levers %}open{% endif %}>
+        <summary><span>{{ t('goals.compose.st4_t') }}</span><small>{{ t('goals.compose.optional') }}</small>{{ icon('chevron-down', 16) }}</summary>
+        <div class="cmp-extra__body">
+          {% call step(4, 'rocket', t('goals.compose.st4_t'), t('goals.compose.st4_d')) %}
+            <p class="muted" style="margin:0">{% if sel and gap and gap > 0 %}{{ t('goals.compose.s3_gap', gap=val(gap, sel.unit), supported=val(supported, sel.unit)) }}{% elif not sel %}{{ t('goals.compose.s3_manual') }}{% else %}{{ t('goals.compose.s3_free') }}{% endif %}</p>
+            {% if lever_ideas %}<div class="chips" role="group" aria-label="{{ t('goals.compose.ideas') }}"><span class="hint">{{ t('goals.compose.ideas') }}</span>{% for x in lever_ideas %}<button class="chip-btn" type="button" data-fill="{{ x }}" data-target="[name=lever_title]" data-mode="empty">{{ x }}</button>{% endfor %}</div>{% endif %}
+            <div class="clev">
+            {% for i in range(3) %}{% set lv = levers[i] if i < levers|length else none %}
+              <div class="clev__r">
+                <div class="field"><label>{{ t('goals.compose.lever') }} {{ i + 1 }}</label><input class="input" name="lever_title" maxlength="200" dir="auto" placeholder="{{ t('goals.compose.lever_ph') }}" value="{{ lv.title if lv else '' }}"></div>
+                <div class="field"><label>{{ t('goals.compose.effect') }}{% set u = sel.unit if sel else man.unit %}{% if u %} ({{ u }}){% endif %}</label><input class="input" name="lever_effect" inputmode="decimal" value="{{ lv.effect if lv else '' }}"></div>
+                <div class="field"><label>{{ t('goals.compose.certainty') }}</label><select class="select" name="lever_certainty">{% for c in certainties %}<option value="{{ c }}" {% if lv and lv.certainty == c %}selected{% endif %}>{{ t('goals.factors.certainty.' ~ c) }}</option>{% endfor %}</select></div>
+              </div>
+            {% endfor %}
+            </div>
+            {% if cov and gap and gap > 0 %}<p class="cov">{{ t('goals.compose.covered_of', s=pct(cov.share_likely)) }}</p>{% endif %}
+          {% endcall %}
         </div>
-        {% if cov and gap and gap > 0 %}<p class="cov">{{ t('goals.compose.covered_of', s=pct(cov.share_likely)) }}</p>{% endif %}
-      {% endcall %}
+      </details>
       {% endif %}
 
-      {% call step(5 if ready else (3 if source == 'manual' else 4), 'sitemap', t('goals.compose.st5_t'), t('goals.compose.st5_d')) %}
-        <div class="form-grid">
-          <div class="field"><label for="c-unit-sel">{{ t('goals.compose.unit') }}</label>
-            <select class="select" id="c-unit-sel" name="unit_id" data-heads='{{ heads|tojson }}'>
-              {% if not is_head %}<option value="">{{ t('goals.compose.unit_org') }}</option>{% endif %}
-              {% for u in allowed_units %}<option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
-            </select>
-            <p class="chead" data-head-line data-yes="{{ t('goals.compose.head_of', name='{name}') }}" data-no="{{ t('goals.compose.head_none') }}">{{ icon('user', 14) }}<span>{% if unit_id and heads.get(unit_id) %}{{ t('goals.compose.head_of', name=heads[unit_id]) }}{% elif unit_id %}{{ t('goals.compose.head_none') }}{% else %}{{ t('goals.compose.org_note') }}{% endif %}</span></p></div>
-          <div class="field"><label for="c-owner">{{ t('goals.compose.owner') }}</label>
-            <select class="select" id="c-owner" name="owner_id">{% for m in members %}<option value="{{ m.user_id }}" {% if (owner_id and owner_id|int == m.user_id) or (not owner_id and m.user_id == current_user.id) %}selected{% endif %}>{{ m.user.name }}</option>{% endfor %}</select></div>
-          <div class="field span-2"><label for="c-parent">{{ t('goals.compose.parent') }}</label>
-            <select class="select" id="c-parent" name="parent_id"><option value="">{{ t('goals.compose.parent_none') }}</option>{% for p in parents %}<option value="{{ p.id }}" {% if parent_id == p.id %}selected{% endif %}>{{ p.title }}</option>{% endfor %}</select>
-            <p class="hint">{{ t('goals.compose.parent_hint') }}</p></div>
+      <details class="cmp-extra">
+        <summary><span>{{ t('goals.compose.st5_t') }}</span><small>{{ t('goals.compose.optional') }}</small>{{ icon('chevron-down', 16) }}</summary>
+        <div class="cmp-extra__body">
+          {% call step(5 if ready else (3 if source == 'manual' else 4), 'sitemap', t('goals.compose.st5_t'), t('goals.compose.st5_d')) %}
+            <div class="form-grid">
+              <div class="field"><label for="c-unit-sel">{{ t('goals.compose.unit') }}</label>
+                <select class="select" id="c-unit-sel" name="unit_id" data-heads='{{ heads|tojson }}'>
+                  {% if not is_head %}<option value="">{{ t('goals.compose.unit_org') }}</option>{% endif %}
+                  {% for u in allowed_units %}<option value="{{ u.id }}" {% if unit_id == u.id %}selected{% endif %}>{{ u.name }}</option>{% endfor %}
+                </select>
+                <p class="chead" data-head-line data-yes="{{ t('goals.compose.head_of', name='{name}') }}" data-no="{{ t('goals.compose.head_none') }}">{{ icon('user', 14) }}<span>{% if unit_id and heads.get(unit_id) %}{{ t('goals.compose.head_of', name=heads[unit_id]) }}{% elif unit_id %}{{ t('goals.compose.head_none') }}{% else %}{{ t('goals.compose.org_note') }}{% endif %}</span></p></div>
+              <div class="field"><label for="c-owner">{{ t('goals.compose.owner') }}</label>
+                <select class="select" id="c-owner" name="owner_id">{% for m in members %}<option value="{{ m.user_id }}" {% if (owner_id and owner_id|int == m.user_id) or (not owner_id and m.user_id == current_user.id) %}selected{% endif %}>{{ m.user.name }}</option>{% endfor %}</select></div>
+              <div class="field span-2"><label for="c-parent">{{ t('goals.compose.parent') }}</label>
+                <select class="select" id="c-parent" name="parent_id"><option value="">{{ t('goals.compose.parent_none') }}</option>{% for p in parents %}<option value="{{ p.id }}" {% if parent_id == p.id %}selected{% endif %}>{{ p.title }}</option>{% endfor %}</select>
+                <p class="hint">{{ t('goals.compose.parent_hint') }}</p></div>
+            </div>
+            <fieldset class="cdir"><legend>{{ t('goals.compose.kind') }}</legend>
+              {% for c in commitments %}
+              <label class="cdir__c"><input type="radio" name="commitment" value="{{ c }}" {% if commitment == c %}checked{% endif %}>
+                <span>{{ icon('flag-3' if c == 'committed' else 'mountain', 18) }}<b>{{ t('goals.commitment.' ~ c) }}</b><small>{{ t('goals.commitment_hint.' ~ c) }}</small></span></label>
+              {% endfor %}
+            </fieldset>
+          {% endcall %}
         </div>
-        <fieldset class="cdir"><legend>{{ t('goals.compose.kind') }}</legend>
-          {% for c in commitments %}
-          <label class="cdir__c"><input type="radio" name="commitment" value="{{ c }}" {% if commitment == c %}checked{% endif %}>
-            <span>{{ icon('flag-3' if c == 'committed' else 'mountain', 18) }}<b>{{ t('goals.commitment.' ~ c) }}</b><small>{{ t('goals.commitment_hint.' ~ c) }}</small></span></label>
-          {% endfor %}
-        </fieldset>
-        <div class="cact cact--save"><button class="btn btn-primary btn-lg" type="submit" name="do" value="save">{{ icon('check', 18) }}{{ t('goals.compose.save') }}</button>
-          {% if not ready %}<span class="hint">{{ t('goals.compose.save_need') }}</span>{% endif %}</div>
-      {% endcall %}
+      </details>
+      <div class="cmp-submit">
+        <button class="btn btn-primary btn-lg" type="submit" name="do" value="save">{{ icon('check', 18) }}{{ t('goals.compose.save') }}</button>
+        <span class="hint">{% if not ready %}{{ t('goals.compose.save_need') }}{% else %}{{ t('goals.compose.save_hint') }}{% endif %}</span>
+      </div>
     </div>
 
     <aside class="cmp__aside">
       <section class="cai" data-assist="{{ url_for('goals.suggest_krs') if source == 'data' else url_for('goals.draft') }}" data-assist-from="#c-title,#c-end,#c-why" data-assist-failed="{{ t('goals.draft.failed') }}">
-        <header class="cai__head"><span class="cai__ic">{{ icon('bulb', 22) }}</span><div><h2>{{ t('goals.compose.assist_t') }}</h2>
-          <p>{{ t('goals.compose.assist_d_data') if source == 'data' else t('goals.compose.assist_d_manual') }}</p></div></header>
-        <button class="btn btn-primary cai__run" type="button" data-assist-run>{{ icon('bulb', 16) }}{{ t('goals.compose.assist_run_data') if source == 'data' else t('goals.compose.assist_run_manual') }}</button>
-        <div class="sug-list" data-assist-out aria-live="polite"><p class="cai__idle">{{ t('goals.compose.assist_idle') }}</p></div>
-        <p class="cai__foot">{{ icon('shield-check', 14) }}<span>{% if ai_state.models %}{% if ai_state.consent %}{{ t('goals.ai.on', model=t('ai.provider.' ~ ai_state.models[0])) }}{% else %}{{ t('goals.ai.need_consent') }}{% endif %}{% else %}{{ t('goals.ai.none') }}{% endif %}</span></p>
+        <details class="cai__details">
+          <summary class="cai__summary"><span class="cai__ic">{{ icon('bulb', 22) }}</span><span class="cai__summary-text"><b>{{ t('goals.compose.assist_t') }}</b><small>{{ t('goals.compose.assist_d_data') if source == 'data' else t('goals.compose.assist_d_manual') }}</small></span>{{ icon('chevron-down', 16) }}</summary>
+          <div class="cai__content">
+            <button class="btn btn-primary cai__run" type="button" data-assist-run>{{ icon('bulb', 16) }}{{ t('goals.compose.assist_run_data') if source == 'data' else t('goals.compose.assist_run_manual') }}</button>
+            <div class="sug-list" data-assist-out aria-live="polite"><p class="cai__idle">{{ t('goals.compose.assist_idle') }}</p></div>
+            <p class="cai__foot">{{ icon('shield-check', 14) }}<span>{% if ai_state.models %}{% if ai_state.consent %}{{ t('goals.ai.on', model=t('ai.provider.' ~ ai_state.models[0])) }}{% else %}{{ t('goals.ai.need_consent') }}{% endif %}{% else %}{{ t('goals.ai.none') }}{% endif %}</span></p>
+          </div>
+        </details>
       </section>
       <section class="cnote">
         <span class="cnote__ic">{{ icon('sitemap', 18) }}</span>

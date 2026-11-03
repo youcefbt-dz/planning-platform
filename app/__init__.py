@@ -259,7 +259,13 @@ def _register_template_api(app: Flask) -> None:
                     app.logger.exception("could not determine assistant availability")
                     candidates, why = [], "error"
                 ctx["assistant_widget"] = {"live": bool(candidates), "why": why}
-                ctx["assistant_starters"] = ["health", "targets", "gaps"] if registry.is_enabled("goals") else ["data"]
+                # What a friend suggests first: how to begin, then what this workspace can do, and who made it.
+                starters = ["tour"]
+                if registry.is_enabled("goals"):
+                    starters += ["create", "health"]
+                elif registry.is_enabled("data"):
+                    starters += ["upload"]
+                ctx["assistant_starters"] = [*starters, "developer"]
         return ctx
 
     @app.template_filter("ago")

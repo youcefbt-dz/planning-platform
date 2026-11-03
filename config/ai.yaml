@@ -58,6 +58,8 @@ tasks:
   draft_goal:      {enabled: true, max_tokens: 1100, temperature: 0.5}     # from one typed line to objective + why + key results (no figures)
   agent:           {enabled: true, max_tokens: 2200, temperature: 0.2}     # the assistant: a conversation with tools (app/modules/agent)
   draft_direction: {enabled: true, max_tokens: 900,  temperature: 0.6}     # vision / mission / values options from the sector (nothing is saved)
+  explain_journey:  {enabled: true, max_tokens: 1800, temperature: 0.25}   # spoken, data-grounded explanation of the organization map
+  ask_journey:      {enabled: true, max_tokens: 900, temperature: 0.2}     # answer a spoken question about the live organization map
 
 privacy:
   sample_rows: 8                   # how many example rows may be sent (headers + these only, never the whole file)

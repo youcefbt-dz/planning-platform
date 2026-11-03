@@ -15,15 +15,16 @@
   <div class="layout-side">
   <div class="stack">
     {% if mode == 'new' %}
-    <div class="box" data-assist="{{ url_for('goals.draft') }}" data-assist-from="#draft-intent" data-assist-failed="{{ t('goals.draft.failed') }}">
-      <div class="box-body stack-sm">
-        <label for="draft-intent"><b>{{ icon('bulb', 16) }}{{ t('goals.draft.title') }}</b></label>
-        <p class="hint">{{ t('goals.draft.sub') }}</p>
-        <div class="row-wrap"><input class="input" id="draft-intent" name="intent" maxlength="200" dir="auto" autocomplete="off" placeholder="{{ t('goals.draft.ph') }}" style="flex:1;min-width:220px">
-          <button class="btn btn-primary" type="button" data-assist-run>{{ icon('bulb', 15) }}{{ t('goals.draft.btn') }}</button></div>
-        <div class="chips" role="group" aria-label="{{ t('goals.draft.examples') }}">{% for k in ('sales','costs','customers','team','delivery','cash') %}<button class="chip-btn" type="button" data-fill="{{ t('goals.draft.ex.' ~ k) }}" data-target="#draft-intent">{{ t('goals.draft.ex.' ~ k) }}</button>{% endfor %}</div>
-        <div class="sug-list" data-assist-out aria-live="polite"></div>
-      </div>
+    <div class="box goal-assist" data-assist="{{ url_for('goals.draft') }}" data-assist-from="#draft-intent" data-assist-failed="{{ t('goals.draft.failed') }}">
+      <details>
+        <summary>{{ icon('bulb', 16) }}<b>{{ t('goals.draft.title') }}</b><span class="muted">{{ t('goals.draft.sub') }}</span></summary>
+        <div class="box-body stack-sm">
+          <div class="row-wrap"><input class="input" id="draft-intent" name="intent" maxlength="200" dir="auto" autocomplete="off" placeholder="{{ t('goals.draft.ph') }}" style="flex:1;min-width:220px">
+            <button class="btn btn-primary" type="button" data-assist-run>{{ icon('bulb', 15) }}{{ t('goals.draft.btn') }}</button></div>
+          <div class="chips" role="group" aria-label="{{ t('goals.draft.examples') }}">{% for k in ('sales','costs','customers','team','delivery','cash') %}<button class="chip-btn" type="button" data-fill="{{ t('goals.draft.ex.' ~ k) }}" data-target="#draft-intent">{{ t('goals.draft.ex.' ~ k) }}</button>{% endfor %}</div>
+          <div class="sug-list" data-assist-out aria-live="polite"></div>
+        </div>
+      </details>
     </div>
     {% endif %}
     <div class="box"><div class="box-body">
@@ -61,23 +62,28 @@
     <div class="box"><div class="box-head"><h2>{{ icon('flag', 18) }}{{ t('goals.entity.key_results') }}</h2><span class="muted" style="font-size:var(--fs-sm)">{{ t('goals.kr_form_hint') }}</span></div>
       <div class="box-body stack-sm">
         {% for i in range(5) %}
-        <div class="krrow" data-row="{{ i }}" {% if i >= 3 %}hidden{% endif %}>
+        <div class="krrow" data-row="{{ i }}" {% if i >= 1 %}hidden{% endif %}>
           <input type="hidden" name="kr_level" value="" data-f="level">
-          <div class="krrow__head"><label for="kt{{ i }}">{{ t('goals.kr_n', n=i+1) }}</label>
-            <select class="select select-sm" name="kr_type" data-f="type" aria-label="{{ t('goals.kr_type_h') }}">{% for kt in kr_types %}<option value="{{ kt }}">{{ t('goals.kr_type.' ~ kt) }}</option>{% endfor %}</select></div>
+          <div class="krrow__head"><label for="kt{{ i }}">{{ t('goals.kr_n', n=i+1) }}</label></div>
           <input class="input" id="kt{{ i }}" name="kr_title" data-f="title" dir="auto" placeholder="{{ t('goals.kr_title_ph') }}">
           <div class="krrow__nums">
             <div class="field" data-for="start"><label for="ks{{ i }}">{{ t('goals.start_value') }}</label><input class="input" id="ks{{ i }}" name="kr_start" data-f="start" inputmode="decimal" placeholder="0"></div>
             <div class="field" data-for="target"><label for="kg{{ i }}" data-label-target>{{ t('goals.target_value') }}</label><input class="input" id="kg{{ i }}" name="kr_target" data-f="target" inputmode="decimal" placeholder="100"></div>
             <div class="field" data-for="unit"><label for="ku{{ i }}">{{ t('goals.unit_label') }}</label><input class="input" id="ku{{ i }}" name="kr_unit" data-f="unit" maxlength="24"></div>
           </div>
-          <p class="hint krrow__hint" data-kind-hint></p>
-          <div class="levels" data-levels hidden>
-            <span class="levels__h">{{ icon('bulb', 14) }}{{ t('goals.levels.title') }}</span>
-            <div class="levelrow" role="group" aria-label="{{ t('goals.levels.title') }}"></div>
-            <p class="hint levels__note"></p>
-          </div>
-          {% if has_series %}{% with name='kr_series', selected=none, uid='n' ~ i, end='', end_from='#f-end_date', target_from='#kg' ~ i, start_to='#ks' ~ i, unit_to='#ku' ~ i, goal='' %}{% include "data/_kr_measure.html" %}{% endwith %}{% endif %}
+          <details class="krrow__advanced">
+            <summary>{{ t('goals.form_measure_options') }}</summary>
+            <div class="krrow__advanced-body">
+              <div class="field"><label>{{ t('goals.kr_type_h') }}</label><select class="select select-sm" name="kr_type" data-f="type">{% for kt in kr_types %}<option value="{{ kt }}">{{ t('goals.kr_type.' ~ kt) }}</option>{% endfor %}</select></div>
+              <p class="hint krrow__hint" data-kind-hint></p>
+              <div class="levels" data-levels hidden>
+                <span class="levels__h">{{ icon('bulb', 14) }}{{ t('goals.levels.title') }}</span>
+                <div class="levelrow" role="group" aria-label="{{ t('goals.levels.title') }}"></div>
+                <p class="hint levels__note"></p>
+              </div>
+              {% if has_series %}{% with name='kr_series', selected=none, uid='n' ~ i, end='', end_from='#f-end_date', target_from='#kg' ~ i, start_to='#ks' ~ i, unit_to='#ku' ~ i, goal='' %}{% include "data/_kr_measure.html" %}{% endwith %}{% endif %}
+            </div>
+          </details>
         </div>
         {% endfor %}
         <button class="btn btn-sm" type="button" data-add-kr>{{ icon('plus', 14) }}{{ t('goals.add_another_kr') }}</button>

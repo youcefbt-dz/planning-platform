@@ -18,6 +18,15 @@ def register_cli(app: Flask) -> None:
             org = create_demo(lang)
             click.echo(f"demo[{lang}] -> /app/{org.slug}/")
 
+    @app.cli.command("ensure-demo")
+    def ensure_demo_cmd():
+        """Build the demo organization only if it does not exist yet (used by scripts/start.sh on every deploy)."""
+        from app.core.demo import ensure_demo
+
+        for lang in i18n.LANGS:
+            org = ensure_demo(lang)
+            click.echo(f"demo[{lang}] -> " + (f"/app/{org.slug}/" if org else "NOT built (see the log)"))
+
     @app.cli.command("modules")
     def modules():
         """List modules and whether they are enabled."""

@@ -1,4 +1,4 @@
-"""Demo data for the goals module — a fictional mid-size distribution company, in ar / en / fr.
+"""Demo data for the goals module — a small fictional distribution company; kept simple on purpose.
 
 Values are generated from a target *delta against expected progress*, so the demo always shows
 a believable mix of statuses whatever day it is opened.
@@ -14,87 +14,60 @@ from app.extensions import db
 from app.modules.goals.models import Indicator, IndicatorValue, KeyResult, Objective
 
 
-# (key, parent_key, level 'year'|'quarter', owner, unit, perspective, title(ar,en,fr), [KRs], note?)
-# KR: (title(ar,en,fr), unit_label, start, target, delta_points, metric_type)
+# A deliberately small demo: three company goals, two department goals that serve them, and three indicators. Each one reads at a glance:
+#   تنمية رقم الأعمال ... على المسار      إرضاء عملائنا ... معرَّض للخطر      تشغيل أسرع ... خارج المسار
+# (key, parent_key, level 'year'|'quarter', owner, unit, perspective, title, [KRs], note?)
+# KR: (title, unit_label, start, target, delta_points against the progress expected today, metric_type)
+# delta: about 0 or above = on track; -15 to -20 = at risk; -30 or worse = off track (the status rules are 10 and 25 points).
 OBJECTIVES = [
     ("rev", None, "year", "ceo", "root", "financial",
      "تنمية رقم الأعمال بربحية",
-     [("رقم الأعمال السنوي", "M DZD", 480, 600, -26, "number"),
-      ("هامش الربح الإجمالي", "%", 27, 31, -8, "percent"),
-      ("حصة رقم الأعمال من العملاء المتكررين", "%", 52, 65, 6, "percent")],
-     "في انتظار توقيع عقد التوزيع الجديد في الشرق"),
+     [("رقم الأعمال السنوي", "مليون دج", 480, 600, 2, "number"),
+      ("هامش الربح الإجمالي", "%", 27, 31, -3, "percent")],
+     None),
     ("cust", None, "year", "sales", "root", "customer",
-     "أن نكون المورّد الذي يوصي به عملاؤنا",
-     [("مؤشر صافي نقاط الترويج (NPS)", "", 31, 50, 4, "number"),
-      ("نسبة التسليم في الموعد", "%", 82, 95, -4, "percent"),
-      ("الشكاوى المعالجة خلال 48 ساعة", "%", 60, 90, -12, "percent")],
+     "إرضاء عملائنا",
+     [("نسبة العملاء الراضين", "%", 70, 85, -16, "percent"),
+      ("نسبة التسليم في الموعد", "%", 82, 95, -17, "percent")],
      None),
     ("ops", None, "year", "ops", "root", "process",
      "تشغيل أسرع وأكثر موثوقية",
-     [("المدة من الطلب إلى التسليم (يوم)", "days", 9, 5, -9, "number"),
-      ("حالات نفاد المخزون شهريًا", "", 14, 4, -3, "number"),
-      ("أخطاء تحضير الطلبيات", "%", 3.2, 1, 5, "percent")],
-     None),
-    ("team", None, "year", "people", "people", "learning",
-     "بناء فريق قادر على النمو",
-     [("معدل ترك العمل الطوعي", "%", 18, 10, 2, "percent"),
-      ("ساعات التكوين لكل موظف", "h", 12, 30, -14, "number"),
-      ("المناصب الرئيسية التي لها خلف جاهز", "", 2, 8, -6, "number")],
+     [("المدة من الطلب إلى التسليم (يوم)", "يوم", 9, 5, -32, "number"),
+      ("الطلبيات التي فيها خطأ", "%", 3.2, 1, -30, "percent")],
      None),
     ("rev_q", "rev", "quarter", "sales", "sales", "financial",
-     "كسب 25 عميلًا جديدًا في المنطقة الشمالية",
-     [("عملاء جدد", "", 0, 25, 4, "number"),
-      ("قيمة الفرص التجارية المفتوحة", "M DZD", 40, 90, 8, "number")],
-     None),
-    ("cash_q", "rev", "quarter", "fin", "fin", "financial",
-     "تحرير السيولة المجمّدة في الذمم",
-     [("متوسط فترة تحصيل الذمم (يوم)", "days", 74, 55, 3, "number"),
-      ("الذمم المتأخرة أكثر من 90 يومًا", "M DZD", 38, 15, -22, "number")],
-     "لم تُحصَّل بعد الدفعة الكبرى لأحد العملاء"),
-    ("promise_q", "cust", "quarter", "ops", "logistics", "customer",
-     "الوفاء بوعد التسليم",
-     [("الطلبيات المسلّمة في التاريخ المتفق عليه", "%", 82, 95, 5, "percent"),
-      ("الطلبيات المزوّدة بتتبّع مباشر", "%", 0, 100, -3, "percent")],
+     "كسب 25 عميلًا جديدًا هذا الربع",
+     [("عملاء جدد", "", 0, 25, 3, "number"),
+      ("زيارات العملاء المحتملين", "", 0, 60, 0, "number")],
      None),
     ("wh_q", "ops", "quarter", "ops", "ops", "process",
-     "تقليص زمن الدورة داخل المستودع",
-     [("المدة من الاستلام إلى التخزين (ساعة)", "h", 36, 12, -30, "number"),
-      ("أخطاء التحضير لكل 1000 سطر", "", 32, 10, -4, "number")],
+     "تجهيز الطلبيات في المستودع بسرعة أكبر",
+     [("مدة تجهيز الطلبية (ساعة)", "ساعة", 36, 12, -30, "number"),
+      ("أخطاء التحضير لكل 1000 سطر", "", 32, 10, -12, "number")],
      "تأخر وصول الماسحات الضوئية من المورّد"),
-    ("onb_q", "team", "quarter", "people", "people", "learning",
-     "إنجاح تهيئة الموظفين الجدد في أول 90 يومًا",
-     [("الموظفون الجدد الذين أكملوا خطة التهيئة", "%", 40, 90, 3, "percent"),
-      ("استمرار الموظفين الجدد بعد 90 يومًا", "%", 78, 92, 7, "percent")],
-     None),
 ]
 
-# Why each top-level goal matters (ar, en, fr) and which ones are deliberate stretches (aspirational ~70% = success)
+# Why each company goal matters
 RATIONALE = {
-    "rev": "بدون نمو مربح لا نستطيع تمويل المخزون ولا الفريق. هذا الهدف يحدد قدرتنا على الاستثمار هذه السنة.",
-    "cust": "العميل الذي يوصي بنا يخفّض كلفة اكتساب العملاء ويثبّت الإيراد المتكرر.",
-    "ops": "كل يوم تأخير في التسليم يتحول إلى شكوى وإلى ذمم متأخرة.",
-    "team": "النمو يتوقف عند أول منصب رئيسي يشغر دون خلف جاهز.",
+    "rev": "نمو مربح يمكّننا من تمويل المخزون والفريق.",
+    "cust": "العميل الراضي يعود ويوصي بنا، ويقلّل كلفة اكتساب عملاء جدد.",
+    "ops": "كل يوم تأخير في التسليم يتحول إلى شكوى وإلى مال متأخر.",
 }
-ASPIRATIONAL = {"cust", "team"}
+ASPIRATIONAL: set[str] = set()
 
 COMMENTS = [
     "تقدّم جيد هذا الأسبوع.",
     "بدأنا نرى أثر الإجراء الأخير.",
     "التقدّم أبطأ من المتوقع، سنراجع الخطة.",
-    "تم تحديث الرقم بعد إقفال الشهر.",
     "",
     "",
 ]
 
 # (name, unit_label, metric_type, direction, baseline, target, start_value, end_value, owner, perspective)
 INDICATORS = [
-    ("رقم الأعمال الشهري", "M DZD", "number", "higher_better", 40, 50, 41, 47.5, "fin", "financial"),
-    ("هامش الربح الإجمالي", "%", "percent", "higher_better", 26, 31, 27.2, 29.1, "fin", "financial"),
+    ("رقم الأعمال الشهري", "مليون دج", "number", "higher_better", 40, 50, 41, 47.5, "ceo", "financial"),
     ("نسبة التسليم في الموعد", "%", "percent", "higher_better", 80, 95, 82, 88.5, "ops", "customer"),
-    ("مؤشر صافي نقاط الترويج (NPS)", "", "number", "higher_better", 28, 50, 31, 41, "sales", "customer"),
-    ("المدة من الطلب إلى التسليم (يوم)", "days", "number", "lower_better", 9.5, 5, 9, 6.8, "ops", "process"),
-    ("متوسط فترة تحصيل الذمم (يوم)", "days", "number", "lower_better", 78, 55, 74, 63, "fin", "financial"),
-    ("معدل ترك العمل الطوعي (سنوي)", "%", "percent", "lower_better", 19, 10, 18, 13.5, "people", "learning"),
+    ("المدة من الطلب إلى التسليم (يوم)", "يوم", "number", "lower_better", 9.5, 5, 9, 6.8, "ops", "process"),
 ]
 
 
@@ -118,12 +91,10 @@ def seed(org, lang: str, ctx: dict) -> None:
         cyc = cycles["year"] if level == "year" else cycles["quarter"]
         o = Objective(org_id=org.id, cycle_id=cyc.id, unit_id=units[unit].id, owner_id=users[owner].id,
                       parent_id=objs[parent].id if parent else None, title=title, perspective=persp,
-                      progress_driver="key_results" if not parent or level == "quarter" else "both",
+                      progress_driver="key_results",
                       start_date=cyc.start_date, end_date=cyc.end_date,
                       rationale=RATIONALE[key] if key in RATIONALE else None, commitment="aspirational" if key in ASPIRATIONAL else "committed",
                       created_at=datetime.combine(cyc.start_date, datetime.min.time()) + timedelta(days=2))
-        if level == "year":
-            o.progress_driver = "both" if key in ("rev", "cust", "ops", "team") else "key_results"
         db.session.add(o)
         db.session.flush()
         objs[key] = o
@@ -159,7 +130,7 @@ def seed(org, lang: str, ctx: dict) -> None:
         if note:
             db.session.add(CheckIn(org_id=org.id, entity_type="objective", entity_id=o.id, user_id=users[owner].id,
                                    progress=sum(p for _, p in kr_rows) / len(kr_rows), created_at=datetime.utcnow() - timedelta(days=2),
-                                   comment=note, status="off_track" if key in ("rev", "wh_q") else "at_risk"))
+                                   comment=note, status="off_track"))
     ctx["objectives"] = objs
 
     for name, ul, mt, direction, base, target, v0, v1, owner, persp in INDICATORS:

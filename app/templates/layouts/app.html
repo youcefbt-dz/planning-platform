@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/shell.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cards.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/agent.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/assistant-dock.css', v='2202') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/assistant-dock.css', v='2300') }}">
   {% block css_page %}{% endblock %}
 {% endblock %}
 {% block body_class %}app-body{% endblock %}
@@ -141,48 +141,51 @@
    the flex app wrapper and do not depend on the optional provider-status context. #}
 {% if org and modules.is_enabled('agent') %}
 {% set dock_widget = assistant_widget|default({'live': false, 'why': 'none'}) %}
-{% set dock_starters = assistant_starters|default(['data']) %}
+{% set dock_starters = assistant_starters|default(['tour', 'developer']) %}
+{% set dock_icons = {'tour': 'rocket', 'create': 'flag-3', 'upload': 'upload', 'developer': 'user-circle', 'health': 'progress-alert', 'targets': 'target-arrow', 'gaps': 'sitemap', 'data': 'table', 'suggest': 'bulb'} %}
+{# The assistant carries the site's name (config/brand.yaml) and is the person's travel companion: it explains the product, reads their goals and data, and talks about anything. #}
+{% macro robot_mark() %}
+<svg class="assistant-mark-svg" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+  <path class="assistant-mark-antenna" d="M24 5.5V9" />
+  <circle class="assistant-mark-tip" cx="24" cy="4" r="2" />
+  <rect class="assistant-mark-ear" x="4.5" y="20" width="5" height="9" rx="2.5" />
+  <rect class="assistant-mark-ear" x="38.5" y="20" width="5" height="9" rx="2.5" />
+  <rect class="assistant-mark-shell" x="8.5" y="10" width="31" height="29" rx="9.5" />
+  <rect class="assistant-mark-screen" x="12.5" y="14" width="23" height="20" rx="6" />
+  <circle class="assistant-mark-eye" cx="19.3" cy="22.6" r="2.05" />
+  <circle class="assistant-mark-eye" cx="28.7" cy="22.6" r="2.05" />
+  <path class="assistant-mark-mouth" d="M20.5 28.2Q24 30.6 27.5 28.2" />
+</svg>
+{% endmacro %}
 <aside class="assistant-dock ag ag--floating" data-agent data-dock-root
        data-endpoint="{{ url_for('agent.chat') }}" data-apply-url="{{ url_for('agent.apply') }}"
        data-live="{{ 1 if dock_widget.live else 0 }}"
        data-preference-key="planwise.assistant.hidden.v2185.{{ me.id if me.is_authenticated else 'guest' }}.{{ org.id }}"
        data-voice-key="planwise.assistant.voice.v1.{{ me.id if me.is_authenticated else 'guest' }}.{{ org.id }}"
+       data-teaser-key="planwise.assistant.teaser.v1.{{ me.id if me.is_authenticated else 'guest' }}.{{ org.id }}"
        data-l-listen="{{ t('agent.voice.listen') }}" data-l-stop="{{ t('agent.voice.stop') }}" data-l-voice-on="{{ t('agent.voice.auto_on') }}" data-l-voice-off="{{ t('agent.voice.auto_off') }}" data-l-no-voice="{{ t('agent.voice.unavailable') }}"
        data-history-key="planwise.agent.chat.{{ me.id if me.is_authenticated else 'guest' }}.{{ org.id }}"
        data-l-open="{{ t('agent.open_goal') }}" data-l-error="{{ t('agent.err.failed') }}"
+       data-l-copy="{{ t('agent.copy') }}" data-l-copied="{{ t('agent.copied') }}"
        data-l-unverified="{{ t('agent.unverified') }}" data-l-approving="{{ t('agent.approving') }}">
-  <button class="assistant-dock__launcher" type="button" data-dock-open aria-label="{{ t('agent.widget_title') }}" aria-controls="assistant-dock-panel" aria-expanded="false">
-    <svg class="assistant-mark-svg" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-      <path class="assistant-mark-antenna" d="M24 5.5V9" />
-      <circle class="assistant-mark-tip" cx="24" cy="4" r="2" />
-      <rect class="assistant-mark-ear" x="4.5" y="20" width="5" height="9" rx="2.5" />
-      <rect class="assistant-mark-ear" x="38.5" y="20" width="5" height="9" rx="2.5" />
-      <rect class="assistant-mark-shell" x="8.5" y="10" width="31" height="29" rx="9.5" />
-      <rect class="assistant-mark-screen" x="12.5" y="14" width="23" height="20" rx="6" />
-      <circle class="assistant-mark-eye" cx="19.3" cy="22.6" r="2.05" />
-      <circle class="assistant-mark-eye" cx="28.7" cy="22.6" r="2.05" />
-      <path class="assistant-mark-mouth" d="M20.5 28.2Q24 30.6 27.5 28.2" />
-    </svg>
+  <div class="assistant-dock__teaser" data-teaser hidden role="status">
+    <button class="assistant-dock__teaser-text" type="button" data-dock-open>{{ t('agent.teaser', name=brand_name) }}</button>
+    <button class="assistant-dock__teaser-close" type="button" data-teaser-close aria-label="{{ t('agent.teaser_close') }}">{{ icon('x', 13) }}</button>
+  </div>
+  <button class="assistant-dock__launcher" type="button" data-dock-open aria-label="{{ t('agent.widget_title', name=brand_name) }}" aria-controls="assistant-dock-panel" aria-expanded="false">
+    {{ robot_mark() }}
     <span class="assistant-dock__robot-status" aria-hidden="true"></span>
   </button>
 
-  <section class="assistant-dock__panel" id="assistant-dock-panel" data-dock-panel hidden aria-label="{{ t('agent.widget_title') }}">
+  <section class="assistant-dock__panel" id="assistant-dock-panel" data-dock-panel hidden aria-label="{{ t('agent.widget_title', name=brand_name) }}">
     <header class="assistant-dock__head">
-      <span class="assistant-dock__mark" aria-hidden="true">
-        <svg class="assistant-mark-svg" viewBox="0 0 48 48" focusable="false">
-          <path class="assistant-mark-antenna" d="M24 5.5V9" />
-          <circle class="assistant-mark-tip" cx="24" cy="4" r="2" />
-          <rect class="assistant-mark-ear" x="4.5" y="20" width="5" height="9" rx="2.5" />
-          <rect class="assistant-mark-ear" x="38.5" y="20" width="5" height="9" rx="2.5" />
-          <rect class="assistant-mark-shell" x="8.5" y="10" width="31" height="29" rx="9.5" />
-          <rect class="assistant-mark-screen" x="12.5" y="14" width="23" height="20" rx="6" />
-          <circle class="assistant-mark-eye" cx="19.3" cy="22.6" r="2.05" />
-          <circle class="assistant-mark-eye" cx="28.7" cy="22.6" r="2.05" />
-          <path class="assistant-mark-mouth" d="M20.5 28.2Q24 30.6 27.5 28.2" />
-        </svg>
+      <span class="assistant-dock__mark" aria-hidden="true">{{ robot_mark() }}</span>
+      <span class="assistant-dock__heading">
+        <b><bdi>{{ brand_name }}</bdi></b>
+        <small><i class="assistant-dock__live{{ '' if dock_widget.live else ' is-off' }}" aria-hidden="true"></i>{{ t('agent.widget_hint') }}</small>
       </span>
-      <span class="assistant-dock__heading"><b>{{ t('agent.widget_title') }}</b><small>{{ t('agent.widget_hint') }}</small></span>
       <span class="assistant-dock__head-actions">
+        <button type="button" data-chat-reset aria-label="{{ t('agent.clear') }}" title="{{ t('agent.clear') }}">{{ icon('refresh', 17) }}</button>
         <button class="assistant-dock__voice-toggle" type="button" data-voice-toggle aria-pressed="true" aria-label="{{ t('agent.voice.auto_on') }}" title="{{ t('agent.voice.auto_on') }}">
           <svg data-voice-icon-on viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
           <svg data-voice-icon-off viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m16 9 5 6m0-6-5 6"/></svg>
@@ -205,17 +208,19 @@
 
     <div class="ag__thread assistant-dock__thread" data-thread aria-live="polite">
       <div class="ag__hello assistant-dock__hello" data-hello>
-        <h2>{{ t('agent.hello_t') }}</h2>
+        <span class="assistant-dock__hello-mark" aria-hidden="true">{{ robot_mark() }}</span>
+        <h2>{{ t('agent.hello_t', name=brand_name) }}</h2>
         <p>{{ t('agent.hello') }}</p>
-        <div class="ag__starters assistant-dock__starters">
+        <div class="ag__starters assistant-dock__starters" role="group" aria-label="{{ t('agent.hello_tip') }}">
           {% for k in dock_starters %}
           <button class="chip-btn" type="button" data-ask="{{ t('agent.starter.' ~ k ~ '_q') }}">
-            {{ icon({'health':'progress-alert','targets':'target-arrow','gaps':'sitemap','data':'table'}[k], 15) }}<span>{{ t('agent.starter.' ~ k) }}</span>
+            {{ icon(dock_icons[k], 15) }}<span>{{ t('agent.starter.' ~ k) }}</span>
           </button>
           {% endfor %}
         </div>
       </div>
     </div>
+    <div class="assistant-dock__suggest" data-suggest hidden></div>
     <form class="ag__composer assistant-dock__composer" data-form autocomplete="off">
       <textarea class="textarea" data-input rows="1" maxlength="1500" dir="auto" placeholder="{{ t('agent.ph') }}" aria-label="{{ t('agent.ph') }}"></textarea>
       <button class="btn btn-primary ag__send" type="submit" data-send aria-label="{{ t('agent.send') }}">{{ icon('arrow-narrow-left', 22) }}</button>
@@ -236,6 +241,6 @@
 </template>
 <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 <script src="{{ url_for('static', filename='js/assist.js') }}" defer></script>
-{% if org and modules.is_enabled('agent') %}<script src="{{ url_for('static', filename='js/agent.js', v='2201') }}" defer></script>{% endif %}
+{% if org and modules.is_enabled('agent') %}<script src="{{ url_for('static', filename='js/agent.js', v='2300') }}" defer></script>{% endif %}
 {% block js_page %}{% endblock %}
 {% endblock %}
