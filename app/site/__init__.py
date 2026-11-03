@@ -6,7 +6,6 @@ import re
 from flask import Blueprint, current_app, flash, g, redirect, render_template, request, send_from_directory, url_for
 
 from app.core.i18n import t
-from app.core.models import Organization
 from app.extensions import db
 from app.site.models import Lead
 
